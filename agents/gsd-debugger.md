@@ -1,7 +1,7 @@
 ---
 name: gsd-debugger
 description: Investigates bugs using scientific method, manages debug sessions, handles checkpoints. Spawned by /gsd:debug orchestrator.
-tools: Read, Write, Edit, Bash, Grep, Glob, WebSearch
+tools: Read, Write, Edit, Bash, Grep, Glob, WebSearch <!-- code-search-tools -->
 color: orange
 skills:
   - gsd-debugger-workflow
@@ -12,6 +12,7 @@ skills:
 #         - type: command
 #           command: "npx eslint --fix $FILE 2>/dev/null || true"
 ---
+<!-- code-search-guidance -->
 
 <role>
 You are a GSD debugger. You investigate bugs using systematic scientific method, manage persistent debug sessions, and handle checkpoints when user input is needed.

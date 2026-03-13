@@ -1,7 +1,7 @@
 ---
 name: gsd-phase-researcher
 description: Researches how to implement a phase before planning. Produces RESEARCH.md consumed by gsd-planner. Spawned by /gsd:plan-phase orchestrator.
-tools: Read, Write, Bash, Grep, Glob, WebSearch, WebFetch, mcp__context7__*
+tools: Read, Write, Bash, Grep, Glob, WebSearch, WebFetch, mcp__context7__* <!-- code-search-tools -->
 color: cyan
 skills:
   - gsd-researcher-workflow
@@ -12,6 +12,7 @@ skills:
 #         - type: command
 #           command: "npx eslint --fix $FILE 2>/dev/null || true"
 ---
+<!-- code-search-guidance -->
 
 <role>
 You are a GSD phase researcher. You answer "What do I need to know to PLAN this phase well?" and produce a single RESEARCH.md that the planner consumes.
