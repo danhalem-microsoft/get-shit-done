@@ -532,6 +532,96 @@ function cmdScaffold(cwd, type, options, raw) {
   output({ created: true, path: relPath }, raw, relPath);
 }
 
+// ─── Researcher Type Registry ────────────────────────────────────────────────
+
+function scanResearcherTypes() {
+  const researchersDir = path.join(require('os').homedir(), '.claude', 'get-shit-done', 'researchers');
+  const results = [];
+
+  try {
+    const files = fs.readdirSync(researchersDir).filter(f => f.endsWith('.md') && !f.startsWith('_'));
+
+    for (const file of files) {
+      try {
+        const loaded = loadResearcherType(path.join(researchersDir, file));
+        if (loaded) {
+          results.push({
+            name: loaded.name,
+            output_file: loaded.output_file,
+            description: loaded.description,
+            triggers: loaded.triggers,
+            file_path: file,
+          });
+        }
+      } catch {}
+    }
+  } catch {}
+
+  return results;
+}
+
+function loadResearcherType(filePath) {
+  const content = fs.readFileSync(filePath, 'utf-8');
+  const fmMatch = content.match(/^---\n([\s\S]+?)\n---/);
+  if (!fmMatch) return null;
+
+  const fmBlock = fmMatch[1];
+  const fm = {};
+
+  for (const line of fmBlock.split('\n')) {
+    const kv = line.match(/^([a-zA-Z_-]+):\s*(.*)/);
+    if (kv && kv[2].trim() !== '') {
+      fm[kv[1]] = kv[2].trim();
+    }
+  }
+
+  // Extract triggers list (YAML array format)
+  const triggersMatch = fmBlock.match(/^triggers:\s*\n((?:\s+-\s+.+\n?)+)/m);
+  if (triggersMatch) {
+    fm.triggers = triggersMatch[1]
+      .split('\n')
+      .map(line => line.replace(/^\s+-\s+/, '').trim())
+      .filter(Boolean);
+  } else {
+    fm.triggers = null;
+  }
+
+  // Extract prompt_template content
+  const templateMatch = content.match(/<prompt_template>([\s\S]*?)<\/prompt_template>/);
+
+  return {
+    name: fm.name || null,
+    output_file: fm.output_file || null,
+    description: fm.description || null,
+    triggers: fm.triggers || null,
+    prompt_template: templateMatch ? templateMatch[1].trim() : null,
+  };
+}
+
+function cmdResearcherScan(raw) {
+  const results = scanResearcherTypes();
+  output({ count: results.length, researchers: results }, raw);
+}
+
+function cmdResearcherLoad(name, raw) {
+  if (!name) {
+    error('researcher name required');
+  }
+
+  const researchersDir = path.join(require('os').homedir(), '.claude', 'get-shit-done', 'researchers');
+  const filePath = path.join(researchersDir, name.endsWith('.md') ? name : name + '.md');
+
+  try {
+    const loaded = loadResearcherType(filePath);
+    if (!loaded) {
+      error('Could not parse researcher type: ' + name);
+    }
+    output(loaded, raw);
+  } catch (e) {
+    error('Researcher type not found: ' + name);
+  }
+}
+
 module.exports = {
   cmdGenerateSlug,
   cmdCurrentTimestamp,
@@ -545,4 +635,8 @@ module.exports = {
   cmdProgressRender,
   cmdTodoComplete,
   cmdScaffold,
+  cmdResearcherScan,
+  cmdResearcherLoad,
+  scanResearcherTypes,
+  loadResearcherType,
 };

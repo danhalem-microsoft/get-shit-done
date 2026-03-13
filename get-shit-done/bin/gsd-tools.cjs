@@ -645,6 +645,18 @@ async function main() {
       break;
     }
 
+    case 'researcher': {
+      const subcommand = args[1];
+      if (subcommand === 'scan') {
+        commands.cmdResearcherScan(raw);
+      } else if (subcommand === 'load') {
+        commands.cmdResearcherLoad(args[2], raw);
+      } else {
+        error('Unknown researcher subcommand. Available: scan, load');
+      }
+      break;
+    }
+
     default:
       error(`Unknown command: ${command}`);
   }
