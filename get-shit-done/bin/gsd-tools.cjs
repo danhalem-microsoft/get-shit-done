@@ -128,7 +128,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { error } = require('./lib/core.cjs');
+const { error, output, loadConfig, pathExistsInternal } = require('./lib/core.cjs');
 const state = require('./lib/state.cjs');
 const phase = require('./lib/phase.cjs');
 const roadmap = require('./lib/roadmap.cjs');
@@ -139,6 +139,64 @@ const milestone = require('./lib/milestone.cjs');
 const commands = require('./lib/commands.cjs');
 const init = require('./lib/init.cjs');
 const frontmatter = require('./lib/frontmatter.cjs');
+
+// ─── Mistake Registry ────────────────────────────────────────────────────────
+
+function cmdInitMistakes(cwd, raw) {
+  const cfg = loadConfig(cwd);
+  const now = new Date();
+  const mistakesDir = path.join(cwd, '.planning', 'mistakes');
+  let count = 0;
+  const mistakes = [];
+  let maxId = 0;
+
+  try {
+    const files = fs.readdirSync(mistakesDir).filter(f => f.endsWith('.md'));
+    for (const file of files) {
+      try {
+        const content = fs.readFileSync(path.join(mistakesDir, file), 'utf-8');
+        const fm = frontmatter.extractFrontmatter(content);
+        const idMatch = (fm.id || '').match(/^MR-(\d+)$/);
+
+        const numericId = idMatch ? parseInt(idMatch[1], 10) : 0;
+        if (numericId > maxId) maxId = numericId;
+
+        count++;
+        mistakes.push({
+          file,
+          id: fm.id || 'unknown',
+          created: fm.created || 'unknown',
+          title: fm.title || 'Untitled',
+          area: fm.area || 'general',
+          files: Array.isArray(fm.files) ? fm.files : [],
+          path: path.join('.planning', 'mistakes', file),
+        });
+      } catch {}
+    }
+  } catch {}
+
+  // Sort by created date, newest first
+  mistakes.sort((a, b) => {
+    if (a.created === 'unknown') return 1;
+    if (b.created === 'unknown') return -1;
+    return new Date(b.created) - new Date(a.created);
+  });
+
+  const nextNum = maxId + 1;
+  const nextId = `MR-${String(nextNum).padStart(3, '0')}`;
+
+  output({
+    commit_docs: cfg.commit_docs,
+    date: now.toISOString().split('T')[0],
+    timestamp: now.toISOString(),
+    mistake_count: count,
+    mistakes,
+    next_id: nextId,
+    mistakes_dir: '.planning/mistakes',
+    mistakes_dir_exists: pathExistsInternal(cwd, '.planning/mistakes'),
+    planning_exists: pathExistsInternal(cwd, '.planning'),
+  }, raw);
+}
 
 // ─── CLI Router ───────────────────────────────────────────────────────────────
 
@@ -540,6 +598,9 @@ async function main() {
         case 'todos':
           init.cmdInitTodos(cwd, args[2], raw);
           break;
+        case 'mistakes':
+          cmdInitMistakes(cwd, raw);
+          break;
         case 'milestone-op':
           init.cmdInitMilestoneOp(cwd, raw);
           break;
@@ -550,7 +611,7 @@ async function main() {
           init.cmdInitProgress(cwd, raw);
           break;
         default:
-          error(`Unknown init workflow: ${workflow}\nAvailable: execute-phase, plan-phase, new-project, new-milestone, quick, resume, verify-work, phase-op, todos, milestone-op, map-codebase, progress`);
+          error(`Unknown init workflow: ${workflow}\nAvailable: execute-phase, plan-phase, new-project, new-milestone, quick, resume, verify-work, phase-op, todos, mistakes, milestone-op, map-codebase, progress`);
       }
       break;
     }
