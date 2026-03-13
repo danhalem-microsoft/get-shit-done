@@ -461,12 +461,16 @@ async function main() {
     }
 
     case 'load-active-tastes': {
-      commands.cmdLoadActiveTastes(cwd, raw);
+      const entries = taste.loadActiveTasteEntries(cwd);
+      const { output: out } = require('./lib/core.cjs');
+      out(entries, raw, `${entries.length} active taste entries`);
       break;
     }
 
     case 'update-taste-counters': {
-      commands.cmdUpdateTasteCounters(cwd, args[1], raw);
+      taste.updateTasteCounters(cwd, args[1] ? JSON.parse(args[1]) : {});
+      const { output: out } = require('./lib/core.cjs');
+      out({ updated: true }, raw, 'Taste counters updated');
       break;
     }
 
