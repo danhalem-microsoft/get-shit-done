@@ -1878,6 +1878,50 @@ function reportLocalPatches(configDir, runtime = 'claude') {
   return meta.files || [];
 }
 
+/**
+ * Detect whether code-search MCP server is configured in settings.json.
+ * Checks both global and local settings for a mcpServers key containing 'code-search'.
+ * Returns boolean. Gracefully returns false on any error.
+ */
+function detectCodeSearch(configDir) {
+  try {
+    const settingsPath = path.join(configDir, 'settings.json');
+    if (!fs.existsSync(settingsPath)) return false;
+    const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
+    if (!settings.mcpServers || typeof settings.mcpServers !== 'object') return false;
+    return Object.keys(settings.mcpServers).some(key => key.includes('code-search'));
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Expand template markers in agent content based on detection results.
+ * - <!-- code-search-tools --> -> ", mcp__code-search__*" or ""
+ * - <!-- code-search-guidance --> -> guidance block content or ""
+ */
+function expandTemplateMarkers(content, hasCodeSearch, src) {
+  if (hasCodeSearch) {
+    content = content.replace(/<!--\s*code-search-tools\s*-->/g, ', mcp__code-search__*');
+    // Load guidance content from template file
+    let guidanceContent = '';
+    try {
+      const guidancePath = path.join(src, 'get-shit-done', 'templates', 'code-search-guidance.md');
+      if (fs.existsSync(guidancePath)) {
+        guidanceContent = fs.readFileSync(guidancePath, 'utf8').trim();
+      }
+    } catch {
+      guidanceContent = '';
+    }
+    content = content.replace(/<!--\s*code-search-guidance\s*-->/g, guidanceContent);
+  } else {
+    // Remove markers entirely when code-search is not available
+    content = content.replace(/\s*<!--\s*code-search-tools\s*-->/g, '');
+    content = content.replace(/<!--\s*code-search-guidance\s*-->/g, '');
+  }
+  return content;
+}
+
 function install(isGlobal, runtime = 'claude') {
   const isOpencode = runtime === 'opencode';
   const isGemini = runtime === 'gemini';
@@ -1907,6 +1951,12 @@ function install(isGlobal, runtime = 'claude') {
   if (isCodex) runtimeLabel = 'Codex';
 
   console.log(`  Installing for ${cyan}${runtimeLabel}${reset} to ${cyan}${locationLabel}${reset}\n`);
+
+  // Detect code-search MCP server for template expansion
+  const hasCodeSearch = detectCodeSearch(isGlobal ? getGlobalDir(runtime, explicitConfigDir) : path.join(process.cwd(), dirName));
+  if (hasCodeSearch) {
+    console.log(`  ${green}✓${reset} Detected code-search MCP server — agents will include code-search tools\n`);
+  }
 
   // Track installation failures
   const failures = [];
@@ -1993,6 +2043,8 @@ function install(isGlobal, runtime = 'claude') {
         content = content.replace(dirRegex, pathPrefix);
         content = content.replace(homeDirRegex, toHomePrefix(pathPrefix));
         content = processAttribution(content, getCommitAttribution(runtime));
+        // Expand code-search template markers before runtime conversion
+        content = expandTemplateMarkers(content, hasCodeSearch, src);
         // Convert frontmatter for runtime compatibility
         if (isOpencode) {
           content = convertClaudeToOpencodeFrontmatter(content);
