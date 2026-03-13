@@ -27,6 +27,8 @@
  *   summary-extract <path> [--fields]  Extract structured data from SUMMARY.md
  *   state-snapshot                     Structured parse of STATE.md
  *   phase-plan-index <phase>           Index plans with waves and status
+ *   unprocessed-logs [dir]             Check for unprocessed decision logs
+ *     Returns logs without <!-- processed: yes --> marker
  *   websearch <query>                  Search web via Brave API (if configured)
  *     [--limit N] [--freshness day|week|month]
  *
@@ -139,6 +141,7 @@ const milestone = require('./lib/milestone.cjs');
 const commands = require('./lib/commands.cjs');
 const init = require('./lib/init.cjs');
 const frontmatter = require('./lib/frontmatter.cjs');
+const taste = require('./lib/taste.cjs');
 
 // ─── Mistake Registry ────────────────────────────────────────────────────────
 
@@ -196,6 +199,43 @@ function cmdInitMistakes(cwd, raw) {
     mistakes_dir_exists: pathExistsInternal(cwd, '.planning/mistakes'),
     planning_exists: pathExistsInternal(cwd, '.planning'),
   }, raw);
+}
+
+// ─── Helper Functions ─────────────────────────────────────────────────────────
+
+/**
+ * Get unprocessed decision logs from .planning/decisions/
+ * @param {string} decisionsDir - Path to decisions directory
+ * @returns {string[]} Array of unprocessed log file paths
+ */
+function getUnprocessedDecisionLogs(decisionsDir = '.planning/decisions/') {
+  // Early return if directory doesn't exist
+  if (!fs.existsSync(decisionsDir)) {
+    return [];
+  }
+
+  const files = fs.readdirSync(decisionsDir);
+  const unprocessedLogs = [];
+
+  for (const file of files) {
+    // Skip non-markdown files
+    if (!file.endsWith('.md')) continue;
+
+    const filePath = path.join(decisionsDir, file);
+
+    // Skip directories (like archive/)
+    if (!fs.statSync(filePath).isFile()) continue;
+
+    // Read file content
+    const content = fs.readFileSync(filePath, 'utf-8');
+
+    // Check for processed marker
+    if (!content.includes('<!-- processed: yes -->')) {
+      unprocessedLogs.push(filePath);
+    }
+  }
+
+  return unprocessedLogs;
 }
 
 // ─── CLI Router ───────────────────────────────────────────────────────────────
@@ -417,6 +457,16 @@ async function main() {
 
     case 'list-todos': {
       commands.cmdListTodos(cwd, args[1], raw);
+      break;
+    }
+
+    case 'load-active-tastes': {
+      commands.cmdLoadActiveTastes(cwd, raw);
+      break;
+    }
+
+    case 'update-taste-counters': {
+      commands.cmdUpdateTasteCounters(cwd, args[1], raw);
       break;
     }
 
@@ -642,6 +692,22 @@ async function main() {
         limit: limitIdx !== -1 ? parseInt(args[limitIdx + 1], 10) : 10,
         freshness: freshnessIdx !== -1 ? args[freshnessIdx + 1] : null,
       }, raw);
+      break;
+    }
+
+    case 'unprocessed-logs': {
+      const decisionsDir = args[1] || path.join(cwd, '.planning/decisions/');
+      const logs = getUnprocessedDecisionLogs(decisionsDir);
+      if (raw) {
+        console.log(JSON.stringify({ unprocessed_logs: logs, count: logs.length }));
+      } else {
+        if (logs.length === 0) {
+          console.log('No unprocessed decision logs found.');
+        } else {
+          console.log(`Found ${logs.length} unprocessed decision log(s):`);
+          logs.forEach(log => console.log(`  - ${log}`));
+        }
+      }
       break;
     }
 

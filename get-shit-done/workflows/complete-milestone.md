@@ -318,6 +318,54 @@ Initial user testing showed demand for shape tools.
 
 </step>
 
+<step name="extract_taste_patterns">
+
+**Check for unprocessed decision logs and offer taste extraction:**
+
+```bash
+UNPROCESSED=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" unprocessed-logs .planning/decisions/ --raw)
+COUNT=$(echo "$UNPROCESSED" | jq -r '.count')
+```
+
+**If no unprocessed logs** (`COUNT === 0`):
+- Silent skip — no output
+- Proceed directly to reorganize_roadmap step
+
+**If unprocessed logs exist** (`COUNT > 0`):
+
+Present:
+
+```
+You have ${COUNT} unprocessed decision log(s). Extract taste patterns from decision logs?
+
+- [ ] Yes, extract now
+- [ ] No, skip
+```
+
+**If user selects "Yes, extract now":**
+- Invoke `/gsd:extract-taste` directly
+- Full interactive extraction flow runs (init -> load logs -> identify candidates -> preview -> confirm -> write)
+- User reviews each candidate taste entry before it's written
+- Rejected candidates are not written to `.planning/taste/`
+- After extraction completes, show confirmation message:
+
+```
+Extraction complete. {N} new taste entries created. Proceeding to archive.
+```
+
+**If user selects "No, skip":**
+- Message: "Proceeding to archive without extraction."
+- Logs remain unprocessed for future extraction
+- Continue to reorganize_roadmap step
+
+**Step complete when:**
+- [ ] Unprocessed logs checked
+- [ ] Extraction offered if logs exist (or silent skip if none)
+- [ ] User choice respected (extract or skip)
+- [ ] Confirmation message shown if extraction ran
+
+</step>
+
 <step name="reorganize_roadmap">
 
 Update `.planning/ROADMAP.md` — group completed milestone phases:

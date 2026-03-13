@@ -223,6 +223,40 @@ Structure the extracted information:
 **If no prior context exists:** Continue without — this is expected for early phases.
 </step>
 
+<step name="load_taste_entries">
+Load active taste entries for consultation during discussion.
+
+```bash
+TASTES=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" load-active-tastes --raw)
+```
+
+**If no taste directory or no active entries:** Silent skip — continue to scout_codebase with no taste context. Zero behavior change for projects without taste entries (backward compatible).
+
+**If active entries exist:**
+
+1. Parse the JSON array of taste entries
+2. Store internally as `<active_tastes>` for use in subsequent steps
+3. Each entry has: id, domain, title, confidence, pattern, tags, times_applied, times_overridden
+
+**Usage in subsequent steps:**
+- `analyze_phase`: Use taste entries to pre-answer gray areas where a taste matches
+- `present_gray_areas`: Annotate gray areas with matching taste entries ("Your taste preference: {title}")
+- `discuss_areas`: Use taste patterns as default recommendations, probe whether user's position has changed
+- `write_context`: Queue counter updates for applied/overridden tastes
+
+**Semantic matching approach:**
+- Use Claude's contextual understanding to match taste entries to gray areas
+- Prefer over-matching to under-matching — user can reject false positives
+- Partial matches valid: "error messages" taste can match "user feedback" gray area
+
+**Counter tracking preparation:**
+Initialize empty counter queues:
+```
+taste_counters = { applied: [], overridden: [] }
+```
+These will be populated during discuss_areas based on user responses.
+</step>
+
 <step name="scout_codebase">
 Lightweight scan of existing code to inform gray area identification and discussion. Uses ~10% context — acceptable for an interactive session.
 
@@ -425,6 +459,16 @@ Ask 4 questions per area before offering to continue or move on. Each answer oft
 - Each answer should inform the next question
 - If user picks "Other" to provide freeform input (e.g., "let me describe it", "something else", or an open-ended reply), ask your follow-up as plain text — NOT another AskUserQuestion. Wait for them to type at the normal prompt, then reflect their input back and confirm before resuming AskUserQuestion for the next question.
 
+**Taste-informed questions:**
+When a taste entry matches the current area being discussed:
+- Present the taste pattern as the recommended default with conversational phrasing
+- Example: "You've previously preferred explicit error messages over codes. Same here, or different approach?"
+- If user agrees (>80% semantic similarity to taste pattern): queue counter update `{ tasteId, increment: 1 }` to `taste_counters.applied`
+- If user disagrees (<50% similarity): queue counter update to `taste_counters.overridden`
+- Middle ground (50-80%): prompt user for explicit confirmation before queueing
+
+**Batch presentation:** When multiple tastes match the current discussion area, show all matching taste patterns together before discussing unmatched areas. User can accept all defaults or flag specific items for discussion.
+
 **Scope creep handling:**
 If user mentions something outside the phase domain:
 ```
@@ -520,6 +564,21 @@ mkdir -p ".planning/phases/${padded_phase}-${phase_slug}"
 ```
 
 Write file.
+</step>
+
+<step name="persist_taste_counters">
+Persist queued taste counter updates (if any were accumulated during discussion).
+
+**If `taste_counters` has any entries (applied or overridden):**
+
+```bash
+# Format counter updates as JSON and pass to gsd-tools
+node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" update-taste-counters '${JSON.stringify(taste_counters)}' --raw
+```
+
+**If no taste counters queued:** Silent skip — no output.
+
+Counter updates are persisted at CONTEXT.md write time (per Phase 22 decision) to avoid partial updates if the workflow is interrupted before context is written.
 </step>
 
 <step name="confirm_creation">
@@ -662,7 +721,9 @@ Route to `confirm_creation` step (existing behavior — show manual next steps).
 <success_criteria>
 - Phase validated against roadmap
 - Prior context loaded (PROJECT.md, REQUIREMENTS.md, STATE.md, prior CONTEXT.md files)
+- Active taste entries loaded (silent skip if none exist — zero behavior change)
 - Already-decided questions not re-asked (carried forward from prior phases)
+- Taste-matched gray areas use taste patterns as recommended defaults
 - Codebase scouted for reusable assets, patterns, and integration points
 - Gray areas identified through intelligent analysis with code and prior decision annotations
 - User selected which areas to discuss
@@ -671,6 +732,7 @@ Route to `confirm_creation` step (existing behavior — show manual next steps).
 - CONTEXT.md captures actual decisions, not vague vision
 - CONTEXT.md includes code_context section with reusable assets and patterns
 - Deferred ideas preserved for future phases
+- Taste counters persisted at CONTEXT.md write time
 - STATE.md updated with session info
 - User knows next steps
 </success_criteria>
