@@ -1,0 +1,55 @@
+{
+  "version": "1.0",
+  "description": "GSD fork install manifest - maps source to destination",
+  "sources": {
+    "workflows": {
+      "src": "get-shit-done/workflows/",
+      "dest": "get-shit-done/workflows/",
+      "type": "copy-with-path-replacement"
+    },
+    "researchers": {
+      "src": "get-shit-done/researchers/",
+      "dest": "get-shit-done/researchers/",
+      "type": "copy-with-path-replacement"
+    },
+    "bin": {
+      "src": "get-shit-done/bin/",
+      "dest": "get-shit-done/bin/",
+      "type": "copy-raw"
+    },
+    "references": {
+      "src": "get-shit-done/references/",
+      "dest": "get-shit-done/references/",
+      "type": "copy-with-path-replacement"
+    },
+    "templates": {
+      "src": "get-shit-done/templates/",
+      "dest": "get-shit-done/templates/",
+      "type": "copy-with-path-replacement"
+    },
+    "agents": {
+      "src": "agents/",
+      "dest": "agents/",
+      "type": "copy-with-path-replacement",
+      "template_markers": ["code-search-tools", "code-search-guidance"]
+    },
+    "commands": {
+      "src": "commands/gsd/",
+      "dest": "commands/gsd/",
+      "type": "copy-with-path-replacement"
+    }
+  },
+  "generated_files": ["get-shit-done/VERSION", "gsd-file-manifest.json"],
+  "template_expansions": {
+    "code-search-tools": {
+      "detect": "settings.json mcpServers contains 'code-search'",
+      "present": ", mcp__code-search__*",
+      "absent": ""
+    },
+    "code-search-guidance": {
+      "detect": "settings.json mcpServers contains 'code-search'",
+      "present_file": "get-shit-done/templates/code-search-guidance.md",
+      "absent": ""
+    }
+  }
+}
