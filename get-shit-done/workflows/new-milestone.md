@@ -155,24 +155,60 @@ Use template: ~/.claude/get-shit-done/templates/research-project/{FILE}
 | GATES | Versions current (verify with Context7), rationale explains WHY, integration considered | Categories clear, complexity noted, dependencies identified | Integration points identified, new vs modified explicit, build order considers deps | Pitfalls specific to adding these features, integration pitfalls covered, prevention actionable |
 | FILE | STACK.md | FEATURES.md | ARCHITECTURE.md | PITFALLS.md |
 
-After all 4 complete, spawn synthesizer:
+After all 4 complete, read and validate research files, then spawn synthesizer with inlined content:
 
+**Pre-flight validation:** Before building the synthesizer prompt, read each research file and verify it exists and is non-empty:
 ```
-Task(prompt="
-Synthesize research outputs into SUMMARY.md.
+Read .planning/research/STACK.md → ${STACK_CONTENT}
+Read .planning/research/FEATURES.md → ${FEATURES_CONTENT}
+Read .planning/research/ARCHITECTURE.md → ${ARCHITECTURE_CONTENT}
+Read .planning/research/PITFALLS.md → ${PITFALLS_CONTENT}
+```
 
-<files_to_read>
-- .planning/research/STACK.md
-- .planning/research/FEATURES.md
-- .planning/research/ARCHITECTURE.md
-- .planning/research/PITFALLS.md
-</files_to_read>
+If any file is missing or empty, fail with clear error:
+```
+Error: Research file missing or empty: .planning/research/{FILE}.md
+All 4 research files must exist before synthesis. Check researcher agent output.
+```
 
+**Build synthesizer prompt with inlined content:**
+```
+Task(prompt="First, read the gsd-research-synthesizer agent file for your role and instructions.
+
+<research_files>
+
+<research_file name="STACK.md">
+{content of .planning/research/STACK.md}
+</research_file>
+
+<research_file name="FEATURES.md">
+{content of .planning/research/FEATURES.md}
+</research_file>
+
+<research_file name="ARCHITECTURE.md">
+{content of .planning/research/ARCHITECTURE.md}
+</research_file>
+
+<research_file name="PITFALLS.md">
+{content of .planning/research/PITFALLS.md}
+</research_file>
+
+</research_files>
+
+<output>
 Write to: .planning/research/SUMMARY.md
-Use template: ~/.claude/get-shit-done/templates/research-project/SUMMARY.md
-Commit after writing.
+Commit all research files in .planning/research/ after writing.
+</output>
 ", subagent_type="gsd-research-synthesizer", model="{synthesizer_model}", description="Synthesize research")
 ```
+
+**Handle contradiction return from synthesizer:**
+
+After synthesizer returns, check for `<contradictions>` block in the return:
+
+- **If no contradictions:** Proceed normally.
+- **If contradictions detected:** Show each to user via AskUserQuestion and resolve.
+  Track synthesis count — max 2 total (initial + 1 re-synthesis).
 
 Display key findings from SUMMARY.md:
 ```
