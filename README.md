@@ -39,9 +39,54 @@ npx get-shit-done-cc@latest
 
 **Trusted by engineers at Amazon, Google, Shopify, and Webflow.**
 
-[Why I Built This](#why-i-built-this) · [How It Works](#how-it-works) · [Commands](#commands) · [Why It Works](#why-it-works) · [User Guide](docs/USER-GUIDE.md)
+[Why I Built This](#why-i-built-this) · [How It Works](#how-it-works) · [Fork Features](#fork-features) · [Commands](#commands) · [Why It Works](#why-it-works) · [User Guide](docs/USER-GUIDE.md)
 
 </div>
+
+---
+
+## Fork Features
+
+> This fork extends GSD with 6 natively integrated systems. All customizations ship with `git clone` + `node install.js` — no patch skills, no post-install scripts.
+
+| System | What It Does |
+|--------|-------------|
+| **Code-Search Integration** | Optional MCP-based code search tools auto-injected into agents during install |
+| **Critic Agents** | 6 specialized critics (plan, code, scope, verify, discuss, strategy) for quality gates |
+| **Dynamic Researchers** | 11 researcher types with AI-powered selection and adaptive synthesis |
+| **Adaptive Synthesizer** | Synthesizer that adapts output format to researcher findings |
+| **Mistake Registry** | Structured mistake capture, storage, and critic-integrated area routing |
+| **Taste Library** | Decision preference extraction, storage, and consultation during planning |
+
+### Fork Installation (Recommended)
+
+```bash
+git clone https://github.com/YOUR_USERNAME/get-shit-done.git
+cd get-shit-done
+node bin/install.js --global
+```
+
+### Updating
+
+```bash
+cd /path/to/your/get-shit-done
+git pull origin main
+node bin/install.js --global
+```
+
+Or use `/gsd:update` which handles both fork and npm update paths.
+
+### Fork Commands
+
+| Command | What it does |
+|---------|-------------|
+| `/gsd:add-taste` | Create a taste preference entry |
+| `/gsd:extract-taste` | Extract taste patterns from decision logs |
+| `/gsd:add-mistake` | Record a mistake for critic reference |
+| `/gsd:mistakes` | List mistakes by area |
+| `/gsd:sync-upstream` | Merge upstream GSD changes into fork |
+
+See [FORK.md](FORK.md) for detailed fork documentation.
 
 ---
 
