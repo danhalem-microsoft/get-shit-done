@@ -1,0 +1,345 @@
+#!/usr/bin/env node
+
+/**
+ * verify-install.js - Verify installed files match fork source
+ *
+ * Compares fork source files against installed files, accounting for
+ * path rewriting, template expansion, and generated files.
+ *
+ * Exit codes:
+ *   0 = all match
+ *   1 = mismatches found
+ *   2 = script error
+ *
+ * Usage:
+ *   node scripts/verify-install.js [--verbose] [--runtime claude|opencode|gemini|codex] [--target <dir>]
+ */
+
+const fs = require('fs');
+const path = require('path');
+const os = require('os');
+
+// Parse args
+const args = process.argv.slice(2);
+const verbose = args.includes('--verbose') || args.includes('-v');
+const runtimeIdx = args.findIndex(a => a === '--runtime');
+const runtime = runtimeIdx !== -1 && args[runtimeIdx + 1] ? args[runtimeIdx + 1] : 'claude';
+const targetIdx = args.findIndex(a => a === '--target');
+const explicitTarget = targetIdx !== -1 && args[targetIdx + 1] ? args[targetIdx + 1] : null;
+
+// Colors
+const green = '\x1b[32m';
+const red = '\x1b[31m';
+const yellow = '\x1b[33m';
+const cyan = '\x1b[36m';
+const dim = '\x1b[2m';
+const reset = '\x1b[0m';
+
+// Resolve paths
+const forkRoot = path.join(__dirname, '..');
+const manifest = JSON.parse(fs.readFileSync(path.join(forkRoot, 'install-manifest.json'), 'utf8'));
+
+function getTargetDir() {
+  if (explicitTarget) return explicitTarget;
+  if (runtime === 'opencode') {
+    return process.env.OPENCODE_CONFIG_DIR ||
+      (process.env.XDG_CONFIG_HOME ? path.join(process.env.XDG_CONFIG_HOME, 'opencode') : path.join(os.homedir(), '.config', 'opencode'));
+  }
+  if (runtime === 'gemini') return path.join(os.homedir(), '.gemini');
+  if (runtime === 'codex') return path.join(os.homedir(), '.codex');
+  return path.join(os.homedir(), '.claude');
+}
+
+const targetDir = getTargetDir();
+const pathPrefix = `${targetDir.replace(/\\/g, '/')}/`;
+
+/**
+ * Detect code-search MCP configuration
+ */
+function detectCodeSearch() {
+  try {
+    const settingsPath = path.join(targetDir, 'settings.json');
+    if (!fs.existsSync(settingsPath)) return false;
+    const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
+    if (!settings.mcpServers || typeof settings.mcpServers !== 'object') return false;
+    return Object.keys(settings.mcpServers).some(key => key.includes('code-search'));
+  } catch {
+    return false;
+  }
+}
+
+const hasCodeSearch = detectCodeSearch();
+
+/**
+ * Normalize installed content back to source form for comparison.
+ * Reverses the transformations applied by install.js:
+ *   1. Path replacement (targetDir -> ~/.claude/)
+ *   2. $HOME path replacement
+ *   3. Template expansion (code-search markers)
+ */
+function normalizeInstalled(content, category) {
+  // 1. Reverse path replacement: /home/user/.claude/ -> ~/.claude/
+  const escapedPrefix = pathPrefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  content = content.replace(new RegExp(escapedPrefix, 'g'), '~/.claude/');
+
+  // 2. Reverse $HOME path replacement
+  const homePrefix = '$HOME/.claude/';
+  const toHomePrefix = `$HOME${targetDir.slice(os.homedir().length).replace(/\\/g, '/')}/`;
+  if (toHomePrefix !== homePrefix) {
+    content = content.replace(new RegExp(toHomePrefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), '$HOME/.claude/');
+  }
+
+  // 3. Reverse template expansion for agents
+  if (category === 'agents') {
+    if (hasCodeSearch) {
+      // Reverse: ", mcp__code-search__*" -> "<!-- code-search-tools -->"
+      content = content.replace(/, mcp__code-search__\*/g, '<!-- code-search-tools -->');
+      // Reverse code-search guidance expansion
+      try {
+        const guidancePath = path.join(forkRoot, 'get-shit-done', 'templates', 'code-search-guidance.md');
+        if (fs.existsSync(guidancePath)) {
+          const guidanceContent = fs.readFileSync(guidancePath, 'utf8').trim();
+          if (guidanceContent) {
+            content = content.replace(new RegExp(guidanceContent.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), '<!-- code-search-guidance -->');
+          }
+        }
+      } catch { /* ignore */ }
+    } else {
+      // When code-search not present, markers were removed entirely
+      // We can't reverse this perfectly, so we compare against the source
+      // with markers also removed (handled in comparison logic)
+    }
+  }
+
+  return content;
+}
+
+/**
+ * Normalize source content for comparison when code-search is NOT available.
+ * Removes template markers the same way install.js does when hasCodeSearch=false.
+ */
+function normalizeSource(content, category) {
+  if (category === 'agents' && !hasCodeSearch) {
+    // Match install.js behavior: remove markers entirely
+    content = content.replace(/\s*<!--\s*code-search-tools\s*-->/g, '');
+    content = content.replace(/<!--\s*code-search-guidance\s*-->/g, '');
+  }
+  return content;
+}
+
+/**
+ * Generate a context diff between two strings
+ */
+function contextDiff(a, b, labelA, labelB, contextLines = 3) {
+  const linesA = a.split('\n');
+  const linesB = b.split('\n');
+  const diffs = [];
+  const maxLen = Math.max(linesA.length, linesB.length);
+
+  for (let i = 0; i < maxLen; i++) {
+    if ((linesA[i] || '') !== (linesB[i] || '')) {
+      const start = Math.max(0, i - contextLines);
+      const end = Math.min(maxLen, i + contextLines + 1);
+
+      diffs.push(`  @@ line ${i + 1} @@`);
+      for (let j = start; j < end; j++) {
+        const lineA = linesA[j] !== undefined ? linesA[j] : '';
+        const lineB = linesB[j] !== undefined ? linesB[j] : '';
+        if (lineA === lineB) {
+          diffs.push(`   ${lineA}`);
+        } else {
+          if (linesA[j] !== undefined) diffs.push(`${red}  - ${lineA}${reset}`);
+          if (linesB[j] !== undefined) diffs.push(`${green}  + ${lineB}${reset}`);
+        }
+      }
+      // Skip ahead past this diff hunk
+      i = end;
+    }
+  }
+
+  if (diffs.length > 20) {
+    return diffs.slice(0, 20).join('\n') + `\n  ... (${diffs.length - 20} more diff lines)`;
+  }
+  return diffs.join('\n');
+}
+
+// Results tracking
+const results = { matched: 0, mismatched: 0, missing: 0, orphaned: 0, skipped: 0 };
+const issues = [];
+
+console.log(`\n${cyan}GSD Install Verification${reset}`);
+console.log(`${dim}Fork source: ${forkRoot}${reset}`);
+console.log(`${dim}Install target: ${targetDir}${reset}`);
+console.log(`${dim}Runtime: ${runtime}${reset}`);
+console.log(`${dim}Code-search detected: ${hasCodeSearch}${reset}\n`);
+
+if (!fs.existsSync(targetDir)) {
+  console.error(`${red}ERROR: Target directory does not exist: ${targetDir}${reset}`);
+  process.exit(2);
+}
+
+/**
+ * Verify a single file
+ */
+function verifyFile(srcRelative, destRelative, category) {
+  const srcPath = path.join(forkRoot, srcRelative);
+  const destPath = path.join(targetDir, destRelative);
+
+  if (!fs.existsSync(srcPath)) {
+    // Source file doesn't exist (shouldn't happen if manifest is correct)
+    issues.push({ type: 'ERROR', file: srcRelative, detail: 'Source file missing from fork' });
+    return;
+  }
+
+  if (!fs.existsSync(destPath)) {
+    results.missing++;
+    issues.push({ type: 'MISSING', file: destRelative, detail: `Not found at ${destPath}` });
+    return;
+  }
+
+  let srcContent = fs.readFileSync(srcPath, 'utf8');
+  let destContent = fs.readFileSync(destPath, 'utf8');
+
+  // Normalize both sides
+  srcContent = normalizeSource(srcContent, category);
+  destContent = normalizeInstalled(destContent, category);
+
+  if (srcContent === destContent) {
+    results.matched++;
+    if (verbose) {
+      console.log(`  ${green}OK${reset} ${destRelative}`);
+    }
+  } else {
+    results.mismatched++;
+    const diff = contextDiff(srcContent, destContent, 'source', 'installed');
+    issues.push({ type: 'MISMATCH', file: destRelative, detail: diff });
+  }
+}
+
+/**
+ * Verify all files in a source directory against the destination
+ */
+function verifyDirectory(srcDir, destDir, category) {
+  const srcPath = path.join(forkRoot, srcDir);
+  if (!fs.existsSync(srcPath)) return;
+
+  const entries = fs.readdirSync(srcPath, { withFileTypes: true });
+  for (const entry of entries) {
+    if (entry.isDirectory()) {
+      verifyDirectory(
+        path.join(srcDir, entry.name),
+        path.join(destDir, entry.name),
+        category
+      );
+    } else if (entry.isFile()) {
+      verifyFile(
+        path.join(srcDir, entry.name),
+        path.join(destDir, entry.name),
+        category
+      );
+    }
+  }
+}
+
+/**
+ * Find orphaned GSD files in the installed directory
+ */
+function findOrphans(destDir, srcDir, prefix) {
+  const destPath = path.join(targetDir, destDir);
+  if (!fs.existsSync(destPath)) return;
+
+  const srcPath = path.join(forkRoot, srcDir);
+  const destEntries = fs.readdirSync(destPath, { withFileTypes: true });
+
+  for (const entry of destEntries) {
+    if (entry.isDirectory()) {
+      findOrphans(
+        path.join(destDir, entry.name),
+        path.join(srcDir, entry.name),
+        prefix
+      );
+    } else if (entry.isFile()) {
+      const srcFile = path.join(srcPath, entry.name);
+      // Only flag GSD-owned files as orphans
+      if (prefix === 'agents' && !entry.name.startsWith('gsd-')) continue;
+      if (!fs.existsSync(srcFile)) {
+        // Check if it's a generated file
+        const relPath = path.join(destDir, entry.name);
+        const isGenerated = manifest.generated_files.some(gf => relPath.endsWith(gf));
+        if (isGenerated) {
+          results.skipped++;
+          if (verbose) {
+            console.log(`  ${dim}SKIP${reset} ${relPath} (generated)`);
+          }
+        } else {
+          results.orphaned++;
+          issues.push({ type: 'ORPHAN', file: relPath, detail: 'Installed but not in fork source' });
+        }
+      }
+    }
+  }
+}
+
+// ─── Verify each source category from manifest ───
+
+for (const [name, source] of Object.entries(manifest.sources)) {
+  if (verbose) console.log(`\n${cyan}Checking ${name}...${reset}`);
+  verifyDirectory(source.src, source.dest, name);
+}
+
+// ─── Check for orphaned files ───
+
+if (verbose) console.log(`\n${cyan}Checking for orphans...${reset}`);
+
+findOrphans('agents', 'agents', 'agents');
+findOrphans('commands/gsd', 'commands/gsd', 'commands');
+findOrphans('get-shit-done', 'get-shit-done', 'get-shit-done');
+
+// ─── Verify specific expectations ───
+
+// Check reapply-patches command is NOT present
+const reapplyPath = path.join(targetDir, 'commands', 'gsd', 'reapply-patches.md');
+if (fs.existsSync(reapplyPath)) {
+  issues.push({ type: 'ORPHAN', file: 'commands/gsd/reapply-patches.md', detail: 'Deprecated command still present' });
+  results.orphaned++;
+}
+
+// ─── Summary ───
+
+const agentCount = fs.readdirSync(path.join(forkRoot, 'agents')).filter(f => f.endsWith('.md')).length;
+const commandCount = fs.readdirSync(path.join(forkRoot, 'commands', 'gsd')).filter(f => f.endsWith('.md')).length;
+const researcherCount = fs.readdirSync(path.join(forkRoot, 'get-shit-done', 'researchers')).filter(f => f.endsWith('.md')).length;
+const workflowCount = fs.readdirSync(path.join(forkRoot, 'get-shit-done', 'workflows')).filter(f => f.endsWith('.md')).length;
+
+console.log(`\n${'─'.repeat(60)}`);
+console.log(`${cyan}Verified:${reset} ${agentCount} agents, ${workflowCount} workflows, ${researcherCount} researcher files, ${commandCount} command stubs, bin files`);
+
+if (issues.length === 0) {
+  console.log(`${green}All installed files match fork source. ${results.matched} matched, 0 mismatches, 0 orphans.${reset}`);
+  if (results.skipped > 0) {
+    console.log(`${dim}(${results.skipped} generated files skipped)${reset}`);
+  }
+  process.exit(0);
+} else {
+  console.log(`\n${red}Issues found:${reset}\n`);
+
+  for (const issue of issues) {
+    if (issue.type === 'MISSING') {
+      console.log(`  ${red}MISSING${reset}  ${issue.file}`);
+      if (verbose) console.log(`    ${dim}${issue.detail}${reset}`);
+    } else if (issue.type === 'MISMATCH') {
+      console.log(`  ${yellow}MISMATCH${reset} ${issue.file}`);
+      if (verbose || issues.length <= 10) {
+        console.log(issue.detail);
+      }
+    } else if (issue.type === 'ORPHAN') {
+      console.log(`  ${yellow}ORPHAN${reset}   ${issue.file} — ${issue.detail}`);
+    } else {
+      console.log(`  ${red}${issue.type}${reset} ${issue.file} — ${issue.detail}`);
+    }
+  }
+
+  console.log(`\n${red}Result: ${results.mismatched} mismatches, ${results.missing} missing, ${results.orphaned} orphans${reset}`);
+  console.log(`${dim}(${results.matched} matched, ${results.skipped} generated skipped)${reset}`);
+  process.exit(1);
+}
