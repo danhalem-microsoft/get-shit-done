@@ -1,5 +1,5 @@
 <purpose>
-Check for GSD updates via npm, display changelog for versions between installed and latest, obtain user confirmation, and execute clean installation with cache clearing.
+Check for GSD updates and execute clean installation. Supports two update paths: fork-based (git pull) and npm-based (legacy).
 </purpose>
 
 <required_reading>
@@ -7,6 +7,20 @@ Read all files referenced by the invoking prompt's execution_context before star
 </required_reading>
 
 <process>
+
+## Updating From Fork
+
+If you installed from the get-shit-done fork:
+1. `cd /path/to/your/get-shit-done`
+2. `git pull origin main`
+3. `node bin/install.js --global`
+4. Verify: `node scripts/verify-install.js` (if available)
+
+For upstream changes: use `/gsd:sync-upstream`
+
+---
+
+## Updating From NPM (Legacy)
 
 <step name="get_installed_version">
 Detect whether GSD is installed locally or globally by checking both locations and validating install integrity:
@@ -144,7 +158,7 @@ Exit.
 
 ────────────────────────────────────────────────────────────
 
-⚠️  **Note:** The installer performs a clean install of GSD folders:
+**Note:** The installer performs a clean install of GSD folders:
 - `commands/gsd/` will be wiped and replaced
 - `get-shit-done/` will be wiped and replaced
 - `agents/gsd-*` files will be replaced
@@ -152,12 +166,10 @@ Exit.
 (Paths are relative to your install location: `~/.claude/` for global, `./.claude/` for local)
 
 Your custom files in other locations are preserved:
-- Custom commands not in `commands/gsd/` ✓
-- Custom agents not prefixed with `gsd-` ✓
-- Custom hooks ✓
-- Your CLAUDE.md files ✓
-
-If you've modified any GSD files directly, they'll be automatically backed up to `gsd-local-patches/` and can be reapplied with `/gsd:reapply-patches` after the update.
+- Custom commands not in `commands/gsd/`
+- Custom agents not prefixed with `gsd-`
+- Custom hooks
+- Your CLAUDE.md files
 ```
 
 Use AskUserQuestion:
@@ -201,31 +213,14 @@ The SessionStart hook (`gsd-check-update.js`) writes to the detected runtime's c
 Format completion message (changelog was already shown in confirmation step):
 
 ```
-╔═══════════════════════════════════════════════════════════╗
-║  GSD Updated: v1.5.10 → v1.5.15                           ║
-╚═══════════════════════════════════════════════════════════╝
+GSD Updated: v1.5.10 -> v1.5.15
 
-⚠️  Restart Claude Code to pick up the new commands.
+Restart Claude Code to pick up the new commands.
 
-[View full changelog](https://github.com/glittercowboy/get-shit-done/blob/main/CHANGELOG.md)
+View full changelog: https://github.com/glittercowboy/get-shit-done/blob/main/CHANGELOG.md
 ```
 </step>
 
-
-<step name="check_local_patches">
-After update completes, check if the installer detected and backed up any locally modified files:
-
-Check for gsd-local-patches/backup-meta.json in the config directory.
-
-**If patches found:**
-
-```
-Local patches were backed up before the update.
-Run /gsd:reapply-patches to merge your modifications into the new version.
-```
-
-**If no patches:** Continue normally.
-</step>
 </process>
 
 <success_criteria>
