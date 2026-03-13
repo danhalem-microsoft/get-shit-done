@@ -6,6 +6,71 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [5.0.0] - 2026-03-13
+
+### BREAKING CHANGES
+
+- **Patch skills deprecated**: All 4 patch skill directories (`gsd-patch`, `gsd-antagonist-patch`, `gsd-researcher-patch`, `gsd-synthesizer-patch`) are replaced by native fork integration. Remove old patch skill directories from `~/.claude/skills/`.
+- **Auto-repatch removed**: The `update.md` workflow no longer runs auto-repatch. Updates use `git pull` + `node install.js` instead of npm + reapply-patches.
+- **`/gsd:reapply-patches` deprecated**: No longer needed — all customizations ship natively with the fork.
+
+### Added
+
+- **Decision Logging**: Per-session decision log files in `.planning/decisions/` capturing Q&A exchanges during discuss-phase, new-project, new-milestone, and plan-phase workflows
+- **Taste Library**: Decision preference extraction (`/gsd:extract-taste`), manual creation (`/gsd:add-taste`), consultation during discuss-phase, and auto-extraction hook in complete-milestone
+- **5 New Commands**: `/gsd:add-taste`, `/gsd:extract-taste`, `/gsd:add-mistake`, `/gsd:mistakes`, `/gsd:sync-upstream`
+- **6 Critic Agents**: `gsd-critic-plan`, `gsd-critic-code`, `gsd-critic-scope`, `gsd-critic-verify`, `gsd-critic-discuss`, `gsd-critic-strategy` — quality gates with structured finding reports
+- **11 Researcher Types**: `stack`, `features`, `pitfalls`, `architecture`, `conventions`, `data-model`, `build-system`, `deployment`, `testing`, `phase-research`, `_template` — AI-powered selection and adaptive synthesis
+- **Adaptive Synthesizer**: `gsd-research-synthesizer` adapts output format based on researcher findings
+- **Code-Search Integration**: Optional MCP-based code search tools auto-detected from `settings.json` and injected into 7 agent files via template markers during install
+- **Mistake Registry Integration**: `cmdInitMistakes`, `cmdAddMistake`, `cmdCheckMistakes` in `gsd-tools.cjs` with critic area routing
+- **`install-manifest.json`**: Declarative manifest mapping fork source paths to installation destinations
+- **`FORK.md`**: Comprehensive fork documentation covering all 6 systems, upstream sync, and troubleshooting
+- **`code-search-guidance.md`**: Template file for code-search guidance block injected into agents
+
+### Changed
+
+- **Update workflow**: `update.md` now supports two paths — fork-based (`git pull` + `install.js`) and npm-based (legacy)
+- **`discuss-phase.md`**: Taste consultation during gray areas with pre-filled defaults and override options
+- **`complete-milestone.md`**: Taste extraction hook after PROJECT.md evolution review
+- **`new-project.md`**: Synthesizer integration for research output formatting
+- **`new-milestone.md`**: Synthesizer integration for research output formatting
+- **`gsd-tools.cjs`**: Mistake schema/init/routing, researcher router, taste commands, critic finding schema
+- **`commands.cjs`**: Researcher scan/load functions for dynamic type discovery
+- **`install.js`**: `detectCodeSearch()` and `expandTemplateMarkers()` for conditional code-search injection
+- **7 Agent files**: Template markers (`<!-- code-search-tools -->`, `<!-- code-search-guidance -->`) for conditional MCP tool access
+- **`README.md`**: Fork features section, fork installation instructions, fork commands table
+
+### Removed
+
+- **Auto-repatch workflow**: All 4 `<!-- gsd-patch:auto-repatch* -->` sections removed from `update.md`
+- **Patch skill dependencies**: No longer requires external patch skills to be installed
+- **`/gsd:reapply-patches` relevance**: Command still exists but is no longer referenced by update workflow
+
+### Migration Guide
+
+**Before (v4.x):**
+1. Install via `npx get-shit-done-cc@latest`
+2. Install patch skills: `gsd-patch`, `gsd-antagonist-patch`, `gsd-researcher-patch`, `gsd-synthesizer-patch`
+3. After each GSD update: `/gsd:reapply-patches` to re-apply customizations
+4. Patch skills maintained separately from GSD core
+
+**After (v5.0):**
+1. Clone fork: `git clone https://github.com/YOUR_USERNAME/get-shit-done.git`
+2. Install: `cd get-shit-done && node bin/install.js --global`
+3. Update: `git pull origin main && node bin/install.js --global`
+4. All customizations ship natively — no patches needed
+
+**Cleanup:**
+```bash
+# Remove old patch skill directories
+rm -rf ~/.claude/skills/gsd-patch/
+rm -rf ~/.claude/skills/gsd-antagonist-patch/
+rm -rf ~/.claude/skills/gsd-researcher-patch/
+rm -rf ~/.claude/skills/gsd-synthesizer-patch/
+rm -rf ~/.claude/skills/gsd-taste-patch/
+```
+
 ## [1.22.4] - 2026-03-03
 
 ### Added
