@@ -29,3 +29,6 @@ docs/GSD-SYSTEM-SPECIFICATION.md
 gaps.md
 improve.md
 philosophy.md
+
+# GSD runtime temp files
+.gsd-autopilot-active
