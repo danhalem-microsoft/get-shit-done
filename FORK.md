@@ -18,7 +18,7 @@ This fork adds the following systems on top of upstream GSD:
 ### From Fork (Recommended)
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/get-shit-done.git
+git clone https://github.com/danhalem-microsoft/get-shit-done.git
 cd get-shit-done
 node bin/install.js --global
 ```

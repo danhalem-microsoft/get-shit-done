@@ -18,8 +18,12 @@ Display the complete GSD command reference. Output ONLY the reference content. D
 GSD evolves fast. Update periodically:
 
 ```bash
-npx get-shit-done-cc@latest
+cd /path/to/your/get-shit-done
+git pull origin main
+node bin/install.js --global
 ```
+
+Or use `/gsd:update` from within Claude Code.
 
 ## Core Workflow
 
@@ -331,10 +335,9 @@ Show this command reference.
 Update GSD to latest version with changelog preview.
 
 - Shows installed vs latest version comparison
-- Displays changelog entries for versions you've missed
-- Highlights breaking changes
-- Confirms before running install
-- Better than raw `npx get-shit-done-cc`
+- Displays recent git commits you've missed
+- Confirms before running git pull + install
+- Better than running the commands manually
 
 Usage: `/gsd:update`
 
