@@ -145,10 +145,19 @@ describe('SPAWN: spawn type consistency', () => {
         const matches = content.matchAll(/subagent_type="([^"]+)"/g);
         for (const match of matches) {
           const agentType = match[1];
-          assert.ok(
-            validAgentTypes.has(agentType),
-            `${file} references unknown agent type: ${agentType}`
-          );
+          // Allow template patterns like gsd-critic-{type} where the prefix matches a real agent group
+          if (agentType.includes('{')) {
+            const prefix = agentType.replace(/\{[^}]+\}.*$/, '');
+            assert.ok(
+              [...validAgentTypes].some(a => a.startsWith(prefix)),
+              `${file} references unknown agent template: ${agentType}`
+            );
+          } else {
+            assert.ok(
+              validAgentTypes.has(agentType),
+              `${file} references unknown agent type: ${agentType}`
+            );
+          }
         }
       }
     }

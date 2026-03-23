@@ -109,6 +109,8 @@ Phase: "API documentation"
 
 **Express path available:** If you already have a PRD or acceptance criteria document, use `/gsd:plan-phase {phase} --prd path/to/prd.md` to skip this discussion and go straight to planning.
 
+**Process flow:** initialize → check_existing → load_prior_context → load_taste_entries → scout_codebase → analyze_phase → present_gray_areas → discuss_areas → write_context → persist_taste_counters → **discuss_critic** → confirm_creation → git_commit → update_state → auto_advance
+
 <step name="initialize" priority="first">
 Phase number from argument (required).
 
@@ -581,6 +583,128 @@ node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" update-taste-counters '${JS
 Counter updates are persisted at CONTEXT.md write time (per Phase 22 decision) to avoid partial updates if the workflow is interrupted before context is written.
 </step>
 
+<step name="discuss_critic">
+Check if adversarial critics should auto-spawn:
+
+```bash
+AUTO_SPAWN=$(node $HOME/.claude/get-shit-done/bin/gsd-tools.cjs config-get workflow.critics.auto_spawn 2>/dev/null || echo "true")
+```
+
+**If AUTO_SPAWN is "false":** Skip to confirm_creation step.
+
+**If AUTO_SPAWN is "true":**
+
+Display banner:
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ GSD ► REVIEWING DISCUSSION COMPLETENESS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+◆ Spawning discuss-critic...
+```
+
+Spawn discuss-critic agent via Task():
+
+```
+Task(
+  subagent_type="gsd-critic-discuss",
+  model="{critic_model}",
+  prompt="
+    <objective>
+    You are being invoked after discuss-phase for Phase {phase_number}: {phase_name}.
+    Review the CONTEXT.md just created for blind spots, ambiguous decisions, and missing discussion areas.
+    Produce CRITIQUE-discuss.md following .planning/critique-template.md format.
+    </objective>
+
+    <files_to_read>
+    Read these files at start using the Read tool:
+    - CONTEXT.md just written: {phase_dir}/{padded_phase}-CONTEXT.md
+    - Roadmap: .planning/ROADMAP.md
+    - Requirements: .planning/REQUIREMENTS.md
+    - Severity ref: .planning/severity-reference.md
+    - Critique template: .planning/critique-template.md
+    - Project context: .planning/codebase/ARCHITECTURE.md, CONVENTIONS.md, STACK.md (if they exist)
+    </files_to_read>
+
+    <output>
+    Write your critique report to: {phase_dir}/CRITIQUE-discuss.md
+    Follow .planning/critique-template.md format EXACTLY.
+    Use critique_type: discuss in frontmatter.
+    Use finding ID prefix: discuss-
+    </output>
+
+    <success_criteria>
+    - CRITIQUE-discuss.md exists with valid YAML frontmatter
+    - severity_counts matches actual finding count
+    - Every finding has ID, file:line, evidence, severity justification
+    - Findings organized: Critical > Warning > Info
+    </success_criteria>
+  ",
+  description="Review Phase {phase} discussion completeness"
+)
+```
+
+### Handle Discuss-Critic Results
+
+Check for output:
+```bash
+ls "{phase_dir}/CRITIQUE-discuss.md" 2>/dev/null
+```
+
+If file doesn't exist: log warning "Discuss-critic did not produce output" and continue to confirm_creation.
+
+If file exists, parse findings:
+```bash
+DISCUSS_PARSED=$(node $HOME/.claude/get-shit-done/bin/gsd-tools.cjs critique parse "{phase_dir}/CRITIQUE-discuss.md")
+```
+
+**If NO findings (all counts are 0):**
+Display: `✓ Discussion completeness check passed — no blind spots detected`
+Continue to confirm_creation.
+
+**If findings exist:**
+
+Display inline findings summary:
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ DISCUSSION REVIEW RESULTS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+{If critical findings:}
+### Blind Spots (Critical)
+| ID | Finding | Relates To |
+|----|---------|------------|
+| discuss-C-001 | {title} | {file:line reference} |
+
+{If warning findings:}
+### Areas for Consideration (Warning)
+| ID | Finding | Relates To |
+|----|---------|------------|
+| discuss-W-001 | {title} | {file:line reference} |
+
+{If info findings:}
+### Info: {count} additional observations — see CRITIQUE-discuss.md
+```
+
+Use AskUserQuestion — NO circuit breaker for discuss-phase (user-driven):
+- header: "Blind Spots"
+- question: "The discuss-critic found {N} area(s) to consider. Want to revisit any topics, or proceed to planning?"
+- options:
+  - "Revisit topics" — Re-enter discussion for flagged areas (goes back to discuss_areas step with critic-identified areas as the gray areas)
+  - "Proceed to planning" — Accept current context as-is and continue
+
+**If "Revisit topics":**
+- Extract the specific areas from critic findings (group findings by topic)
+- Return to the `discuss_areas` step with these areas pre-loaded as the selected gray areas
+- After discussion completes, re-write CONTEXT.md (write_context step)
+- Re-spawn discuss-critic (this step again)
+- NO counter limit — this loop is entirely user-controlled
+
+**If "Proceed to planning":**
+- Continue to confirm_creation step
+</step>
+
 <step name="confirm_creation">
 Present summary and next steps:
 
@@ -733,6 +857,8 @@ Route to `confirm_creation` step (existing behavior — show manual next steps).
 - CONTEXT.md includes code_context section with reusable assets and patterns
 - Deferred ideas preserved for future phases
 - Taste counters persisted at CONTEXT.md write time
+- Discuss-critic spawned after CONTEXT.md written (when auto_spawn enabled)
+- Blind spots presented inline with revisit offer
 - STATE.md updated with session info
 - User knows next steps
 </success_criteria>

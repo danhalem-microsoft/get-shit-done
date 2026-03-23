@@ -79,11 +79,50 @@ Verify cross-phase wiring and E2E user flows.",
 )
 ```
 
+## 3.5 Spawn Strategy Critic (if auto_spawn enabled)
+
+Read config and check `workflow.critics.auto_spawn`:
+```bash
+AUTO_SPAWN=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" config-get workflow.critics.auto_spawn 2>/dev/null || echo "true")
+```
+
+If `AUTO_SPAWN` is `"false"`: skip with one-line notice "Strategy critic: skipped (auto_spawn disabled)".
+
+If `AUTO_SPAWN` is `"true"` or `true`:
+
+Resolve strategy critic model:
+```bash
+STRATEGY_MODEL=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" resolve-model gsd-critic-strategy --raw)
+```
+
+Spawn strategy-critic:
+```
+Task(
+  prompt="Review milestone v{milestone_version} strategy.
+
+  Read: .planning/ROADMAP.md, .planning/REQUIREMENTS.md, .planning/STATE.md
+  For each phase in scope: Read phase CONTEXT.md and SUMMARY.md
+  Only load VERIFICATION.md/CRITIQUE.md if a specific checklist item requires evidence.
+
+  Three focus lanes:
+  1. Scope creep: Requirements/work added beyond ROADMAP definitions
+  2. Stale assumptions: Early decisions contradicted by later learnings
+  3. Deferred enforcement: Anti-goals violated, deferred items undermining goals
+
+  Write CRITIQUE-strategy.md to the last phase's directory.",
+  subagent_type="gsd-critic-strategy",
+  model="{STRATEGY_MODEL}"
+)
+```
+
+Note: Strategy-critic is a milestone-boundary critic only — it is NOT in the default per-phase critique set (the 5 phase-level critics: plan, code, scope, verify, discuss). It fires here at milestone audit and can be invoked manually via `/gsd:critique --only=strategy`.
+
 ## 4. Collect Results
 
 Combine:
 - Phase-level gaps and tech debt (from step 2)
 - Integration checker's report (wiring gaps, broken flows)
+- Strategy-critic findings (if spawned): read CRITIQUE-strategy.md from last phase directory, display findings inline in audit output
 
 ## 5. Check Requirements Coverage (3-Source Cross-Reference)
 
@@ -324,6 +363,8 @@ All requirements met. No critical blockers. Accumulated tech debt needs review.
 - [ ] Orphaned requirements detected (in traceability but absent from all VERIFICATIONs)
 - [ ] Tech debt and deferred gaps aggregated
 - [ ] Integration checker spawned with milestone requirement IDs
+- [ ] Strategy-critic spawned at milestone boundary (when auto_spawn enabled)
+- [ ] Strategy-critic findings displayed inline in audit output
 - [ ] v{version}-MILESTONE-AUDIT.md created with structured requirement gap objects
 - [ ] FAIL gate enforced — any unsatisfied requirement forces gaps_found status
 - [ ] Nyquist compliance scanned for all milestone phases (if enabled)

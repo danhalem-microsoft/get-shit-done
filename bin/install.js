@@ -28,6 +28,7 @@ const CODEX_AGENT_SANDBOX = {
   'gsd-debugger': 'workspace-write',
   'gsd-plan-checker': 'read-only',
   'gsd-integration-checker': 'read-only',
+  'gsd-nyquist-auditor': 'read-only',
   'gsd-critic-plan': 'read-only',
   'gsd-critic-code': 'read-only',
   'gsd-critic-scope': 'read-only',

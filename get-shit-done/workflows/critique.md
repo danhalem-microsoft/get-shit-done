@@ -188,7 +188,7 @@ Spawning {count} critic(s) in parallel...
 
 All Task() calls MUST be spawned simultaneously (parallel, not sequential).
 
-**Subagent type resolution:** Use `gsd-critic-{type}` as the subagent_type. If a critic type is not registered as a subagent_type (e.g., `discuss`), fall back to `general-purpose` and prepend the prompt with: `"First, read ~/.claude/agents/gsd-critic-{type}.md for your role and instructions.\n\n"`.
+**Subagent type resolution:** Use `gsd-critic-{type}` as the subagent_type. All 6 critic types (plan, code, scope, verify, discuss, strategy) are registered as named subagent types.
 
 ```
 Task(

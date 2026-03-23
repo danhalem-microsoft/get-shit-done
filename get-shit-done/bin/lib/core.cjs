@@ -28,6 +28,12 @@ const MODEL_PROFILES = {
   'gsd-plan-checker':         { quality: 'sonnet', balanced: 'sonnet', budget: 'haiku' },
   'gsd-integration-checker':  { quality: 'sonnet', balanced: 'sonnet', budget: 'haiku' },
   'gsd-nyquist-auditor':      { quality: 'sonnet', balanced: 'sonnet', budget: 'haiku' },
+  'gsd-critic-plan':          { quality: 'sonnet', balanced: 'sonnet', budget: 'haiku' },
+  'gsd-critic-code':          { quality: 'sonnet', balanced: 'sonnet', budget: 'haiku' },
+  'gsd-critic-scope':         { quality: 'sonnet', balanced: 'sonnet', budget: 'haiku' },
+  'gsd-critic-verify':        { quality: 'sonnet', balanced: 'sonnet', budget: 'haiku' },
+  'gsd-critic-discuss':       { quality: 'sonnet', balanced: 'sonnet', budget: 'haiku' },
+  'gsd-critic-strategy':      { quality: 'sonnet', balanced: 'sonnet', budget: 'haiku' },
 };
 
 // ─── Output helpers ───────────────────────────────────────────────────────────

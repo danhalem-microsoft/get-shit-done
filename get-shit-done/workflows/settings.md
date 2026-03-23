@@ -32,6 +32,8 @@ Parse current values (default to `true` if not present):
 - `workflow.nyquist_validation` — validation architecture research during plan-phase (default: true if absent)
 - `model_profile` — which model each agent uses (default: `balanced`)
 - `git.branching_strategy` — branching approach (default: `"none"`)
+- `research.always_include` — researcher types to always include in recommendations (default: `[]`)
+- `research.max_researchers` — hard cap on researcher count (default: `12`)
 </step>
 
 <step name="present_settings">
@@ -103,6 +105,28 @@ AskUserQuestion([
       { label: "Per Phase", description: "Create branch for each phase (gsd/phase-{N}-{name})" },
       { label: "Per Milestone", description: "Create branch for entire milestone (gsd/{version}-{name})" }
     ]
+  },
+  {
+    question: "Which researchers to always include in recommendations?",
+    header: "Always Run",
+    multiSelect: true,
+    options: [
+      { label: "Stack", description: "Technology stack guidance (core type)" },
+      { label: "Features", description: "Feature scoping and UX patterns (core type)" },
+      { label: "Architecture", description: "System architecture patterns (core type)" },
+      { label: "Pitfalls", description: "Common mistakes and gotchas (core type)" },
+      { label: "None", description: "Let AI decide each time" }
+    ]
+  },
+  {
+    question: "Maximum number of researchers per project?",
+    header: "Max Count",
+    multiSelect: false,
+    options: [
+      { label: "8 (Recommended)", description: "Good balance of coverage and cost" },
+      { label: "4", description: "Minimal — just core researchers" },
+      { label: "12", description: "Maximum — extensive research coverage" }
+    ]
   }
 ])
 ```
@@ -124,9 +148,17 @@ Merge new settings into existing config.json:
   },
   "git": {
     "branching_strategy": "none" | "phase" | "milestone"
+  },
+  "research": {
+    "always_include": [...selected researcher names, lowercased],
+    "max_researchers": selected_max_number
   }
 }
 ```
+
+Map Always Run labels to config names: "Stack" → "stack", "Features" → "features", "Architecture" → "architecture", "Pitfalls" → "pitfalls". If "None" selected, always_include is `[]`.
+
+Map Max Count labels to numbers: "4" → 4, "8 (Recommended)" → 8, "12" → 12.
 
 Write updated config to `.planning/config.json`.
 </step>
@@ -169,6 +201,10 @@ Write `~/.gsd/defaults.json` with:
     "verifier": <current>,
     "auto_advance": <current>,
     "nyquist_validation": <current>
+  },
+  "research": {
+    "always_include": <current>,
+    "max_researchers": <current>
   }
 }
 ```
@@ -191,6 +227,8 @@ Display:
 | Auto-Advance         | {On/Off} |
 | Nyquist Validation   | {On/Off} |
 | Git Branching        | {None/Per Phase/Per Milestone} |
+| Always-Include       | {stack, features / None} |
+| Max Researchers      | {4/8/12} |
 | Saved as Defaults    | {Yes/No} |
 
 These settings apply to future /gsd:plan-phase and /gsd:execute-phase runs.
@@ -207,8 +245,8 @@ Quick commands:
 
 <success_criteria>
 - [ ] Current config read
-- [ ] User presented with 7 settings (profile + 5 workflow toggles + git branching)
-- [ ] Config updated with model_profile, workflow, and git sections
+- [ ] User presented with 9 settings (profile + 5 workflow toggles + git branching + always-include + max researchers)
+- [ ] Config updated with model_profile, workflow, git, and research sections
 - [ ] User offered to save as global defaults (~/.gsd/defaults.json)
 - [ ] Changes confirmed to user
 </success_criteria>

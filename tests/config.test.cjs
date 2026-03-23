@@ -289,14 +289,19 @@ describe('config-set command', () => {
 
 describe('config-get command', () => {
   let tmpDir;
+  let origHome;
 
   beforeEach(() => {
     tmpDir = createTempProject();
+    // Isolate from user defaults (~/.gsd/defaults.json)
+    origHome = process.env.HOME;
+    process.env.HOME = tmpDir;
     // Create config with known values
     runGsdTools('config-ensure-section', tmpDir);
   });
 
   afterEach(() => {
+    process.env.HOME = origHome;
     cleanup(tmpDir);
   });
 

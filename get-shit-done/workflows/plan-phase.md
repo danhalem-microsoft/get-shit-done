@@ -345,16 +345,37 @@ Task(
 - **`## CHECKPOINT REACHED`:** Present to user, get response, spawn continuation (step 12)
 - **`## PLANNING INCONCLUSIVE`:** Show attempts, offer: Add context / Retry / Manual
 
-## 10. Spawn gsd-plan-checker Agent
+## 9.5. Check Auto-Spawn Config
+
+Check if adversarial critics should auto-spawn:
+
+```bash
+AUTO_SPAWN=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" config-get workflow.critics.auto_spawn 2>/dev/null || echo "true")
+```
+
+Default: `true` (on by default). If config key doesn't exist, default to `true`.
+
+Set `SPAWN_PLAN_CRITIC` based on result:
+- `AUTO_SPAWN` is "true" → `SPAWN_PLAN_CRITIC=true`
+- `AUTO_SPAWN` is "false" → `SPAWN_PLAN_CRITIC=false`
+
+## 10. Spawn Plan Verification Agents
 
 Display banner:
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  GSD ► VERIFYING PLANS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ◆ Spawning plan checker...
+{if SPAWN_PLAN_CRITIC: ◆ Spawning plan critic...}
 ```
+
+```bash
+PLANS_CONTENT=$(cat "${PHASE_DIR}"/*-PLAN.md 2>/dev/null)
+```
+
+**Always spawn plan-checker** (existing behavior, unchanged):
 
 Checker prompt:
 
@@ -392,36 +413,201 @@ Task(
 )
 ```
 
-## 11. Handle Checker Return
+**Conditionally spawn plan-critic in parallel** (if SPAWN_PLAN_CRITIC is true):
 
-- **`## VERIFICATION PASSED`:** Display confirmation, proceed to step 13.
-- **`## ISSUES FOUND`:** Display issues, check iteration count, proceed to step 12.
+Plan-critic prompt:
+```markdown
+<objective>
+You are being invoked as part of plan-phase for Phase {phase_number}: {phase_name}.
+Review all plans in this phase for quality issues.
+Produce CRITIQUE-plan.md following .planning/critique-template.md format.
+</objective>
 
-## 12. Revision Loop (Max 3 Iterations)
+<files_to_read>
+Read these files at start using the Read tool:
+- Phase directory contents: {phase_dir}/ (list with Glob, then read PLANs, CONTEXT, RESEARCH)
+- Roadmap: .planning/ROADMAP.md
+- Requirements: .planning/REQUIREMENTS.md
+- Severity ref: .planning/severity-reference.md
+- Critique template: .planning/critique-template.md
+- Project context: .planning/codebase/ARCHITECTURE.md, CONVENTIONS.md, STACK.md (if they exist)
+</files_to_read>
 
-Track `iteration_count` (starts at 1 after initial plan + check).
+<output>
+Write your critique report to: {phase_dir}/CRITIQUE-plan.md
+Follow .planning/critique-template.md format EXACTLY.
+Use critique_type: plan in frontmatter.
+Use finding ID prefix: plan-
+</output>
+```
 
-**If iteration_count < 3:**
+```
+Task(
+  subagent_type="gsd-critic-plan",
+  model="{critic_model}",
+  prompt=plan_critic_prompt,
+  description="Critique Phase {phase} plans"
+)
+```
 
-Display: `Sending back to planner for revision... (iteration {N}/3)`
+Both Task() calls MUST be spawned simultaneously (parallel, not sequential).
 
-Revision prompt:
+Wait for both to complete.
+
+## 11. Handle Verification Results
+
+### Plan-Checker Results (existing logic, unchanged)
+- **`## VERIFICATION PASSED`:** No plan-checker issues.
+- **`## ISSUES FOUND`:** Parse structured issues from plan-checker output.
+
+### Plan-Critic Results (new — only if SPAWN_PLAN_CRITIC was true)
+
+If plan-critic was spawned, check for CRITIQUE-plan.md:
+
+```bash
+ls "${PHASE_DIR}/CRITIQUE-plan.md" 2>/dev/null
+```
+
+If exists, parse findings:
+```bash
+CRITIC_PARSED=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" critique parse "${PHASE_DIR}/CRITIQUE-plan.md")
+```
+
+Apply severity gating to plan-critic findings:
+- **Critical findings:** Add to unified blocker list (trigger revision)
+- **Warning findings:** Display inline but do NOT add to blocker list
+- **Info findings:** Silent (not displayed in plan-phase flow)
+
+### Merge into Unified Blocker List
+
+Combine:
+1. Plan-checker issues (all are blockers by existing logic)
+2. Plan-critic CRITICAL findings only
+
+### Display Unified Results
+
+Display all results in one block:
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ PLAN VERIFICATION RESULTS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Plan Checker: {PASSED | N issues found}
+Plan Critic: {N critical, M warning | not spawned}
+
+{If unified blocker list is non-empty:}
+### Blockers (require revision)
+
+| Source | ID | Issue |
+|--------|----|-------|
+| checker | - | {checker issue description} |
+| critic | plan-C-001 | {critical finding title} |
+
+{If warning findings from plan-critic exist:}
+### Warnings (logged, no revision required)
+
+| ID | Finding | File |
+|----|---------|------|
+| plan-W-001 | {warning title} | {file reference} |
+```
+
+### Route Decision
+
+- **Unified blocker list is empty:** Proceed to step 13 (done).
+- **Unified blocker list has items:** Check iteration counts, proceed to step 12.
+
+## 12. Revision Loop (Dual Counter with Circuit Breaker)
+
+Track TWO separate counters:
+- `plan_checker_iterations`: existing max 3 iterations (unchanged behavior)
+- `plan_critic_cycles`: new max 2 cycles (circuit breaker per HOOK-06)
+
+A plan-critic cycle is defined as: plan-critic found criticals → planner revised → plan-critic re-ran.
+The plan_critic_cycles counter ONLY increments when the revision was triggered by plan-critic critical findings.
+
+### Counter Logic
+
+If the unified blocker list contains:
+- **Only plan-checker issues:** Increment `plan_checker_iterations` only. This is the existing behavior.
+- **Only plan-critic criticals:** Increment `plan_critic_cycles` only.
+- **Both:** Increment BOTH counters.
+
+### Circuit Breaker Check (HOOK-06)
+
+**Before starting revision,** check if plan-critic circuit breaker has tripped:
+
+If `plan_critic_cycles >= 2` AND unified blocker list still contains plan-critic criticals:
+
+Display circuit breaker summary:
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ CIRCUIT BREAKER — Plan Critic (2/2 cycles)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Remaining critical findings from plan-critic:
+
+| ID | Finding | File |
+|----|---------|------|
+| plan-C-001 | {title} | {file} |
+| plan-C-002 | {title} | {file} |
+```
+
+Use AskUserQuestion:
+- header: "Circuit Breaker"
+- question: "{N} critical finding(s) remain after 2 revision cycles. Accept as tech debt or do one more revision?"
+- options:
+  - "Accept as tech debt" — Log findings to STATE.md Pending Todos, continue without revision
+  - "One more revision" — Allow one additional plan-critic cycle (user override)
+
+**If "Accept as tech debt":**
+- Remove plan-critic criticals from the unified blocker list
+- Log each finding to STATE.md "Pending Todos" section:
+  ```
+  - [ ] [{finding_id}] {finding_title} (from Phase {N} plan-critic, accepted as tech debt {date})
+  ```
+- If remaining blocker list (plan-checker only) is empty: proceed to step 13
+- If plan-checker issues remain: continue revision for plan-checker issues only
+
+**If "One more revision":**
+- Allow one more revision cycle (do NOT increment plan_critic_cycles — this is a user override)
+- Continue normal revision flow below
+
+### Existing Plan-Checker Max Iterations Check
+
+If `plan_checker_iterations >= 3`:
+
+Display: `Max iterations reached. {N} issues remain:` + issue list
+
+Offer: 1) Force proceed, 2) Provide guidance and retry, 3) Abandon
+
+(This is the EXISTING behavior, unchanged.)
+
+### Normal Revision Flow
+
+If neither circuit breaker has tripped:
+
+Display: `Sending back to planner for revision... (checker iteration {N}/3, critic cycle {M}/2)`
+
+Re-spawn planner with combined issues (existing revision prompt plus plan-critic findings):
 
 ```markdown
 <revision_context>
 **Phase:** {phase_number}
 **Mode:** revision
 
-<files_to_read>
-- {PHASE_DIR}/*-PLAN.md (Existing plans)
-- {context_path} (USER DECISIONS from /gsd:discuss-phase)
-</files_to_read>
+**Existing plans:** {plans_content}
+**Plan-checker issues:** {structured_issues_from_checker}
+**Plan-critic critical findings:** {critical_findings_from_critic}
 
-**Checker issues:** {structured_issues_from_checker}
+**Phase Context:**
+Revisions MUST still honor user decisions.
+{context_content}
 </revision_context>
 
 <instructions>
-Make targeted updates to address checker issues.
+Make targeted updates to address ALL issues from both plan-checker and plan-critic.
 Do NOT replan from scratch unless issues are fundamental.
 Return what changed.
 </instructions>
@@ -429,20 +615,31 @@ Return what changed.
 
 ```
 Task(
-  prompt=revision_prompt,
-  subagent_type="gsd-planner",
+  prompt="First, read $HOME/.claude/agents/gsd-planner.md for your role and instructions.\n\n" + revision_prompt,
+  subagent_type="general-purpose",
   model="{planner_model}",
   description="Revise Phase {phase} plans"
 )
 ```
 
-After planner returns -> spawn checker again (step 10), increment iteration_count.
+After planner returns → re-spawn BOTH checker and critic in parallel (step 10), increment appropriate counters based on what triggered revision.
 
-**If iteration_count >= 3:**
+### Cycle Counter Persistence
 
-Display: `Max iterations reached. {N} issues remain:` + issue list
+Store the plan_critic_cycles counter in STATE.md for cross-context persistence:
 
-Offer: 1) Force proceed, 2) Provide guidance and retry, 3) Abandon
+At the start of plan-phase (step 1), read existing counter:
+```bash
+# Parse from STATE.md Circuit Breaker section if it exists
+```
+
+After each revision cycle completes, update STATE.md:
+```
+### Circuit Breaker
+Phase {N} plan-critic cycles: {M}/2
+```
+
+When plan-phase completes successfully (step 13), clear the counter from STATE.md.
 
 ## 13. Present Final Status
 
@@ -554,7 +751,10 @@ Verification: {Passed | Passed with override | Skipped}
 - [ ] gsd-planner spawned with CONTEXT.md + RESEARCH.md
 - [ ] Plans created (PLANNING COMPLETE or CHECKPOINT handled)
 - [ ] gsd-plan-checker spawned with CONTEXT.md
+- [ ] Plan-critic spawned when auto_spawn enabled
 - [ ] Verification passed OR user override OR max iterations with user decision
+- [ ] Circuit breaker respected at 2 cycles
+- [ ] Tech debt logged to STATE.md when accepted
 - [ ] User sees status between agent spawns
 - [ ] User knows next steps
 </success_criteria>

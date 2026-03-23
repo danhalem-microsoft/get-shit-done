@@ -27,6 +27,7 @@ function cmdInitExecutePhase(cwd, phase, raw) {
     // Models
     executor_model: resolveModelInternal(cwd, 'gsd-executor'),
     verifier_model: resolveModelInternal(cwd, 'gsd-verifier'),
+    critic_model: resolveModelInternal(cwd, 'gsd-critic-code'),
 
     // Config flags
     commit_docs: config.commit_docs,
@@ -100,6 +101,7 @@ function cmdInitPlanPhase(cwd, phase, raw) {
     researcher_model: resolveModelInternal(cwd, 'gsd-phase-researcher'),
     planner_model: resolveModelInternal(cwd, 'gsd-planner'),
     checker_model: resolveModelInternal(cwd, 'gsd-plan-checker'),
+    critic_model: resolveModelInternal(cwd, 'gsd-critic-plan'),
 
     // Workflow flags
     research_enabled: config.research,
@@ -274,6 +276,7 @@ function cmdInitQuick(cwd, description, raw) {
     executor_model: resolveModelInternal(cwd, 'gsd-executor'),
     checker_model: resolveModelInternal(cwd, 'gsd-plan-checker'),
     verifier_model: resolveModelInternal(cwd, 'gsd-verifier'),
+    critic_model: resolveModelInternal(cwd, 'gsd-critic-code'),
 
     // Config
     commit_docs: config.commit_docs,
@@ -344,9 +347,7 @@ function cmdInitVerifyWork(cwd, phase, raw) {
     // Models
     planner_model: resolveModelInternal(cwd, 'gsd-planner'),
     checker_model: resolveModelInternal(cwd, 'gsd-plan-checker'),
-
-    // Config
-    commit_docs: config.commit_docs,
+    critic_model: resolveModelInternal(cwd, 'gsd-critic-plan'),
 
     // Phase info
     phase_found: !!phaseInfo,

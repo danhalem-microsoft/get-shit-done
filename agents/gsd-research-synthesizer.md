@@ -3,6 +3,14 @@ name: gsd-research-synthesizer
 description: "Synthesizes N research outputs (2-15) into SUMMARY.md. Receives pre-inlined research content via Task() prompt. Spawned by orchestrators after research agents complete."
 tools: Read, Write, Bash
 color: purple
+skills:
+  - gsd-research-synthesizer-workflow
+# hooks:
+#   PostToolUse:
+#     - matcher: "Write|Edit"
+#       hooks:
+#         - type: command
+#           command: "npx eslint --fix $FILE 2>/dev/null || true"
 ---
 
 <role>
@@ -183,6 +191,8 @@ Build a list of contradiction items (may be empty). Each item captures:
 Minor differences in emphasis are merged normally in SUMMARY.md, not flagged as contradictions.
 
 ## Step 8: Write SUMMARY.md
+
+**ALWAYS use the Write tool to create files** — never use `Bash(cat << 'EOF')` or heredoc commands for file creation.
 
 Use the output path provided in the prompt (orchestrator-controlled).
 
