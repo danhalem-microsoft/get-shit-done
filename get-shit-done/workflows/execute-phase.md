@@ -497,8 +497,19 @@ Execute each wave in sequence. Within a wave: parallel if `PARALLELIZATION=true`
    ---
    ```
 
-   - Bad: "Wave 2 complete. Proceeding to Wave 3."
+   - Bad: "Terrain system complete. Proceeding to next."
    - Good: "Terrain system complete — 3 biome types, height-based texturing, physics collision meshes. Vehicle physics (Wave 3) can now reference ground surfaces."
+
+   <completion_gate priority="before next wave">
+   **MANDATORY PER-WAVE CHECK — Do NOT proceed to next wave without verifying:**
+   - [ ] Code-critic decision was made for this wave:
+     - If auto_spawn=true AND wave has code files: code-critic was spawned, results parsed, critical findings handled (gap closure or accept)
+     - If auto_spawn=false: logged "○ Code-critic skipped (auto-spawn disabled)"
+     - If wave has no code files: logged "○ Code-critic skipped (no code changes in wave {N})"
+   - [ ] SUMMARY.md spot-checks passed for all plans in this wave
+
+   Failure to evaluate the code-critic step is a workflow violation — the config check (sub-operation 4a) MUST run for every wave, even if the result is a skip.
+   </completion_gate>
 
 6. **Handle failures:**
 
@@ -934,6 +945,17 @@ Extract from result: `next_phase`, `next_phase_name`, `is_last_phase`.
 node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs(phase-{X}): complete phase execution" --files .planning/ROADMAP.md .planning/STATE.md .planning/REQUIREMENTS.md {phase_dir}/*-VERIFICATION.md
 ```
 </step>
+
+<completion_gate priority="before offer_next">
+**MANDATORY CHECK — Do NOT proceed to offer_next / auto-advance without verifying:**
+- [ ] verify_phase_goal step completed — verifier was spawned and VERIFICATION.md produced
+- [ ] Verification-auditor decision was made (sub-operation A):
+  - If auto_spawn=true: auditor was spawned (sub-operation E), results parsed, critical findings handled (gap closure, accept tech debt, or abort)
+  - If auto_spawn=false: logged "○ Verification-auditor skipped (auto-spawn disabled)"
+- [ ] Status was read using the audit-aware logic (prefer audit_status over status when present)
+
+Failure to evaluate the verification-auditor step is a workflow violation — sub-operation A MUST run after every verifier spawn.
+</completion_gate>
 
 <step name="offer_next">
 

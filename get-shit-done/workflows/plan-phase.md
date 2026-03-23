@@ -641,6 +641,18 @@ Phase {N} plan-critic cycles: {M}/2
 
 When plan-phase completes successfully (step 13), clear the counter from STATE.md.
 
+<completion_gate priority="before step 13">
+**MANDATORY CHECK — Do NOT proceed to Present Final Status without verifying:**
+- [ ] gsd-plan-checker was spawned (step 10) — unless `--skip-verify` or `plan_checker_enabled` is false
+  - Results collected and acted on (revision loop or pass-through)
+- [ ] Plan-critic spawn decision was made (step 9.5):
+  - If auto_spawn=true: plan-critic was spawned in parallel with plan-checker in step 10, results parsed, critical findings merged into unified blocker list
+  - If auto_spawn=false: `SPAWN_PLAN_CRITIC` set to false, logged as "Plan critic: not spawned (auto_spawn disabled)"
+- [ ] Unified blocker list resolved: either empty (proceed) or all items handled via revision loop / circuit breaker / user override
+
+Failure to execute the plan-critic spawn check (step 9.5) is a workflow violation — even when auto_spawn=false, the config MUST be read and the decision logged.
+</completion_gate>
+
 ## 13. Present Final Status
 
 Route to `<offer_next>` OR `auto_advance` depending on flags/config.

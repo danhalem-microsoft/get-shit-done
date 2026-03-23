@@ -148,7 +148,10 @@ Use AskUserQuestion:
   - "View it" — Show me what's there
   - "Skip" — Use existing context as-is
 
-If "Update": Load existing, continue to analyze_phase
+If "Update": Load existing, continue to analyze_phase.
+  **IMPORTANT:** The "Update" path MUST follow the SAME full step sequence as new context:
+  `analyze_phase → present_gray_areas → discuss_areas → write_context → persist_taste_counters → discuss_critic → confirm_creation`
+  Do NOT shortcut from write_context directly to confirm_creation — the discuss_critic step is mandatory on ALL paths.
 If "View": Display CONTEXT.md, then offer update/skip
 If "Skip": Exit workflow
 
@@ -704,6 +707,18 @@ Use AskUserQuestion — NO circuit breaker for discuss-phase (user-driven):
 **If "Proceed to planning":**
 - Continue to confirm_creation step
 </step>
+
+<completion_gate priority="before confirm_creation">
+**MANDATORY CHECK — Do NOT proceed past this point without verifying:**
+- [ ] write_context completed (CONTEXT.md written/updated)
+- [ ] persist_taste_counters completed (or skipped — no entries)
+- [ ] discuss_critic step executed:
+  - If auto_spawn=true: critic was spawned via `Task()`, results parsed and presented, user chose "Revisit topics" or "Proceed to planning"
+  - If auto_spawn=false: step was explicitly skipped with log message "○ Discuss-critic skipped (auto_spawn disabled)"
+
+This gate applies to ALL paths: new context, "Update existing context", and post-critic revisit loops.
+Failure to execute these steps is a workflow violation.
+</completion_gate>
 
 <step name="confirm_creation">
 Present summary and next steps:

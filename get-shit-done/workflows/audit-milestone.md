@@ -191,6 +191,18 @@ Add to audit YAML: `nyquist: { compliant_phases, partial_phases, missing_phases,
 
 Discovery only — never auto-calls `/gsd:validate-phase`.
 
+<completion_gate priority="before step 7">
+**MANDATORY CHECK — Do NOT proceed to Present Results without verifying:**
+- [ ] Integration checker was spawned (step 3) and results collected (step 4)
+- [ ] Strategy-critic spawn decision was made (step 3.5):
+  - If auto_spawn=true: strategy-critic was spawned via `Task()`, CRITIQUE-strategy.md read and findings included in audit output
+  - If auto_spawn=false: logged "Strategy critic: skipped (auto_spawn disabled)"
+- [ ] 3-source requirements cross-reference completed (step 5): VERIFICATION.md + SUMMARY.md + REQUIREMENTS.md traceability
+- [ ] FAIL gate enforced: any unsatisfied or orphaned requirement forces gaps_found status
+
+Failure to evaluate the strategy-critic spawn (step 3.5) is a workflow violation — the auto_spawn config MUST be read and the decision logged.
+</completion_gate>
+
 ## 6. Aggregate into v{version}-MILESTONE-AUDIT.md
 
 Create `.planning/v{version}-v{version}-MILESTONE-AUDIT.md` with:
