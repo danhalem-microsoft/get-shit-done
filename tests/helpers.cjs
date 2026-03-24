@@ -68,8 +68,67 @@ function createTempGitProject() {
   return tmpDir;
 }
 
+// Create temp directory with full multi-user structure, git repo, and user-map.json
+function createTempMultiUserProject(opts = {}) {
+  const {
+    userName = 'Test User',
+    userEmail = 'test@test.com',
+    userSlug = 'test-user',
+    projectName = 'test-project',
+    withActive = true,
+  } = opts;
+
+  const os = require('os');
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gsd-test-'));
+
+  // Create multi-user directory structure
+  fs.mkdirSync(
+    path.join(tmpDir, '.planning', 'users', userSlug, projectName, 'phases'),
+    { recursive: true }
+  );
+
+  // Initialize git repo
+  execSync('git init', { cwd: tmpDir, stdio: 'pipe' });
+  execSync(`git config user.email "${userEmail}"`, { cwd: tmpDir, stdio: 'pipe' });
+  execSync(`git config user.name "${userName}"`, { cwd: tmpDir, stdio: 'pipe' });
+
+  // Create user-map.json
+  const userMap = { _schema: 1, [userName]: userSlug };
+  fs.writeFileSync(
+    path.join(tmpDir, '.planning', 'user-map.json'),
+    JSON.stringify(userMap, null, 2) + '\n',
+    'utf-8'
+  );
+
+  // Create .active file if requested
+  if (withActive) {
+    const activeData = {
+      project: projectName,
+      resolved_path: `.planning/users/${userSlug}/${projectName}`,
+    };
+    fs.writeFileSync(
+      path.join(tmpDir, '.planning', 'users', userSlug, '.active'),
+      JSON.stringify(activeData, null, 2) + '\n',
+      'utf-8'
+    );
+  }
+
+  // Create .gitignore for .active files
+  fs.writeFileSync(
+    path.join(tmpDir, '.gitignore'),
+    '**/.active\n',
+    'utf-8'
+  );
+
+  // Create initial commit
+  execSync('git add -A', { cwd: tmpDir, stdio: 'pipe' });
+  execSync('git commit -m "initial commit"', { cwd: tmpDir, stdio: 'pipe' });
+
+  return { tmpDir, userSlug, projectName };
+}
+
 function cleanup(tmpDir) {
   fs.rmSync(tmpDir, { recursive: true, force: true });
 }
 
-module.exports = { runGsdTools, createTempProject, createTempGitProject, cleanup, TOOLS_PATH };
+module.exports = { runGsdTools, createTempProject, createTempGitProject, createTempMultiUserProject, cleanup, TOOLS_PATH };
