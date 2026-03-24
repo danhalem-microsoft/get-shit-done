@@ -45,6 +45,7 @@ function runGsdTools(args, cwd = process.cwd()) {
 function createTempProject() {
   const tmpDir = fs.mkdtempSync(path.join(require('os').tmpdir(), 'gsd-test-'));
   fs.mkdirSync(path.join(tmpDir, '.planning', 'phases'), { recursive: true });
+  fs.mkdirSync(path.join(tmpDir, '.planning', 'users'), { recursive: true });
   return tmpDir;
 }
 

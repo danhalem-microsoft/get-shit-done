@@ -5,13 +5,14 @@
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
-const { loadConfig, resolveModelInternal, findPhaseInternal, getRoadmapPhaseInternal, pathExistsInternal, generateSlugInternal, getMilestoneInfo, normalizePhaseName, toPosixPath, output, error } = require('./core.cjs');
+const { loadConfig, resolveModelInternal, findPhaseInternal, getRoadmapPhaseInternal, pathExistsInternal, generateSlugInternal, getMilestoneInfo, normalizePhaseName, toPosixPath, output, error, tryGetPlanningContext } = require('./core.cjs');
 
 function cmdInitExecutePhase(cwd, phase, raw) {
   if (!phase) {
     error('phase required for init execute-phase');
   }
 
+  const ctx = tryGetPlanningContext(cwd);
   const config = loadConfig(cwd);
   const phaseInfo = findPhaseInternal(cwd, phase);
   const milestone = getMilestoneInfo(cwd);
@@ -24,6 +25,10 @@ function cmdInitExecutePhase(cwd, phase, raw) {
   const phase_req_ids = (reqExtracted && reqExtracted !== 'TBD') ? reqExtracted : null;
 
   const result = {
+    active_user: ctx.active_user,
+    active_project: ctx.active_project,
+    planning_root: ctx.planning_root,
+
     // Models
     executor_model: resolveModelInternal(cwd, 'gsd-executor'),
     verifier_model: resolveModelInternal(cwd, 'gsd-verifier'),
@@ -86,6 +91,7 @@ function cmdInitPlanPhase(cwd, phase, raw) {
     error('phase required for init plan-phase');
   }
 
+  const ctx = tryGetPlanningContext(cwd);
   const config = loadConfig(cwd);
   const phaseInfo = findPhaseInternal(cwd, phase);
 
@@ -97,6 +103,10 @@ function cmdInitPlanPhase(cwd, phase, raw) {
   const phase_req_ids = (reqExtracted && reqExtracted !== 'TBD') ? reqExtracted : null;
 
   const result = {
+    active_user: ctx.active_user,
+    active_project: ctx.active_project,
+    planning_root: ctx.planning_root,
+
     // Models
     researcher_model: resolveModelInternal(cwd, 'gsd-phase-researcher'),
     planner_model: resolveModelInternal(cwd, 'gsd-planner'),
@@ -162,6 +172,7 @@ function cmdInitPlanPhase(cwd, phase, raw) {
 }
 
 function cmdInitNewProject(cwd, raw) {
+  const ctx = tryGetPlanningContext(cwd);
   const config = loadConfig(cwd);
 
   // Detect Brave Search API key availability
@@ -188,6 +199,10 @@ function cmdInitNewProject(cwd, raw) {
                    pathExistsInternal(cwd, 'Package.swift');
 
   const result = {
+    active_user: ctx.active_user,
+    active_project: ctx.active_project,
+    planning_root: ctx.planning_root,
+
     // Models
     researcher_model: resolveModelInternal(cwd, 'gsd-project-researcher'),
     synthesizer_model: resolveModelInternal(cwd, 'gsd-research-synthesizer'),
@@ -221,10 +236,15 @@ function cmdInitNewProject(cwd, raw) {
 }
 
 function cmdInitNewMilestone(cwd, raw) {
+  const ctx = tryGetPlanningContext(cwd);
   const config = loadConfig(cwd);
   const milestone = getMilestoneInfo(cwd);
 
   const result = {
+    active_user: ctx.active_user,
+    active_project: ctx.active_project,
+    planning_root: ctx.planning_root,
+
     // Models
     researcher_model: resolveModelInternal(cwd, 'gsd-project-researcher'),
     synthesizer_model: resolveModelInternal(cwd, 'gsd-research-synthesizer'),
@@ -253,6 +273,7 @@ function cmdInitNewMilestone(cwd, raw) {
 }
 
 function cmdInitQuick(cwd, description, raw) {
+  const ctx = tryGetPlanningContext(cwd);
   const config = loadConfig(cwd);
   const now = new Date();
   const slug = description ? generateSlugInternal(description)?.substring(0, 40) : null;
@@ -271,6 +292,10 @@ function cmdInitQuick(cwd, description, raw) {
   } catch {}
 
   const result = {
+    active_user: ctx.active_user,
+    active_project: ctx.active_project,
+    planning_root: ctx.planning_root,
+
     // Models
     planner_model: resolveModelInternal(cwd, 'gsd-planner'),
     executor_model: resolveModelInternal(cwd, 'gsd-executor'),
@@ -304,6 +329,7 @@ function cmdInitQuick(cwd, description, raw) {
 }
 
 function cmdInitResume(cwd, raw) {
+  const ctx = tryGetPlanningContext(cwd);
   const config = loadConfig(cwd);
 
   // Check for interrupted agent
@@ -313,6 +339,10 @@ function cmdInitResume(cwd, raw) {
   } catch {}
 
   const result = {
+    active_user: ctx.active_user,
+    active_project: ctx.active_project,
+    planning_root: ctx.planning_root,
+
     // File existence
     state_exists: pathExistsInternal(cwd, '.planning/STATE.md'),
     roadmap_exists: pathExistsInternal(cwd, '.planning/ROADMAP.md'),
@@ -340,10 +370,15 @@ function cmdInitVerifyWork(cwd, phase, raw) {
     error('phase required for init verify-work');
   }
 
+  const ctx = tryGetPlanningContext(cwd);
   const config = loadConfig(cwd);
   const phaseInfo = findPhaseInternal(cwd, phase);
 
   const result = {
+    active_user: ctx.active_user,
+    active_project: ctx.active_project,
+    planning_root: ctx.planning_root,
+
     // Models
     planner_model: resolveModelInternal(cwd, 'gsd-planner'),
     checker_model: resolveModelInternal(cwd, 'gsd-plan-checker'),
@@ -363,6 +398,7 @@ function cmdInitVerifyWork(cwd, phase, raw) {
 }
 
 function cmdInitPhaseOp(cwd, phase, raw) {
+  const ctx = tryGetPlanningContext(cwd);
   const config = loadConfig(cwd);
   let phaseInfo = findPhaseInternal(cwd, phase);
 
@@ -388,6 +424,10 @@ function cmdInitPhaseOp(cwd, phase, raw) {
   }
 
   const result = {
+    active_user: ctx.active_user,
+    active_project: ctx.active_project,
+    planning_root: ctx.planning_root,
+
     // Config
     commit_docs: config.commit_docs,
     brave_search: config.brave_search,
@@ -444,6 +484,7 @@ function cmdInitPhaseOp(cwd, phase, raw) {
 }
 
 function cmdInitTodos(cwd, area, raw) {
+  const ctx = tryGetPlanningContext(cwd);
   const config = loadConfig(cwd);
   const now = new Date();
 
@@ -477,6 +518,10 @@ function cmdInitTodos(cwd, area, raw) {
   } catch {}
 
   const result = {
+    active_user: ctx.active_user,
+    active_project: ctx.active_project,
+    planning_root: ctx.planning_root,
+
     // Config
     commit_docs: config.commit_docs,
 
@@ -503,6 +548,7 @@ function cmdInitTodos(cwd, area, raw) {
 }
 
 function cmdInitMilestoneOp(cwd, raw) {
+  const ctx = tryGetPlanningContext(cwd);
   const config = loadConfig(cwd);
   const milestone = getMilestoneInfo(cwd);
 
@@ -535,6 +581,10 @@ function cmdInitMilestoneOp(cwd, raw) {
   } catch {}
 
   const result = {
+    active_user: ctx.active_user,
+    active_project: ctx.active_project,
+    planning_root: ctx.planning_root,
+
     // Config
     commit_docs: config.commit_docs,
 
@@ -564,6 +614,7 @@ function cmdInitMilestoneOp(cwd, raw) {
 }
 
 function cmdInitMapCodebase(cwd, raw) {
+  const ctx = tryGetPlanningContext(cwd);
   const config = loadConfig(cwd);
 
   // Check for existing codebase maps
@@ -574,6 +625,10 @@ function cmdInitMapCodebase(cwd, raw) {
   } catch {}
 
   const result = {
+    active_user: ctx.active_user,
+    active_project: ctx.active_project,
+    planning_root: ctx.planning_root,
+
     // Models
     mapper_model: resolveModelInternal(cwd, 'gsd-codebase-mapper'),
 
@@ -598,6 +653,7 @@ function cmdInitMapCodebase(cwd, raw) {
 }
 
 function cmdInitProgress(cwd, raw) {
+  const ctx = tryGetPlanningContext(cwd);
   const config = loadConfig(cwd);
   const milestone = getMilestoneInfo(cwd);
 
@@ -658,6 +714,10 @@ function cmdInitProgress(cwd, raw) {
   } catch {}
 
   const result = {
+    active_user: ctx.active_user,
+    active_project: ctx.active_project,
+    planning_root: ctx.planning_root,
+
     // Models
     executor_model: resolveModelInternal(cwd, 'gsd-executor'),
     planner_model: resolveModelInternal(cwd, 'gsd-planner'),
