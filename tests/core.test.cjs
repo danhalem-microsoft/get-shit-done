@@ -26,7 +26,10 @@ const {
   getRoadmapPhaseInternal,
   searchPhaseInDir,
   findPhaseInternal,
+  clearPlanningRootCache,
 } = require('../get-shit-done/bin/lib/core.cjs');
+const { execSync } = require('child_process');
+const { createTempMultiUserProject, cleanup } = require('./helpers.cjs');
 
 // ─── loadConfig ────────────────────────────────────────────────────────────────
 
@@ -800,5 +803,197 @@ describe('getMilestonePhaseFilter', () => {
 
     const filter = getMilestonePhaseFilter(tmpDir);
     assert.strictEqual(filter.phaseCount, 0);
+  });
+});
+
+// ─── getPlanningRoot ────────────────────────────────────────────────────────
+
+describe('getPlanningRoot', () => {
+  let tmpDir;
+  let savedCI;
+  let savedGithubActions;
+
+  afterEach(() => {
+    if (tmpDir) {
+      cleanup(tmpDir);
+      tmpDir = null;
+    }
+    // Restore env vars
+    if (savedCI !== undefined) {
+      process.env.CI = savedCI;
+    } else {
+      delete process.env.CI;
+    }
+    if (savedGithubActions !== undefined) {
+      process.env.GITHUB_ACTIONS = savedGithubActions;
+    } else {
+      delete process.env.GITHUB_ACTIONS;
+    }
+    clearPlanningRootCache();
+  });
+
+  function runSubprocess(script, env = {}) {
+    const cleanEnv = { ...process.env };
+    // Remove CI-related vars from parent env to avoid false positives
+    delete cleanEnv.CI;
+    delete cleanEnv.GITHUB_ACTIONS;
+    delete cleanEnv.GITLAB_CI;
+    delete cleanEnv.JENKINS_URL;
+    delete cleanEnv.CIRCLECI;
+    delete cleanEnv.TRAVIS;
+    delete cleanEnv.GSD_USER;
+    delete cleanEnv.GSD_PROJECT;
+    Object.assign(cleanEnv, env);
+
+    return execSync(`node -e "${script.replace(/"/g, '\\"')}"`, {
+      encoding: 'utf-8',
+      stdio: ['pipe', 'pipe', 'pipe'],
+      env: cleanEnv,
+    });
+  }
+
+  test('CI/CD detection: CI=true blocks execution', () => {
+    const result = createTempMultiUserProject();
+    tmpDir = result.tmpDir;
+
+    const corePath = require.resolve('../get-shit-done/bin/lib/core.cjs').replace(/\\/g, '/');
+    const dir = tmpDir.replace(/\\/g, '/');
+    const script = `const core = require('${corePath}'); process.stdout.write(core.getPlanningRoot('${dir}'));`;
+
+    try {
+      runSubprocess(script, { CI: 'true', GSD_USER: 'test-user' });
+      assert.fail('Should have thrown');
+    } catch (err) {
+      assert.ok(
+        err.stderr.includes('CI/CD environment detected'),
+        `Expected "CI/CD environment detected" in stderr, got: ${err.stderr}`
+      );
+    }
+  });
+
+  test('CI/CD detection: GITHUB_ACTIONS=true blocks execution', () => {
+    const result = createTempMultiUserProject();
+    tmpDir = result.tmpDir;
+
+    const corePath = require.resolve('../get-shit-done/bin/lib/core.cjs').replace(/\\/g, '/');
+    const dir = tmpDir.replace(/\\/g, '/');
+    const script = `const core = require('${corePath}'); process.stdout.write(core.getPlanningRoot('${dir}'));`;
+
+    try {
+      runSubprocess(script, { GITHUB_ACTIONS: 'true', GSD_USER: 'test-user' });
+      assert.fail('Should have thrown');
+    } catch (err) {
+      assert.ok(
+        err.stderr.includes('CI/CD environment detected'),
+        `Expected "CI/CD environment detected" in stderr, got: ${err.stderr}`
+      );
+    }
+  });
+
+  test('old structure detection: PROJECT.md without users/ dir', () => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gsd-core-test-'));
+    fs.mkdirSync(path.join(tmpDir, '.planning'), { recursive: true });
+    fs.writeFileSync(path.join(tmpDir, '.planning', 'PROJECT.md'), '# Project\n');
+    // No .planning/users/ directory
+
+    const corePath = require.resolve('../get-shit-done/bin/lib/core.cjs').replace(/\\/g, '/');
+    const dir = tmpDir.replace(/\\/g, '/');
+    const script = `const core = require('${corePath}'); process.stdout.write(core.getPlanningRoot('${dir}'));`;
+
+    try {
+      runSubprocess(script, { GSD_USER: 'test-user' });
+      assert.fail('Should have thrown');
+    } catch (err) {
+      assert.ok(
+        err.stderr.includes('Legacy .planning/ structure detected'),
+        `Expected "Legacy .planning/ structure detected" in stderr, got: ${err.stderr}`
+      );
+    }
+  });
+
+  test('old structure detection: PROJECT.md WITH users/ dir is OK', () => {
+    const result = createTempMultiUserProject();
+    tmpDir = result.tmpDir;
+    // Create PROJECT.md alongside the users/ dir
+    fs.writeFileSync(path.join(tmpDir, '.planning', 'PROJECT.md'), '# Project\n');
+
+    const corePath = require.resolve('../get-shit-done/bin/lib/core.cjs').replace(/\\/g, '/');
+    const dir = tmpDir.replace(/\\/g, '/');
+    const script = `const core = require('${corePath}'); process.stdout.write(core.getPlanningRoot('${dir}'));`;
+
+    const output = runSubprocess(script, { GSD_USER: 'test-user' });
+    assert.strictEqual(output.trim(), '.planning/users/test-user/test-project');
+  });
+
+  test('getPlanningRoot: returns user-qualified path', () => {
+    const result = createTempMultiUserProject();
+    tmpDir = result.tmpDir;
+
+    const corePath = require.resolve('../get-shit-done/bin/lib/core.cjs').replace(/\\/g, '/');
+    const dir = tmpDir.replace(/\\/g, '/');
+    const script = `const core = require('${corePath}'); process.stdout.write(core.getPlanningRoot('${dir}'));`;
+
+    const output = runSubprocess(script, { GSD_USER: 'test-user' });
+    assert.strictEqual(output.trim(), '.planning/users/test-user/test-project');
+  });
+
+  test('tryGetPlanningContext: returns null fields when no .active', () => {
+    const result = createTempMultiUserProject({ withActive: false });
+    tmpDir = result.tmpDir;
+
+    const corePath = require.resolve('../get-shit-done/bin/lib/core.cjs').replace(/\\/g, '/');
+    const dir = tmpDir.replace(/\\/g, '/');
+    const script = `const core = require('${corePath}'); const r = core.tryGetPlanningContext('${dir}'); process.stdout.write(JSON.stringify(r));`;
+
+    const output = runSubprocess(script, { GSD_USER: 'test-user' });
+    const parsed = JSON.parse(output.trim());
+    assert.strictEqual(parsed.active_user, 'test-user');
+    assert.strictEqual(parsed.active_project, null);
+    assert.strictEqual(parsed.planning_root, null);
+  });
+
+  test('tryGetPlanningContext: CI/CD still hard-errors', () => {
+    const result = createTempMultiUserProject();
+    tmpDir = result.tmpDir;
+
+    const corePath = require.resolve('../get-shit-done/bin/lib/core.cjs').replace(/\\/g, '/');
+    const dir = tmpDir.replace(/\\/g, '/');
+    const script = `const core = require('${corePath}'); const r = core.tryGetPlanningContext('${dir}'); process.stdout.write(JSON.stringify(r));`;
+
+    try {
+      runSubprocess(script, { CI: 'true', GSD_USER: 'test-user' });
+      assert.fail('Should have thrown');
+    } catch (err) {
+      assert.ok(
+        err.stderr.includes('CI/CD environment detected'),
+        `Expected "CI/CD environment detected" in stderr, got: ${err.stderr}`
+      );
+    }
+  });
+
+  test('tryGetPlanningContext: old structure still hard-errors', () => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gsd-core-test-'));
+    fs.mkdirSync(path.join(tmpDir, '.planning'), { recursive: true });
+    fs.writeFileSync(path.join(tmpDir, '.planning', 'PROJECT.md'), '# Project\n');
+
+    const corePath = require.resolve('../get-shit-done/bin/lib/core.cjs').replace(/\\/g, '/');
+    const dir = tmpDir.replace(/\\/g, '/');
+    const script = `const core = require('${corePath}'); const r = core.tryGetPlanningContext('${dir}'); process.stdout.write(JSON.stringify(r));`;
+
+    try {
+      runSubprocess(script, { GSD_USER: 'test-user' });
+      assert.fail('Should have thrown');
+    } catch (err) {
+      assert.ok(
+        err.stderr.includes('Legacy .planning/ structure detected'),
+        `Expected "Legacy .planning/ structure detected" in stderr, got: ${err.stderr}`
+      );
+    }
+  });
+
+  test('clearPlanningRootCache is a callable function', () => {
+    assert.strictEqual(typeof clearPlanningRootCache, 'function');
+    // Should not throw
+    clearPlanningRootCache();
   });
 });
