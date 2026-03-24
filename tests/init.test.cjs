@@ -847,3 +847,149 @@ describe('cmdInitNewMilestone', () => {
 // roadmap analyze command
 // ─────────────────────────────────────────────────────────────────────────────
 
+// ─────────────────────────────────────────────────────────────────────────────
+// init context fields (PATH-10)
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('init context fields', () => {
+  const { execSync } = require('child_process');
+  const { createTempMultiUserProject, TOOLS_PATH } = require('./helpers.cjs');
+
+  function setupMultiUserProjectWithFiles(opts) {
+    const { tmpDir, userSlug, projectName } = createTempMultiUserProject(opts);
+    const projectDir = path.join(tmpDir, '.planning', 'users', userSlug, projectName);
+
+    // Create minimal planning files needed by init commands
+    fs.writeFileSync(
+      path.join(projectDir, 'STATE.md'),
+      '---\nphase: 1\nstatus: not_started\n---\n# State\n'
+    );
+    fs.writeFileSync(path.join(projectDir, 'ROADMAP.md'), '# Roadmap\n');
+
+    // Create a phase directory with a plan
+    const phaseDir = path.join(projectDir, 'phases', '01-test');
+    fs.mkdirSync(phaseDir, { recursive: true });
+    fs.writeFileSync(path.join(phaseDir, '01-01-PLAN.md'), '# Plan');
+
+    return { tmpDir, userSlug, projectName, projectDir, phaseDir };
+  }
+
+  test('cmdInitProgress includes context fields', () => {
+    const { tmpDir, userSlug, projectName } = setupMultiUserProjectWithFiles({});
+    try {
+      const result = runGsdTools('init progress', tmpDir);
+      assert.ok(result.success, `Command failed: ${result.error}`);
+
+      const output = JSON.parse(result.output);
+      assert.strictEqual(output.active_user, userSlug);
+      assert.strictEqual(output.active_project, projectName);
+      assert.strictEqual(output.planning_root, `.planning/users/${userSlug}/${projectName}`);
+    } finally {
+      cleanup(tmpDir);
+    }
+  });
+
+  test('cmdInitNewProject includes context fields (null when no project)', () => {
+    const { tmpDir } = createTempMultiUserProject({ withActive: false });
+    try {
+      const result = runGsdTools('init new-project', tmpDir);
+      assert.ok(result.success, `Command failed: ${result.error}`);
+
+      const output = JSON.parse(result.output);
+      // Identity resolves (git user.name is set), but no active project
+      assert.strictEqual(typeof output.active_user, 'string');
+      assert.strictEqual(output.active_project, null);
+      assert.strictEqual(output.planning_root, null);
+    } finally {
+      cleanup(tmpDir);
+    }
+  });
+
+  test('cmdInitExecutePhase includes context fields', () => {
+    const { tmpDir, userSlug, projectName } = setupMultiUserProjectWithFiles({});
+    try {
+      const result = runGsdTools('init execute-phase 1', tmpDir);
+      assert.ok(result.success, `Command failed: ${result.error}`);
+
+      const output = JSON.parse(result.output);
+      assert.strictEqual(output.active_user, userSlug);
+      assert.strictEqual(output.active_project, projectName);
+      assert.strictEqual(output.planning_root, `.planning/users/${userSlug}/${projectName}`);
+    } finally {
+      cleanup(tmpDir);
+    }
+  });
+
+  test('cmdInitPlanPhase includes context fields', () => {
+    const { tmpDir, userSlug, projectName } = setupMultiUserProjectWithFiles({});
+    try {
+      const result = runGsdTools('init plan-phase 1', tmpDir);
+      assert.ok(result.success, `Command failed: ${result.error}`);
+
+      const output = JSON.parse(result.output);
+      assert.strictEqual(output.active_user, userSlug);
+      assert.strictEqual(output.active_project, projectName);
+      assert.strictEqual(output.planning_root, `.planning/users/${userSlug}/${projectName}`);
+    } finally {
+      cleanup(tmpDir);
+    }
+  });
+
+  test('cmdInitMapCodebase includes context fields', () => {
+    const { tmpDir, userSlug, projectName } = setupMultiUserProjectWithFiles({});
+    try {
+      const result = runGsdTools('init map-codebase', tmpDir);
+      assert.ok(result.success, `Command failed: ${result.error}`);
+
+      const output = JSON.parse(result.output);
+      assert.strictEqual(output.active_user, userSlug);
+      assert.strictEqual(output.active_project, projectName);
+      assert.strictEqual(output.planning_root, `.planning/users/${userSlug}/${projectName}`);
+    } finally {
+      cleanup(tmpDir);
+    }
+  });
+
+  test('cmdInitMistakes includes context fields', () => {
+    const { tmpDir, userSlug, projectName } = setupMultiUserProjectWithFiles({});
+    try {
+      const result = runGsdTools('init mistakes', tmpDir);
+      assert.ok(result.success, `Command failed: ${result.error}`);
+
+      const output = JSON.parse(result.output);
+      assert.strictEqual(output.active_user, userSlug);
+      assert.strictEqual(output.active_project, projectName);
+      assert.strictEqual(output.planning_root, `.planning/users/${userSlug}/${projectName}`);
+    } finally {
+      cleanup(tmpDir);
+    }
+  });
+
+  test('GSD_USER override reflected in init output', () => {
+    const overrideSlug = 'override-user';
+    const { tmpDir, projectName } = setupMultiUserProjectWithFiles({});
+
+    // Create project directory for the override user
+    const overrideProjectDir = path.join(
+      tmpDir, '.planning', 'users', overrideSlug, projectName, 'phases'
+    );
+    fs.mkdirSync(overrideProjectDir, { recursive: true });
+
+    try {
+      const result = execSync(`node "${TOOLS_PATH}" init progress`, {
+        cwd: tmpDir,
+        encoding: 'utf-8',
+        stdio: ['pipe', 'pipe', 'pipe'],
+        env: { ...process.env, GSD_USER: overrideSlug, GSD_PROJECT: projectName },
+      });
+
+      const output = JSON.parse(result.trim());
+      assert.strictEqual(output.active_user, overrideSlug);
+      assert.strictEqual(output.active_project, projectName);
+      assert.strictEqual(output.planning_root, `.planning/users/${overrideSlug}/${projectName}`);
+    } finally {
+      cleanup(tmpDir);
+    }
+  });
+});
+
