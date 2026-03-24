@@ -474,6 +474,97 @@ function getMilestonePhaseFilter(cwd) {
   return isDirInMilestone;
 }
 
+// --- Planning Root Resolution -----------------------------------------------
+
+let _planningRootCache = {};
+
+/**
+ * Single chokepoint for all path resolution. Returns the user-qualified
+ * planning directory string (e.g., `.planning/users/dan-halem/frontend`).
+ */
+function getPlanningRoot(cwd) {
+  if (_planningRootCache[cwd]) return _planningRootCache[cwd];
+
+  // 1. CI/CD detection (hard error, first check)
+  const ciVars = ['CI', 'GITHUB_ACTIONS', 'GITLAB_CI', 'JENKINS_URL', 'CIRCLECI', 'TRAVIS'];
+  if (ciVars.some(v => process.env[v])) {
+    error('GSD Error: CI/CD environment detected. GSD is not supported in CI.');
+  }
+
+  // 2. Old flat structure detection (hard error)
+  if (fs.existsSync(path.join(cwd, '.planning', 'PROJECT.md')) &&
+      !fs.existsSync(path.join(cwd, '.planning', 'users'))) {
+    error('GSD Error: Legacy .planning/ structure detected. To start fresh: Remove .planning/ and run /gsd:new-project. To preserve work: Move your files to .planning/users/<your-slug>/<project-name>/');
+  }
+
+  // 3. Delegate to context.cjs (lazy require)
+  // CRITICAL: require('./context.cjs') is LAZY (inside function body).
+  // Moving it to module scope causes circular dependency crash.
+  // context.cjs requires core.cjs at its top level.
+  const { resolveContext } = require('./context.cjs');
+  const ctx = resolveContext(cwd);
+  _planningRootCache[cwd] = ctx.planning_root;
+  return ctx.planning_root;
+}
+
+/**
+ * Safe wrapper for init commands that may run before a project exists.
+ * Returns { active_user, active_project, planning_root } with null fields
+ * on graceful failure. CI/CD and old-structure errors still propagate as
+ * hard errors.
+ */
+function tryGetPlanningContext(cwd) {
+  // CI/CD check (hard error - these are always fatal)
+  const ciVars = ['CI', 'GITHUB_ACTIONS', 'GITLAB_CI', 'JENKINS_URL', 'CIRCLECI', 'TRAVIS'];
+  if (ciVars.some(v => process.env[v])) {
+    error('GSD Error: CI/CD environment detected. GSD is not supported in CI.');
+  }
+  // Old structure check (hard error)
+  if (fs.existsSync(path.join(cwd, '.planning', 'PROJECT.md')) &&
+      !fs.existsSync(path.join(cwd, '.planning', 'users'))) {
+    error('GSD Error: Legacy .planning/ structure detected. To start fresh: Remove .planning/ and run /gsd:new-project. To preserve work: Move your files to .planning/users/<your-slug>/<project-name>/');
+  }
+
+  // Soft resolution -- return nulls instead of hard erroring
+  const { resolveIdentity } = require('./identity.cjs');
+  const { readActiveContext } = require('./context.cjs');
+
+  const identity = resolveIdentity(cwd);
+  if (!identity) {
+    return { active_user: null, active_project: null, planning_root: null };
+  }
+
+  const user = identity.slug;
+  const envProject = process.env.GSD_PROJECT;
+  let project = null;
+  let planning_root = null;
+
+  if (envProject) {
+    const projectDir = path.join(cwd, '.planning', 'users', user, envProject);
+    if (fs.existsSync(projectDir)) {
+      project = envProject;
+    }
+  } else {
+    const active = readActiveContext(cwd, user);
+    if (active && active.project) {
+      const projectDir = path.join(cwd, '.planning', 'users', user, active.project);
+      if (fs.existsSync(projectDir)) {
+        project = active.project;
+      }
+    }
+  }
+
+  if (project) {
+    planning_root = toPosixPath(path.join('.planning', 'users', user, project));
+  }
+
+  return { active_user: user, active_project: project, planning_root };
+}
+
+function clearPlanningRootCache() {
+  _planningRootCache = {};
+}
+
 module.exports = {
   MODEL_PROFILES,
   output,
@@ -495,4 +586,7 @@ module.exports = {
   getMilestoneInfo,
   getMilestonePhaseFilter,
   toPosixPath,
+  getPlanningRoot,
+  tryGetPlanningContext,
+  clearPlanningRootCache,
 };
