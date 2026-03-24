@@ -130,7 +130,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { error, output, loadConfig, pathExistsInternal } = require('./lib/core.cjs');
+const { error, output, loadConfig, pathExistsInternal, tryGetPlanningContext } = require('./lib/core.cjs');
 const state = require('./lib/state.cjs');
 const phase = require('./lib/phase.cjs');
 const roadmap = require('./lib/roadmap.cjs');
@@ -146,6 +146,7 @@ const taste = require('./lib/taste.cjs');
 // ─── Mistake Registry ────────────────────────────────────────────────────────
 
 function cmdInitMistakes(cwd, raw) {
+  const ctx = tryGetPlanningContext(cwd);
   const cfg = loadConfig(cwd);
   const now = new Date();
   const mistakesDir = path.join(cwd, '.planning', 'mistakes');
@@ -189,6 +190,9 @@ function cmdInitMistakes(cwd, raw) {
   const nextId = `MR-${String(nextNum).padStart(3, '0')}`;
 
   output({
+    active_user: ctx.active_user,
+    active_project: ctx.active_project,
+    planning_root: ctx.planning_root,
     commit_docs: cfg.commit_docs,
     date: now.toISOString().split('T')[0],
     timestamp: now.toISOString(),
