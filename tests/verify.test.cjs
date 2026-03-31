@@ -6,8 +6,9 @@ const { test, describe, beforeEach, afterEach } = require('node:test');
 const assert = require('node:assert');
 const fs = require('fs');
 const path = require('path');
-const { runGsdTools, createTempProject, createTempGitProject, cleanup } = require('./helpers.cjs');
+const { runGsdTools, createTempProject, createTempGitProject, createTempMultiUserProject, cleanup } = require('./helpers.cjs');
 const { execSync } = require('child_process');
+const { clearPlanningRootCache } = require('../get-shit-done/bin/lib/core.cjs');
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -44,23 +45,27 @@ function validPlanContent({ wave = 1, dependsOn = '[]', autonomous = 'true', ext
 
 describe('validate consistency command', () => {
   let tmpDir;
+  let planningRoot;
 
   beforeEach(() => {
-    tmpDir = createTempProject();
+    const project = createTempMultiUserProject();
+    tmpDir = project.tmpDir;
+    planningRoot = `.planning/users/${project.userSlug}/${project.projectName}`;
   });
 
   afterEach(() => {
+    clearPlanningRootCache();
     cleanup(tmpDir);
   });
 
   test('passes for consistent project', () => {
     fs.writeFileSync(
-      path.join(tmpDir, '.planning', 'ROADMAP.md'),
+      path.join(tmpDir, planningRoot, 'ROADMAP.md'),
       `# Roadmap\n### Phase 1: A\n### Phase 2: B\n### Phase 3: C\n`
     );
-    fs.mkdirSync(path.join(tmpDir, '.planning', 'phases', '01-a'), { recursive: true });
-    fs.mkdirSync(path.join(tmpDir, '.planning', 'phases', '02-b'), { recursive: true });
-    fs.mkdirSync(path.join(tmpDir, '.planning', 'phases', '03-c'), { recursive: true });
+    fs.mkdirSync(path.join(tmpDir, planningRoot, 'phases', '01-a'), { recursive: true });
+    fs.mkdirSync(path.join(tmpDir, planningRoot, 'phases', '02-b'), { recursive: true });
+    fs.mkdirSync(path.join(tmpDir, planningRoot, 'phases', '03-c'), { recursive: true });
 
     const result = runGsdTools('validate consistency', tmpDir);
     assert.ok(result.success, `Command failed: ${result.error}`);
@@ -72,11 +77,11 @@ describe('validate consistency command', () => {
 
   test('warns about phase on disk but not in roadmap', () => {
     fs.writeFileSync(
-      path.join(tmpDir, '.planning', 'ROADMAP.md'),
+      path.join(tmpDir, planningRoot, 'ROADMAP.md'),
       `# Roadmap\n### Phase 1: A\n`
     );
-    fs.mkdirSync(path.join(tmpDir, '.planning', 'phases', '01-a'), { recursive: true });
-    fs.mkdirSync(path.join(tmpDir, '.planning', 'phases', '02-orphan'), { recursive: true });
+    fs.mkdirSync(path.join(tmpDir, planningRoot, 'phases', '01-a'), { recursive: true });
+    fs.mkdirSync(path.join(tmpDir, planningRoot, 'phases', '02-orphan'), { recursive: true });
 
     const result = runGsdTools('validate consistency', tmpDir);
     assert.ok(result.success, `Command failed: ${result.error}`);
@@ -91,11 +96,11 @@ describe('validate consistency command', () => {
 
   test('warns about gaps in phase numbering', () => {
     fs.writeFileSync(
-      path.join(tmpDir, '.planning', 'ROADMAP.md'),
+      path.join(tmpDir, planningRoot, 'ROADMAP.md'),
       `# Roadmap\n### Phase 1: A\n### Phase 3: C\n`
     );
-    fs.mkdirSync(path.join(tmpDir, '.planning', 'phases', '01-a'), { recursive: true });
-    fs.mkdirSync(path.join(tmpDir, '.planning', 'phases', '03-c'), { recursive: true });
+    fs.mkdirSync(path.join(tmpDir, planningRoot, 'phases', '01-a'), { recursive: true });
+    fs.mkdirSync(path.join(tmpDir, planningRoot, 'phases', '03-c'), { recursive: true });
 
     const result = runGsdTools('validate consistency', tmpDir);
     assert.ok(result.success, `Command failed: ${result.error}`);

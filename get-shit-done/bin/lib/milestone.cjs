@@ -4,7 +4,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { escapeRegex, getMilestonePhaseFilter, output, error } = require('./core.cjs');
+const { escapeRegex, getMilestonePhaseFilter, getPlanningRoot, output, error } = require('./core.cjs');
 const { extractFrontmatter } = require('./frontmatter.cjs');
 const { writeStateMd } = require('./state.cjs');
 
@@ -25,7 +25,8 @@ function cmdRequirementsMarkComplete(cwd, reqIdsRaw, raw) {
     error('no valid requirement IDs found');
   }
 
-  const reqPath = path.join(cwd, '.planning', 'REQUIREMENTS.md');
+  const planningRoot = getPlanningRoot(cwd);
+  const reqPath = path.join(cwd, planningRoot, 'REQUIREMENTS.md');
   if (!fs.existsSync(reqPath)) {
     output({ updated: false, reason: 'REQUIREMENTS.md not found', ids: reqIds }, raw, 'no requirements file');
     return;
@@ -81,12 +82,13 @@ function cmdMilestoneComplete(cwd, version, options, raw) {
     error('version required for milestone complete (e.g., v1.0)');
   }
 
-  const roadmapPath = path.join(cwd, '.planning', 'ROADMAP.md');
-  const reqPath = path.join(cwd, '.planning', 'REQUIREMENTS.md');
-  const statePath = path.join(cwd, '.planning', 'STATE.md');
-  const milestonesPath = path.join(cwd, '.planning', 'MILESTONES.md');
-  const archiveDir = path.join(cwd, '.planning', 'milestones');
-  const phasesDir = path.join(cwd, '.planning', 'phases');
+  const planningRoot = getPlanningRoot(cwd);
+  const roadmapPath = path.join(cwd, planningRoot, 'ROADMAP.md');
+  const reqPath = path.join(cwd, planningRoot, 'REQUIREMENTS.md');
+  const statePath = path.join(cwd, planningRoot, 'STATE.md');
+  const milestonesPath = path.join(cwd, planningRoot, 'MILESTONES.md');
+  const archiveDir = path.join(cwd, planningRoot, 'milestones');
+  const phasesDir = path.join(cwd, planningRoot, 'phases');
   const today = new Date().toISOString().split('T')[0];
   const milestoneName = options.name || version;
 
@@ -142,12 +144,12 @@ function cmdMilestoneComplete(cwd, version, options, raw) {
   // Archive REQUIREMENTS.md
   if (fs.existsSync(reqPath)) {
     const reqContent = fs.readFileSync(reqPath, 'utf-8');
-    const archiveHeader = `# Requirements Archive: ${version} ${milestoneName}\n\n**Archived:** ${today}\n**Status:** SHIPPED\n\nFor current requirements, see \`.planning/REQUIREMENTS.md\`.\n\n---\n\n`;
+    const archiveHeader = `# Requirements Archive: ${version} ${milestoneName}\n\n**Archived:** ${today}\n**Status:** SHIPPED\n\nFor current requirements, see \`${planningRoot}/REQUIREMENTS.md\`.\n\n---\n\n`;
     fs.writeFileSync(path.join(archiveDir, `${version}-REQUIREMENTS.md`), archiveHeader + reqContent, 'utf-8');
   }
 
   // Archive audit file if exists
-  const auditFile = path.join(cwd, '.planning', `${version}-MILESTONE-AUDIT.md`);
+  const auditFile = path.join(cwd, planningRoot, `${version}-MILESTONE-AUDIT.md`);
   if (fs.existsSync(auditFile)) {
     fs.renameSync(auditFile, path.join(archiveDir, `${version}-MILESTONE-AUDIT.md`));
   }

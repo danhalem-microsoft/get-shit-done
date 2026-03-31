@@ -4,7 +4,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { safeReadFile, normalizePhaseName, execGit, findPhaseInternal, getMilestoneInfo, output, error } = require('./core.cjs');
+const { safeReadFile, normalizePhaseName, execGit, findPhaseInternal, getMilestoneInfo, getPlanningRoot, tryGetPlanningContext, output, error } = require('./core.cjs');
 const { extractFrontmatter, parseMustHavesBlock } = require('./frontmatter.cjs');
 const { writeStateMd } = require('./state.cjs');
 
@@ -395,8 +395,9 @@ function cmdVerifyKeyLinks(cwd, planFilePath, raw) {
 }
 
 function cmdValidateConsistency(cwd, raw) {
-  const roadmapPath = path.join(cwd, '.planning', 'ROADMAP.md');
-  const phasesDir = path.join(cwd, '.planning', 'phases');
+  const planningRoot = getPlanningRoot(cwd);
+  const roadmapPath = path.join(cwd, planningRoot, 'ROADMAP.md');
+  const phasesDir = path.join(cwd, planningRoot, 'phases');
   const errors = [];
   const warnings = [];
 
@@ -515,7 +516,15 @@ function cmdValidateConsistency(cwd, raw) {
 }
 
 function cmdValidateHealth(cwd, options, raw) {
-  const planningDir = path.join(cwd, '.planning');
+  // Use tryGetPlanningContext if .planning exists; fall back to '.planning' if not
+  let planningRoot = '.planning';
+  if (fs.existsSync(path.join(cwd, '.planning'))) {
+    const ctx = tryGetPlanningContext(cwd);
+    if (ctx && ctx.planning_root) {
+      planningRoot = ctx.planning_root;
+    }
+  }
+  const planningDir = path.join(cwd, planningRoot);
   const projectPath = path.join(planningDir, 'PROJECT.md');
   const roadmapPath = path.join(planningDir, 'ROADMAP.md');
   const statePath = path.join(planningDir, 'STATE.md');
@@ -535,9 +544,9 @@ function cmdValidateHealth(cwd, options, raw) {
     else info.push(issue);
   };
 
-  // ─── Check 1: .planning/ exists ───────────────────────────────────────────
+  // ─── Check 1: planning directory exists ──────────────────────────────────
   if (!fs.existsSync(planningDir)) {
-    addIssue('error', 'E001', '.planning/ directory not found', 'Run /gsd:new-project to initialize');
+    addIssue('error', 'E001', `${planningRoot}/ directory not found`, 'Run /gsd:new-project to initialize');
     output({
       status: 'broken',
       errors,
@@ -749,7 +758,7 @@ function cmdValidateHealth(cwd, options, raw) {
             const milestone = getMilestoneInfo(cwd);
             let stateContent = `# Session State\n\n`;
             stateContent += `## Project Reference\n\n`;
-            stateContent += `See: .planning/PROJECT.md\n\n`;
+            stateContent += `See: ${planningRoot}/PROJECT.md\n\n`;
             stateContent += `## Position\n\n`;
             stateContent += `**Milestone:** ${milestone.version} ${milestone.name}\n`;
             stateContent += `**Current phase:** (determining...)\n`;
