@@ -29,8 +29,8 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **PATH-08**: `milestone.cjs` module uses `getPlanningRoot()` for all path construction
 - [x] **PATH-09**: `taste.cjs` module uses `getPlanningRoot()` for all path construction
 - [x] **PATH-10**: `init.cjs` includes `active_user`, `active_project`, and `planning_root` in all init command JSON output
-- [ ] **PATH-11**: All workflow markdown files use paths from init JSON output rather than hardcoded `.planning/` strings
-- [ ] **PATH-12**: Agent-spawned prompts receive fully-resolved paths via orchestrator `<files_to_read>` blocks — agents never construct `.planning/` paths themselves
+- [x] **PATH-11**: All workflow markdown files use paths from init JSON output rather than hardcoded `.planning/` strings
+- [x] **PATH-12**: Agent-spawned prompts receive fully-resolved paths via orchestrator `<files_to_read>` blocks — agents never construct `.planning/` paths themselves
 - [x] **PATH-13**: A grep audit confirms zero unresolved raw `.planning/` path references remain in operational code (excluding documentation and the resolver function itself)
 
 ### Project Lifecycle
@@ -105,8 +105,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PATH-08 | Phase 2 | Complete |
 | PATH-09 | Phase 2 | Complete |
 | PATH-10 | Phase 1 | Complete |
-| PATH-11 | Phase 2 | Pending |
-| PATH-12 | Phase 2 | Pending |
+| PATH-11 | Phase 2 | Complete |
+| PATH-12 | Phase 2 | Complete |
 | PATH-13 | Phase 2 | Complete |
 | LIFE-01 | Phase 3 | Pending |
 | LIFE-02 | Phase 3 | Pending |

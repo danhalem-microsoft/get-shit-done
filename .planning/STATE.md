@@ -3,26 +3,26 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in-progress
-last_updated: "2026-03-31T22:04:13Z"
+last_updated: "2026-03-31T22:15:48Z"
 progress:
   total_phases: 4
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 8
-  completed_plans: 7
+  completed_plans: 8
 ---
 
 # Project State: GSD Multi-User Monorepo Support
 
 ## Current Phase
 
-**Phase 2: Module Path Migration** — In Progress (Plan 02-04 complete, 1 remaining)
+**Phase 2: Module Path Migration** — Complete (5/5 plans)
 
 ## Phase Summary
 
 | Phase | Name | Status |
 |-------|------|--------|
 | 1 | Identity and Path Resolution Core | Complete (3/3 plans) |
-| 2 | Module Path Migration | In Progress (4/5 plans) |
+| 2 | Module Path Migration | Complete (5/5 plans) |
 | 3 | Project Lifecycle Commands | Not Started |
 | 4 | Team Visibility and Hardening | Not Started |
 
@@ -47,6 +47,8 @@ progress:
 | cmdCommit retains repo-root .planning references | 02-03 | Gitignore check and default staging reference the container directory, not user-qualified paths |
 | planning_exists checks .planning container, not planning_root | 02-04 | Container directory always lives at repo root regardless of multi-user structure |
 | getUnprocessedDecisionLogs takes cwd parameter with auto-resolve | 02-04 | Consistent cwd-first API; falls back to .planning/decisions when no planning root |
+| commands.cjs and gsd-tools.cjs added to audit allowlist | 02-05 | Legitimate container-dir refs and CLI help text — not user-qualified paths |
+| Source audit excludes tests/ dir; test files get dedicated audit with expanded allowlist | 02-05 | All test files legitimately construct .planning/users/ paths for multi-user test setup |
 
 ## Session Log
 
@@ -64,6 +66,7 @@ progress:
 | 2026-03-31 | Plan 02-02 executed | state/phase/roadmap/config migration to getPlanningRoot — 12 min, 3 tasks, 8 files |
 | 2026-03-31 | Plan 02-03 executed | verify/milestone/commands/taste/template migration — 14 min, 3 tasks, 8 files |
 | 2026-03-31 | Plan 02-04 executed | init.cjs (12 functions) + gsd-tools.cjs dispatcher migration — 9 min, 3 tasks, 4 files |
+| 2026-03-31 | Plan 02-05 executed | 83 markdown files migrated + audit gate activated — 5 min, 3 tasks, 85 files. Phase 2 complete |
 
 ---
 *State initialized: 2026-03-17*
