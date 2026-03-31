@@ -3,26 +3,26 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in-progress
-last_updated: "2026-03-31T21:44:12Z"
+last_updated: "2026-03-31T22:04:13Z"
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 8
-  completed_plans: 6
+  completed_plans: 7
 ---
 
 # Project State: GSD Multi-User Monorepo Support
 
 ## Current Phase
 
-**Phase 2: Module Path Migration** — In Progress (Plan 02-03 complete, 2 remaining)
+**Phase 2: Module Path Migration** — In Progress (Plan 02-04 complete, 1 remaining)
 
 ## Phase Summary
 
 | Phase | Name | Status |
 |-------|------|--------|
 | 1 | Identity and Path Resolution Core | Complete (3/3 plans) |
-| 2 | Module Path Migration | In Progress (3/5 plans) |
+| 2 | Module Path Migration | In Progress (4/5 plans) |
 | 3 | Project Lifecycle Commands | Not Started |
 | 4 | Team Visibility and Hardening | Not Started |
 
@@ -45,6 +45,8 @@ progress:
 | cmdValidateHealth uses tryGetPlanningContext with .planning fallback | 02-03 | Health check must handle E001 (missing planning dir) gracefully without process.exit(1) |
 | taste.cjs cwd-first signatures; gsd-tools.cjs callers already compatible | 02-03 | Callers were already passing cwd as first arg (previously interpreted as tastesDir) |
 | cmdCommit retains repo-root .planning references | 02-03 | Gitignore check and default staging reference the container directory, not user-qualified paths |
+| planning_exists checks .planning container, not planning_root | 02-04 | Container directory always lives at repo root regardless of multi-user structure |
+| getUnprocessedDecisionLogs takes cwd parameter with auto-resolve | 02-04 | Consistent cwd-first API; falls back to .planning/decisions when no planning root |
 
 ## Session Log
 
@@ -61,6 +63,7 @@ progress:
 | 2026-03-31 | Plan 02-01 executed | core.cjs internal migration + audit gate scaffold — 13 min, 2 tasks, 5 files |
 | 2026-03-31 | Plan 02-02 executed | state/phase/roadmap/config migration to getPlanningRoot — 12 min, 3 tasks, 8 files |
 | 2026-03-31 | Plan 02-03 executed | verify/milestone/commands/taste/template migration — 14 min, 3 tasks, 8 files |
+| 2026-03-31 | Plan 02-04 executed | init.cjs (12 functions) + gsd-tools.cjs dispatcher migration — 9 min, 3 tasks, 4 files |
 
 ---
 *State initialized: 2026-03-17*

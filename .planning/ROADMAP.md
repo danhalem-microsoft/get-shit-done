@@ -50,8 +50,8 @@
 Plans:
 - [x] 02-01-PLAN.md — Core.cjs internal function migration + test helpers + audit gate scaffold
 - [x] 02-02-PLAN.md — state.cjs + phase.cjs + roadmap.cjs + config.cjs migration
-- [ ] 02-03-PLAN.md — verify.cjs + template.cjs + milestone.cjs + taste.cjs + commands.cjs migration
-- [ ] 02-04-PLAN.md — init.cjs + gsd-tools.cjs dispatcher migration
+- [x] 02-03-PLAN.md — verify.cjs + template.cjs + milestone.cjs + taste.cjs + commands.cjs migration
+- [x] 02-04-PLAN.md — init.cjs + gsd-tools.cjs dispatcher migration
 - [ ] 02-05-PLAN.md — Workflow + agent + template markdown migration + grep audit gate activation
 
 ### Requirements
