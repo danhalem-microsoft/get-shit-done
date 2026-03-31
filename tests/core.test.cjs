@@ -35,22 +35,35 @@ const { createTempMultiUserProject, cleanup } = require('./helpers.cjs');
 
 describe('loadConfig', () => {
   let tmpDir;
+  let planningRoot;
   let originalCwd;
+  let savedGsdUser;
+  let savedGsdProject;
 
   beforeEach(() => {
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gsd-core-test-'));
-    fs.mkdirSync(path.join(tmpDir, '.planning'), { recursive: true });
+    savedGsdUser = process.env.GSD_USER;
+    savedGsdProject = process.env.GSD_PROJECT;
+    const result = createTempMultiUserProject();
+    tmpDir = result.tmpDir;
+    planningRoot = `.planning/users/${result.userSlug}/${result.projectName}`;
+    process.env.GSD_USER = result.userSlug;
+    process.env.GSD_PROJECT = result.projectName;
     originalCwd = process.cwd();
   });
 
   afterEach(() => {
     process.chdir(originalCwd);
-    fs.rmSync(tmpDir, { recursive: true, force: true });
+    cleanup(tmpDir);
+    clearPlanningRootCache();
+    if (savedGsdUser !== undefined) process.env.GSD_USER = savedGsdUser;
+    else delete process.env.GSD_USER;
+    if (savedGsdProject !== undefined) process.env.GSD_PROJECT = savedGsdProject;
+    else delete process.env.GSD_PROJECT;
   });
 
   function writeConfig(obj) {
     fs.writeFileSync(
-      path.join(tmpDir, '.planning', 'config.json'),
+      path.join(tmpDir, planningRoot, 'config.json'),
       JSON.stringify(obj, null, 2)
     );
   }
@@ -99,7 +112,7 @@ describe('loadConfig', () => {
 
   test('returns defaults when config.json contains invalid JSON', () => {
     fs.writeFileSync(
-      path.join(tmpDir, '.planning', 'config.json'),
+      path.join(tmpDir, planningRoot, 'config.json'),
       'not valid json {{{{'
     );
     const config = loadConfig(tmpDir);
@@ -130,19 +143,32 @@ describe('loadConfig', () => {
 
 describe('resolveModelInternal', () => {
   let tmpDir;
+  let planningRoot;
+  let savedGsdUser;
+  let savedGsdProject;
 
   beforeEach(() => {
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gsd-core-test-'));
-    fs.mkdirSync(path.join(tmpDir, '.planning'), { recursive: true });
+    savedGsdUser = process.env.GSD_USER;
+    savedGsdProject = process.env.GSD_PROJECT;
+    const result = createTempMultiUserProject();
+    tmpDir = result.tmpDir;
+    planningRoot = `.planning/users/${result.userSlug}/${result.projectName}`;
+    process.env.GSD_USER = result.userSlug;
+    process.env.GSD_PROJECT = result.projectName;
   });
 
   afterEach(() => {
-    fs.rmSync(tmpDir, { recursive: true, force: true });
+    cleanup(tmpDir);
+    clearPlanningRootCache();
+    if (savedGsdUser !== undefined) process.env.GSD_USER = savedGsdUser;
+    else delete process.env.GSD_USER;
+    if (savedGsdProject !== undefined) process.env.GSD_PROJECT = savedGsdProject;
+    else delete process.env.GSD_PROJECT;
   });
 
   function writeConfig(obj) {
     fs.writeFileSync(
-      path.join(tmpDir, '.planning', 'config.json'),
+      path.join(tmpDir, planningRoot, 'config.json'),
       JSON.stringify(obj, null, 2)
     );
   }
@@ -155,6 +181,7 @@ describe('resolveModelInternal', () => {
 
       for (const profile of profiles) {
         writeConfig({ model_profile: profile });
+        clearPlanningRootCache();
         for (const agent of knownAgents) {
           const result = resolveModelInternal(tmpDir, agent);
           assert.ok(
@@ -378,19 +405,32 @@ describe('pathExistsInternal', () => {
 
 describe('getMilestoneInfo', () => {
   let tmpDir;
+  let planningRoot;
+  let savedGsdUser;
+  let savedGsdProject;
 
   beforeEach(() => {
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gsd-core-test-'));
-    fs.mkdirSync(path.join(tmpDir, '.planning'), { recursive: true });
+    savedGsdUser = process.env.GSD_USER;
+    savedGsdProject = process.env.GSD_PROJECT;
+    const result = createTempMultiUserProject();
+    tmpDir = result.tmpDir;
+    planningRoot = `.planning/users/${result.userSlug}/${result.projectName}`;
+    process.env.GSD_USER = result.userSlug;
+    process.env.GSD_PROJECT = result.projectName;
   });
 
   afterEach(() => {
-    fs.rmSync(tmpDir, { recursive: true, force: true });
+    cleanup(tmpDir);
+    clearPlanningRootCache();
+    if (savedGsdUser !== undefined) process.env.GSD_USER = savedGsdUser;
+    else delete process.env.GSD_USER;
+    if (savedGsdProject !== undefined) process.env.GSD_PROJECT = savedGsdProject;
+    else delete process.env.GSD_PROJECT;
   });
 
   test('extracts version and name from roadmap', () => {
     fs.writeFileSync(
-      path.join(tmpDir, '.planning', 'ROADMAP.md'),
+      path.join(tmpDir, planningRoot, 'ROADMAP.md'),
       '# Roadmap\n\n## Roadmap v1.2: My Cool Project\n\nSome content'
     );
     const info = getMilestoneInfo(tmpDir);
@@ -428,7 +468,7 @@ describe('getMilestoneInfo', () => {
       '### Phase 8: New Dashboard Layout',
       'Some content about phase 8',
     ].join('\n');
-    fs.writeFileSync(path.join(tmpDir, '.planning', 'ROADMAP.md'), roadmap);
+    fs.writeFileSync(path.join(tmpDir, planningRoot, 'ROADMAP.md'), roadmap);
     const info = getMilestoneInfo(tmpDir);
     assert.strictEqual(info.version, 'v0.2');
     assert.strictEqual(info.name, 'Dashboard Overhaul');
@@ -462,7 +502,7 @@ describe('getMilestoneInfo', () => {
       '',
       '### Phase 12: Optimize Queries',
     ].join('\n');
-    fs.writeFileSync(path.join(tmpDir, '.planning', 'ROADMAP.md'), roadmap);
+    fs.writeFileSync(path.join(tmpDir, planningRoot, 'ROADMAP.md'), roadmap);
     const info = getMilestoneInfo(tmpDir);
     assert.strictEqual(info.version, 'v0.3');
     assert.strictEqual(info.name, 'Performance Tuning');
@@ -470,7 +510,7 @@ describe('getMilestoneInfo', () => {
 
   test('returns defaults when roadmap has no heading matches', () => {
     fs.writeFileSync(
-      path.join(tmpDir, '.planning', 'ROADMAP.md'),
+      path.join(tmpDir, planningRoot, 'ROADMAP.md'),
       '# Roadmap\n\nSome content without version headings'
     );
     const info = getMilestoneInfo(tmpDir);
@@ -497,7 +537,7 @@ describe('searchPhaseInDir', () => {
 
   test('finds phase directory by normalized prefix', () => {
     fs.mkdirSync(path.join(phasesDir, '01-foundation'));
-    const result = searchPhaseInDir(phasesDir, '.planning/phases', '01');
+    const result = searchPhaseInDir(phasesDir, '.planning/users/test-user/test-project/phases', '01');
     assert.strictEqual(result.found, true);
     assert.strictEqual(result.phase_number, '01');
     assert.strictEqual(result.phase_name, 'foundation');
@@ -508,7 +548,7 @@ describe('searchPhaseInDir', () => {
     fs.mkdirSync(phaseDir);
     fs.writeFileSync(path.join(phaseDir, '01-01-PLAN.md'), '# Plan');
     fs.writeFileSync(path.join(phaseDir, '01-01-SUMMARY.md'), '# Summary');
-    const result = searchPhaseInDir(phasesDir, '.planning/phases', '01');
+    const result = searchPhaseInDir(phasesDir, '.planning/users/test-user/test-project/phases', '01');
     assert.ok(result.plans.includes('01-01-PLAN.md'));
     assert.ok(result.summaries.includes('01-01-SUMMARY.md'));
     assert.strictEqual(result.incomplete_plans.length, 0);
@@ -520,7 +560,7 @@ describe('searchPhaseInDir', () => {
     fs.writeFileSync(path.join(phaseDir, '01-01-PLAN.md'), '# Plan 1');
     fs.writeFileSync(path.join(phaseDir, '01-02-PLAN.md'), '# Plan 2');
     fs.writeFileSync(path.join(phaseDir, '01-01-SUMMARY.md'), '# Summary 1');
-    const result = searchPhaseInDir(phasesDir, '.planning/phases', '01');
+    const result = searchPhaseInDir(phasesDir, '.planning/users/test-user/test-project/phases', '01');
     assert.strictEqual(result.incomplete_plans.length, 1);
     assert.ok(result.incomplete_plans.includes('01-02-PLAN.md'));
   });
@@ -530,20 +570,20 @@ describe('searchPhaseInDir', () => {
     fs.mkdirSync(phaseDir);
     fs.writeFileSync(path.join(phaseDir, '01-RESEARCH.md'), '# Research');
     fs.writeFileSync(path.join(phaseDir, '01-CONTEXT.md'), '# Context');
-    const result = searchPhaseInDir(phasesDir, '.planning/phases', '01');
+    const result = searchPhaseInDir(phasesDir, '.planning/users/test-user/test-project/phases', '01');
     assert.strictEqual(result.has_research, true);
     assert.strictEqual(result.has_context, true);
   });
 
   test('returns null when phase not found', () => {
     fs.mkdirSync(path.join(phasesDir, '01-foundation'));
-    const result = searchPhaseInDir(phasesDir, '.planning/phases', '99');
+    const result = searchPhaseInDir(phasesDir, '.planning/users/test-user/test-project/phases', '99');
     assert.strictEqual(result, null);
   });
 
   test('generates phase_slug from directory name', () => {
     fs.mkdirSync(path.join(phasesDir, '01-core-cjs-tests'));
-    const result = searchPhaseInDir(phasesDir, '.planning/phases', '01');
+    const result = searchPhaseInDir(phasesDir, '.planning/users/test-user/test-project/phases', '01');
     assert.strictEqual(result.phase_slug, 'core-cjs-tests');
   });
 });
@@ -552,18 +592,31 @@ describe('searchPhaseInDir', () => {
 
 describe('findPhaseInternal', () => {
   let tmpDir;
+  let planningRoot;
+  let savedGsdUser;
+  let savedGsdProject;
 
   beforeEach(() => {
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gsd-core-test-'));
-    fs.mkdirSync(path.join(tmpDir, '.planning', 'phases'), { recursive: true });
+    savedGsdUser = process.env.GSD_USER;
+    savedGsdProject = process.env.GSD_PROJECT;
+    const result = createTempMultiUserProject();
+    tmpDir = result.tmpDir;
+    planningRoot = `.planning/users/${result.userSlug}/${result.projectName}`;
+    process.env.GSD_USER = result.userSlug;
+    process.env.GSD_PROJECT = result.projectName;
   });
 
   afterEach(() => {
-    fs.rmSync(tmpDir, { recursive: true, force: true });
+    cleanup(tmpDir);
+    clearPlanningRootCache();
+    if (savedGsdUser !== undefined) process.env.GSD_USER = savedGsdUser;
+    else delete process.env.GSD_USER;
+    if (savedGsdProject !== undefined) process.env.GSD_PROJECT = savedGsdProject;
+    else delete process.env.GSD_PROJECT;
   });
 
   test('finds phase in current phases directory', () => {
-    fs.mkdirSync(path.join(tmpDir, '.planning', 'phases', '01-foundation'));
+    fs.mkdirSync(path.join(tmpDir, planningRoot, 'phases', '01-foundation'), { recursive: true });
     const result = findPhaseInternal(tmpDir, '1');
     assert.strictEqual(result.found, true);
     assert.strictEqual(result.phase_number, '01');
@@ -581,7 +634,7 @@ describe('findPhaseInternal', () => {
 
   test('searches archived milestones when not in current', () => {
     // Create archived milestone structure (no current phase match)
-    const archiveDir = path.join(tmpDir, '.planning', 'milestones', 'v1.0-phases', '01-foundation');
+    const archiveDir = path.join(tmpDir, planningRoot, 'milestones', 'v1.0-phases', '01-foundation');
     fs.mkdirSync(archiveDir, { recursive: true });
     const result = findPhaseInternal(tmpDir, '1');
     assert.strictEqual(result.found, true);
@@ -593,14 +646,27 @@ describe('findPhaseInternal', () => {
 
 describe('getRoadmapPhaseInternal', () => {
   let tmpDir;
+  let planningRoot;
+  let savedGsdUser;
+  let savedGsdProject;
 
   beforeEach(() => {
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gsd-core-test-'));
-    fs.mkdirSync(path.join(tmpDir, '.planning'), { recursive: true });
+    savedGsdUser = process.env.GSD_USER;
+    savedGsdProject = process.env.GSD_PROJECT;
+    const result = createTempMultiUserProject();
+    tmpDir = result.tmpDir;
+    planningRoot = `.planning/users/${result.userSlug}/${result.projectName}`;
+    process.env.GSD_USER = result.userSlug;
+    process.env.GSD_PROJECT = result.projectName;
   });
 
   afterEach(() => {
-    fs.rmSync(tmpDir, { recursive: true, force: true });
+    cleanup(tmpDir);
+    clearPlanningRootCache();
+    if (savedGsdUser !== undefined) process.env.GSD_USER = savedGsdUser;
+    else delete process.env.GSD_USER;
+    if (savedGsdProject !== undefined) process.env.GSD_PROJECT = savedGsdProject;
+    else delete process.env.GSD_PROJECT;
   });
 
   // Bug: getRoadmapPhaseInternal was missing from module.exports
@@ -608,7 +674,7 @@ describe('getRoadmapPhaseInternal', () => {
     assert.strictEqual(typeof getRoadmapPhaseInternal, 'function');
     // Also verify it works with a real roadmap (note: goal regex expects **Goal:** with colon inside bold)
     fs.writeFileSync(
-      path.join(tmpDir, '.planning', 'ROADMAP.md'),
+      path.join(tmpDir, planningRoot, 'ROADMAP.md'),
       '### Phase 1: Foundation\n**Goal:** Build the base\n'
     );
     const result = getRoadmapPhaseInternal(tmpDir, '1');
@@ -619,7 +685,7 @@ describe('getRoadmapPhaseInternal', () => {
 
   test('extracts phase name and goal from roadmap', () => {
     fs.writeFileSync(
-      path.join(tmpDir, '.planning', 'ROADMAP.md'),
+      path.join(tmpDir, planningRoot, 'ROADMAP.md'),
       '### Phase 2: API Layer\n**Goal:** Create REST endpoints\n**Depends on**: Phase 1\n'
     );
     const result = getRoadmapPhaseInternal(tmpDir, '2');
@@ -630,7 +696,7 @@ describe('getRoadmapPhaseInternal', () => {
   test('returns null goal when Goal uses colon-outside-bold format', () => {
     // Actual ROADMAP.md uses **Goal**: (colon outside bold) which the regex does not match
     fs.writeFileSync(
-      path.join(tmpDir, '.planning', 'ROADMAP.md'),
+      path.join(tmpDir, planningRoot, 'ROADMAP.md'),
       '### Phase 1: Foundation\n**Goal**: Build the base\n'
     );
     const result = getRoadmapPhaseInternal(tmpDir, '1');
@@ -646,7 +712,7 @@ describe('getRoadmapPhaseInternal', () => {
 
   test('returns null when phase not in roadmap', () => {
     fs.writeFileSync(
-      path.join(tmpDir, '.planning', 'ROADMAP.md'),
+      path.join(tmpDir, planningRoot, 'ROADMAP.md'),
       '### Phase 1: Foundation\n**Goal**: Build the base\n'
     );
     const result = getRoadmapPhaseInternal(tmpDir, '99');
@@ -660,7 +726,7 @@ describe('getRoadmapPhaseInternal', () => {
 
   test('extracts full section text', () => {
     fs.writeFileSync(
-      path.join(tmpDir, '.planning', 'ROADMAP.md'),
+      path.join(tmpDir, planningRoot, 'ROADMAP.md'),
       '### Phase 1: Foundation\n**Goal**: Build the base\n**Requirements**: TEST-01\nSome details here\n\n### Phase 2: API\n**Goal**: REST\n'
     );
     const result = getRoadmapPhaseInternal(tmpDir, '1');
@@ -675,20 +741,33 @@ describe('getRoadmapPhaseInternal', () => {
 
 describe('getMilestonePhaseFilter', () => {
   let tmpDir;
+  let planningRoot;
+  let savedGsdUser;
+  let savedGsdProject;
 
   beforeEach(() => {
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gsd-core-test-'));
-    fs.mkdirSync(path.join(tmpDir, '.planning', 'phases'), { recursive: true });
+    savedGsdUser = process.env.GSD_USER;
+    savedGsdProject = process.env.GSD_PROJECT;
+    const result = createTempMultiUserProject();
+    tmpDir = result.tmpDir;
+    planningRoot = `.planning/users/${result.userSlug}/${result.projectName}`;
+    process.env.GSD_USER = result.userSlug;
+    process.env.GSD_PROJECT = result.projectName;
   });
 
   afterEach(() => {
-    fs.rmSync(tmpDir, { recursive: true, force: true });
+    cleanup(tmpDir);
+    clearPlanningRootCache();
+    if (savedGsdUser !== undefined) process.env.GSD_USER = savedGsdUser;
+    else delete process.env.GSD_USER;
+    if (savedGsdProject !== undefined) process.env.GSD_PROJECT = savedGsdProject;
+    else delete process.env.GSD_PROJECT;
   });
 
   test('filters directories to only current milestone phases', () => {
     // ROADMAP lists only phases 5-7
     fs.writeFileSync(
-      path.join(tmpDir, '.planning', 'ROADMAP.md'),
+      path.join(tmpDir, planningRoot, 'ROADMAP.md'),
       [
         '## Roadmap v2.0: Next Release',
         '',
@@ -706,7 +785,7 @@ describe('getMilestonePhaseFilter', () => {
     // Create phase dirs 1-7 on disk (leftover from previous milestones)
     for (let i = 1; i <= 7; i++) {
       const padded = String(i).padStart(2, '0');
-      fs.mkdirSync(path.join(tmpDir, '.planning', 'phases', `${padded}-phase-${i}`));
+      fs.mkdirSync(path.join(tmpDir, planningRoot, 'phases', `${padded}-phase-${i}`), { recursive: true });
     }
 
     const filter = getMilestonePhaseFilter(tmpDir);
@@ -732,7 +811,7 @@ describe('getMilestonePhaseFilter', () => {
 
   test('returns pass-all filter when ROADMAP has no phase headings', () => {
     fs.writeFileSync(
-      path.join(tmpDir, '.planning', 'ROADMAP.md'),
+      path.join(tmpDir, planningRoot, 'ROADMAP.md'),
       '# Roadmap\n\nSome content without phases.\n'
     );
 
@@ -744,7 +823,7 @@ describe('getMilestonePhaseFilter', () => {
 
   test('handles letter-suffix phases (e.g. 3A)', () => {
     fs.writeFileSync(
-      path.join(tmpDir, '.planning', 'ROADMAP.md'),
+      path.join(tmpDir, planningRoot, 'ROADMAP.md'),
       '### Phase 3A: Sub-feature\n**Goal:** Sub work\n'
     );
 
@@ -757,7 +836,7 @@ describe('getMilestonePhaseFilter', () => {
 
   test('handles decimal phases (e.g. 5.1)', () => {
     fs.writeFileSync(
-      path.join(tmpDir, '.planning', 'ROADMAP.md'),
+      path.join(tmpDir, planningRoot, 'ROADMAP.md'),
       '### Phase 5: Main\n**Goal:** Main work\n\n### Phase 5.1: Patch\n**Goal:** Patch work\n'
     );
 
@@ -770,7 +849,7 @@ describe('getMilestonePhaseFilter', () => {
 
   test('returns false for non-phase directory names', () => {
     fs.writeFileSync(
-      path.join(tmpDir, '.planning', 'ROADMAP.md'),
+      path.join(tmpDir, planningRoot, 'ROADMAP.md'),
       '### Phase 1: Init\n**Goal:** Start\n'
     );
 
@@ -782,7 +861,7 @@ describe('getMilestonePhaseFilter', () => {
 
   test('phaseCount reflects ROADMAP phase count', () => {
     fs.writeFileSync(
-      path.join(tmpDir, '.planning', 'ROADMAP.md'),
+      path.join(tmpDir, planningRoot, 'ROADMAP.md'),
       '### Phase 5: Auth\n### Phase 6: Dashboard\n### Phase 7: Polish\n'
     );
 
@@ -797,7 +876,7 @@ describe('getMilestonePhaseFilter', () => {
 
   test('phaseCount is 0 when ROADMAP has no phase headings', () => {
     fs.writeFileSync(
-      path.join(tmpDir, '.planning', 'ROADMAP.md'),
+      path.join(tmpDir, planningRoot, 'ROADMAP.md'),
       '# Roadmap\n\nSome content.\n'
     );
 

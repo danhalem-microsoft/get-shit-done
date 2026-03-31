@@ -71,8 +71,20 @@ function safeReadFile(filePath) {
   }
 }
 
+/**
+ * Soft-resolve the planning root for internal functions.
+ * Uses tryGetPlanningContext (which returns null gracefully on no active project)
+ * and falls back to '.planning' for backward compatibility with test fixtures
+ * that haven't been migrated to multi-user structure yet.
+ */
+function _resolvePlanningRootSoft(cwd) {
+  const ctx = tryGetPlanningContext(cwd);
+  return (ctx && ctx.planning_root) ? ctx.planning_root : '.planning';
+}
+
 function loadConfig(cwd) {
-  const configPath = path.join(cwd, '.planning', 'config.json');
+  const planningRoot = _resolvePlanningRootSoft(cwd);
+  const configPath = path.join(cwd, planningRoot, 'config.json');
   const defaults = {
     model_profile: 'balanced',
     commit_docs: true,
@@ -265,15 +277,16 @@ function searchPhaseInDir(baseDir, relBase, normalized) {
 function findPhaseInternal(cwd, phase) {
   if (!phase) return null;
 
-  const phasesDir = path.join(cwd, '.planning', 'phases');
+  const planningRoot = _resolvePlanningRootSoft(cwd);
+  const phasesDir = path.join(cwd, planningRoot, 'phases');
   const normalized = normalizePhaseName(phase);
 
   // Search current phases first
-  const current = searchPhaseInDir(phasesDir, '.planning/phases', normalized);
+  const current = searchPhaseInDir(phasesDir, planningRoot + '/phases', normalized);
   if (current) return current;
 
   // Search archived milestone phases (newest first)
-  const milestonesDir = path.join(cwd, '.planning', 'milestones');
+  const milestonesDir = path.join(cwd, planningRoot, 'milestones');
   if (!fs.existsSync(milestonesDir)) return null;
 
   try {
@@ -287,7 +300,7 @@ function findPhaseInternal(cwd, phase) {
     for (const archiveName of archiveDirs) {
       const version = archiveName.match(/^(v[\d.]+)-phases$/)[1];
       const archivePath = path.join(milestonesDir, archiveName);
-      const relBase = '.planning/milestones/' + archiveName;
+      const relBase = planningRoot + '/milestones/' + archiveName;
       const result = searchPhaseInDir(archivePath, relBase, normalized);
       if (result) {
         result.archived = version;
@@ -300,7 +313,8 @@ function findPhaseInternal(cwd, phase) {
 }
 
 function getArchivedPhaseDirs(cwd) {
-  const milestonesDir = path.join(cwd, '.planning', 'milestones');
+  const planningRoot = _resolvePlanningRootSoft(cwd);
+  const milestonesDir = path.join(cwd, planningRoot, 'milestones');
   const results = [];
 
   if (!fs.existsSync(milestonesDir)) return results;
@@ -324,7 +338,7 @@ function getArchivedPhaseDirs(cwd) {
         results.push({
           name: dir,
           milestone: version,
-          basePath: path.join('.planning', 'milestones', archiveName),
+          basePath: path.join(planningRoot, 'milestones', archiveName),
           fullPath: path.join(archivePath, dir),
         });
       }
@@ -338,7 +352,8 @@ function getArchivedPhaseDirs(cwd) {
 
 function getRoadmapPhaseInternal(cwd, phaseNum) {
   if (!phaseNum) return null;
-  const roadmapPath = path.join(cwd, '.planning', 'ROADMAP.md');
+  const planningRoot = _resolvePlanningRootSoft(cwd);
+  const roadmapPath = path.join(cwd, planningRoot, 'ROADMAP.md');
   if (!fs.existsSync(roadmapPath)) return null;
 
   try {
@@ -406,7 +421,8 @@ function generateSlugInternal(text) {
 
 function getMilestoneInfo(cwd) {
   try {
-    const roadmap = fs.readFileSync(path.join(cwd, '.planning', 'ROADMAP.md'), 'utf-8');
+    const planningRoot = _resolvePlanningRootSoft(cwd);
+    const roadmap = fs.readFileSync(path.join(cwd, planningRoot, 'ROADMAP.md'), 'utf-8');
 
     // First: check for list-format roadmaps using 🚧 (in-progress) marker
     // e.g. "- 🚧 **v2.1 Belgium** — Phases 24-28 (in progress)"
@@ -447,7 +463,8 @@ function getMilestoneInfo(cwd) {
 function getMilestonePhaseFilter(cwd) {
   const milestonePhaseNums = new Set();
   try {
-    const roadmap = fs.readFileSync(path.join(cwd, '.planning', 'ROADMAP.md'), 'utf-8');
+    const planningRoot = _resolvePlanningRootSoft(cwd);
+    const roadmap = fs.readFileSync(path.join(cwd, planningRoot, 'ROADMAP.md'), 'utf-8');
     const phasePattern = /#{2,4}\s*Phase\s+(\d+[A-Z]?(?:\.\d+)*)\s*:/gi;
     let m;
     while ((m = phasePattern.exec(roadmap)) !== null) {
