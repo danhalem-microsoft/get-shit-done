@@ -41,7 +41,16 @@ function runGsdTools(args, cwd = process.cwd()) {
   }
 }
 
-// Create temp directory structure
+/**
+ * Create temp directory structure (legacy flat layout).
+ *
+ * @deprecated Use createTempMultiUserProject() for new tests.
+ * Creates .planning/users/ to prevent legacy structure detection error,
+ * but does not create a full multi-user structure.
+ * Callers should migrate to createTempMultiUserProject() and use the
+ * returned { tmpDir, userSlug, projectName } to construct paths via
+ * `.planning/users/${userSlug}/${projectName}/`.
+ */
 function createTempProject() {
   const tmpDir = fs.mkdtempSync(path.join(require('os').tmpdir(), 'gsd-test-'));
   fs.mkdirSync(path.join(tmpDir, '.planning', 'phases'), { recursive: true });
@@ -49,27 +58,35 @@ function createTempProject() {
   return tmpDir;
 }
 
-// Create temp directory with initialized git repo and at least one commit
+/**
+ * Create temp directory with initialized git repo (legacy flat layout).
+ *
+ * @deprecated Use createTempMultiUserProject() for new tests.
+ * Creates .planning/users/ to prevent legacy structure detection error.
+ * Callers should migrate to createTempMultiUserProject().
+ */
 function createTempGitProject() {
   const tmpDir = fs.mkdtempSync(path.join(require('os').tmpdir(), 'gsd-test-'));
   fs.mkdirSync(path.join(tmpDir, '.planning', 'phases'), { recursive: true });
+  fs.mkdirSync(path.join(tmpDir, '.planning', 'users'), { recursive: true });
 
   execSync('git init', { cwd: tmpDir, stdio: 'pipe' });
   execSync('git config user.email "test@test.com"', { cwd: tmpDir, stdio: 'pipe' });
   execSync('git config user.name "Test"', { cwd: tmpDir, stdio: 'pipe' });
 
-  fs.writeFileSync(
-    path.join(tmpDir, '.planning', 'PROJECT.md'),
-    '# Project\n\nTest project.\n'
-  );
-
+  // Create initial commit
+  fs.writeFileSync(path.join(tmpDir, '.gitkeep'), '');
   execSync('git add -A', { cwd: tmpDir, stdio: 'pipe' });
   execSync('git commit -m "initial commit"', { cwd: tmpDir, stdio: 'pipe' });
 
   return tmpDir;
 }
 
-// Create temp directory with full multi-user structure, git repo, and user-map.json
+/**
+ * Create temp directory with full multi-user structure, git repo, and user-map.json.
+ * Returns { tmpDir, userSlug, projectName } so callers can compute planningRoot as
+ * `.planning/users/${userSlug}/${projectName}`.
+ */
 function createTempMultiUserProject(opts = {}) {
   const {
     userName = 'Test User',
