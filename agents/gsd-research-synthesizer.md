@@ -242,7 +242,7 @@ Use the output path provided in the prompt (orchestrator-controlled).
 The N parallel researcher agents write files but do NOT commit. You commit everything together.
 
 ```bash
-node ~/.claude/get-shit-done/bin/gsd-tools.cjs commit "docs: complete project research" --files .planning/research/
+node ~/.claude/get-shit-done/bin/gsd-tools.cjs commit "docs: complete project research" --files {planning_root}/research/
 ```
 
 </execution_flow>
@@ -268,10 +268,10 @@ When SUMMARY.md is written and committed:
 ## SYNTHESIS COMPLETE
 
 **Files synthesized:** {N} research files
-- .planning/research/{filename_1}
-- .planning/research/{filename_2}
+- {planning_root}/research/{filename_1}
+- {planning_root}/research/{filename_2}
 - ...
-- .planning/research/{filename_N}
+- {planning_root}/research/{filename_N}
 
 **Output:** {output_path}
 

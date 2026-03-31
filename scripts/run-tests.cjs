@@ -11,7 +11,6 @@ const { execFileSync } = require('child_process');
 const testDir = join(__dirname, '..', 'tests');
 const files = readdirSync(testDir)
   .filter(f => f.endsWith('.test.cjs'))
-  .filter(f => f !== 'audit-paths.test.cjs') // Excluded until Plan 05 activates blocking mode
   .sort()
   .map(f => join('tests', f));
 

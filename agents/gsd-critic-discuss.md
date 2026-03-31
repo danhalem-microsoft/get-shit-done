@@ -33,18 +33,18 @@ Bad examples:
 BEFORE reviewing any discussion output, load these files to understand the project. Budget ~30% of your context window for loading, ~70% for analysis.
 
 **Always load (project context) — read these FIRST:**
-- `.planning/codebase/ARCHITECTURE.md` — System architecture and component boundaries
-- `.planning/codebase/CONVENTIONS.md` — Code style, naming, and pattern standards
-- `.planning/codebase/STACK.md` — Technology stack and dependency inventory
+- `{planning_root}/codebase/ARCHITECTURE.md` — System architecture and component boundaries
+- `{planning_root}/codebase/CONVENTIONS.md` — Code style, naming, and pattern standards
+- `{planning_root}/codebase/STACK.md` — Technology stack and dependency inventory
 
 **Always load (discussion context):**
 - Phase `CONTEXT.md` — THE artifact being reviewed. This is your primary target.
-- `.planning/ROADMAP.md` — Phase goal, requirements, success criteria. Every requirement here MUST have a corresponding decision or explicit deferral in CONTEXT.md.
-- `.planning/REQUIREMENTS.md` — Full requirement descriptions and priorities. Cross-reference against CONTEXT.md coverage.
+- `{roadmap_path}` — Phase goal, requirements, success criteria. Every requirement here MUST have a corresponding decision or explicit deferral in CONTEXT.md.
+- `{requirements_path}` — Full requirement descriptions and priorities. Cross-reference against CONTEXT.md coverage.
 
 **Always load (severity/output references):**
-- `.planning/severity-reference.md` — Severity calibration rubric with 13 examples
-- `.planning/critique-template.md` — CRITIQUE.md output format specification
+- `{planning_root}/severity-reference.md` — Severity calibration rubric with 13 examples
+- `{planning_root}/critique-template.md` — CRITIQUE.md output format specification
 
 **Load for cross-referencing:**
 - Phase `RESEARCH.md` (if exists) — Pitfalls and patterns the discussion should have considered
@@ -188,12 +188,12 @@ Info findings: can be "No action required — informational only." if no fix nee
 </finding_format>
 
 <output>
-Generate a CRITIQUE-discuss.md report following the `.planning/critique-template.md` structure exactly.
+Generate a CRITIQUE-discuss.md report following the `{planning_root}/critique-template.md` structure exactly.
 
 **Step-by-step process:**
 1. Complete all checklist items (base + domain-adaptive)
 2. Collect all findings with full evidence
-3. Classify each finding's severity using `.planning/severity-reference.md` calibration guidance
+3. Classify each finding's severity using `{planning_root}/severity-reference.md` calibration guidance
 4. Assign finding IDs: `discuss-C-001`, `discuss-W-001`, `discuss-I-001` (sequential per severity tier)
 5. Determine report status: `fail` if any critical, `warn` if warnings but no criticals, `pass` if info-only or empty
 6. Write YAML frontmatter (<300 tokens)
@@ -238,7 +238,7 @@ dismissed: []
 6. `## Info Findings` — finding cards
 7. `## Dismissed Findings` — carried from prior runs
 
-**Output location:** Write the CRITIQUE-discuss.md to the phase directory (e.g., `.planning/phases/{phase_dir}/CRITIQUE-discuss.md`). The merge step combines individual critic reports.
+**Output location:** Write the CRITIQUE-discuss.md to the phase directory (e.g., `{phase_dir}/CRITIQUE-discuss.md`). The merge step combines individual critic reports.
 </output>
 
 <anti_patterns>

@@ -33,18 +33,18 @@ Bad examples:
 BEFORE reviewing scope, load these files to understand the project boundaries. Budget ~30% of your context window for loading, ~70% for analysis.
 
 **Always load (scope authority documents) — read these FIRST:**
-- `.planning/ROADMAP.md` — Phase definitions, requirements per phase, success criteria. This is the MASTER scope document.
-- `.planning/REQUIREMENTS.md` — Full requirement descriptions, priorities, acceptance criteria. These are WHAT was agreed to.
+- `{roadmap_path}` — Phase definitions, requirements per phase, success criteria. This is the MASTER scope document.
+- `{requirements_path}` — Full requirement descriptions, priorities, acceptance criteria. These are WHAT was agreed to.
 - Phase `CONTEXT.md` (if exists) — Locked decisions AND deferred items. Deferred = explicitly NOT in scope.
 
 **Always load (project context):**
-- `.planning/codebase/ARCHITECTURE.md` — System boundaries and component ownership
-- `.planning/codebase/CONVENTIONS.md` — Standards (scope includes adhering to these)
-- `.planning/codebase/STACK.md` — Technology constraints (adding to stack is scope expansion)
+- `{planning_root}/codebase/ARCHITECTURE.md` — System boundaries and component ownership
+- `{planning_root}/codebase/CONVENTIONS.md` — Standards (scope includes adhering to these)
+- `{planning_root}/codebase/STACK.md` — Technology constraints (adding to stack is scope expansion)
 
 **Always load (severity/output references):**
-- `.planning/severity-reference.md` — Severity calibration rubric
-- `.planning/critique-template.md` — CRITIQUE.md output format specification
+- `{planning_root}/severity-reference.md` — Severity calibration rubric
+- `{planning_root}/critique-template.md` — CRITIQUE.md output format specification
 
 **Load for scope review:**
 - All PLAN.md files for the phase — compare planned work against requirements
@@ -173,14 +173,14 @@ For boundary violations: "Move to Phase N where this belongs."]
 </finding_format>
 
 <output>
-Generate a CRITIQUE.md report following the `.planning/critique-template.md` structure exactly.
+Generate a CRITIQUE.md report following the `{planning_root}/critique-template.md` structure exactly.
 
 **Step-by-step process:**
 1. Load scope authority documents (ROADMAP.md, REQUIREMENTS.md, CONTEXT.md)
 2. Build the scope boundary: what's IN scope (requirements) and what's OUT (deferred)
 3. For each plan, trace every task to a requirement
 4. Check for boundary violations, deferred item leakage, and unauthorized additions
-5. Classify severity using `.planning/severity-reference.md`
+5. Classify severity using `{planning_root}/severity-reference.md`
 6. Assign finding IDs: `scope-C-001`, `scope-W-001`, `scope-I-001`
 7. Determine status: `fail` (any critical), `warn` (warnings, no criticals), `pass` (info-only)
 8. Write YAML frontmatter (<300 tokens)
@@ -215,7 +215,7 @@ dismissed: []
 ---
 ```
 
-**Output location:** Write to `.planning/phases/{phase_dir}/CRITIQUE-scope.md`
+**Output location:** Write to `{phase_dir}/CRITIQUE-scope.md`
 </output>
 
 <anti_patterns>

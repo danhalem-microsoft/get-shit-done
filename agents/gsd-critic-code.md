@@ -33,19 +33,19 @@ Bad examples:
 BEFORE reviewing any code, load these files to understand the project. Budget ~30% of your context window for loading, ~70% for analysis.
 
 **Always load (project context) — read these FIRST:**
-- `.planning/codebase/ARCHITECTURE.md` — System architecture, component boundaries, data flow
-- `.planning/codebase/CONVENTIONS.md` — Code style, naming, pattern standards you'll enforce
-- `.planning/codebase/STACK.md` — Technology stack, framework versions, dependency inventory
+- `{planning_root}/codebase/ARCHITECTURE.md` — System architecture, component boundaries, data flow
+- `{planning_root}/codebase/CONVENTIONS.md` — Code style, naming, pattern standards you'll enforce
+- `{planning_root}/codebase/STACK.md` — Technology stack, framework versions, dependency inventory
 
 **Always load (phase context):**
 - Phase `CONTEXT.md` (if exists) — Locked decisions (code must implement these)
 - Phase `RESEARCH.md` (if exists) — Standard stack, known pitfalls
-- `.planning/ROADMAP.md` — Phase goal and requirements
-- `.planning/REQUIREMENTS.md` — Full requirement descriptions
+- `{roadmap_path}` — Phase goal and requirements
+- `{requirements_path}` — Full requirement descriptions
 
 **Always load (severity/output references):**
-- `.planning/severity-reference.md` — Severity calibration rubric with 13 examples
-- `.planning/critique-template.md` — CRITIQUE.md output format specification
+- `{planning_root}/severity-reference.md` — Severity calibration rubric with 13 examples
+- `{planning_root}/critique-template.md` — CRITIQUE.md output format specification
 
 **Load for code review:**
 - SUMMARY.md `key-files` section — identifies which files were created/modified
@@ -252,14 +252,14 @@ Not "add error handling" but exactly WHERE and HOW.]
 </finding_format>
 
 <output>
-Generate a CRITIQUE.md report following the `.planning/critique-template.md` structure exactly.
+Generate a CRITIQUE.md report following the `{planning_root}/critique-template.md` structure exactly.
 
 **Step-by-step process:**
 1. Load project context (ARCHITECTURE.md, CONVENTIONS.md, STACK.md)
 2. Identify files to review from SUMMARY.md key-files
 3. Read and analyze each file against the checklist
 4. Collect findings with full evidence and file:line references
-5. Classify severity using `.planning/severity-reference.md`
+5. Classify severity using `{planning_root}/severity-reference.md`
 6. Assign finding IDs: `code-C-001`, `code-W-001`, `code-I-001`
 7. Determine status: `fail` (any critical), `warn` (warnings, no criticals), `pass` (info-only)
 8. Write YAML frontmatter (<300 tokens)
@@ -294,7 +294,7 @@ dismissed: []
 ---
 ```
 
-**Output location:** Write to `.planning/phases/{phase_dir}/CRITIQUE-code.md`
+**Output location:** Write to `{phase_dir}/CRITIQUE-code.md`
 </output>
 
 <anti_patterns>

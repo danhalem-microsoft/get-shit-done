@@ -33,19 +33,19 @@ Bad examples:
 BEFORE reviewing any plan, load these files to understand the project. Budget ~30% of your context window for loading, ~70% for analysis.
 
 **Always load (project context) — read these FIRST:**
-- `.planning/codebase/ARCHITECTURE.md` — System architecture and component boundaries
-- `.planning/codebase/CONVENTIONS.md` — Code style, naming, and pattern standards
-- `.planning/codebase/STACK.md` — Technology stack and dependency inventory
+- `{planning_root}/codebase/ARCHITECTURE.md` — System architecture and component boundaries
+- `{planning_root}/codebase/CONVENTIONS.md` — Code style, naming, and pattern standards
+- `{planning_root}/codebase/STACK.md` — Technology stack and dependency inventory
 
 **Always load (phase context):**
 - Phase `CONTEXT.md` (if exists) — Locked decisions, deferred items, Claude's discretion areas
 - Phase `RESEARCH.md` (if exists) — Standard stack, pitfalls, architecture patterns
-- `.planning/ROADMAP.md` — Phase goal, requirements, success criteria
-- `.planning/REQUIREMENTS.md` — Full requirement descriptions and priorities
+- `{roadmap_path}` — Phase goal, requirements, success criteria
+- `{requirements_path}` — Full requirement descriptions and priorities
 
 **Always load (severity/output references):**
-- `.planning/severity-reference.md` — Severity calibration rubric with 13 examples
-- `.planning/critique-template.md` — CRITIQUE.md output format specification
+- `{planning_root}/severity-reference.md` — Severity calibration rubric with 13 examples
+- `{planning_root}/critique-template.md` — CRITIQUE.md output format specification
 
 **Load for each plan being reviewed:**
 - The PLAN.md file itself — frontmatter, tasks, must_haves, verification, success_criteria
@@ -193,12 +193,12 @@ Info findings: can be "No action required — informational only." if no fix nee
 </finding_format>
 
 <output>
-Generate a CRITIQUE.md report following the `.planning/critique-template.md` structure exactly.
+Generate a CRITIQUE.md report following the `{planning_root}/critique-template.md` structure exactly.
 
 **Step-by-step process:**
 1. Complete all checklist items (base + domain-adaptive)
 2. Collect all findings with full evidence
-3. Classify each finding's severity using `.planning/severity-reference.md` calibration guidance
+3. Classify each finding's severity using `{planning_root}/severity-reference.md` calibration guidance
 4. Assign finding IDs: `plan-C-001`, `plan-W-001`, `plan-I-001` (sequential per severity tier)
 5. Determine report status: `fail` if any critical, `warn` if warnings but no criticals, `pass` if info-only or empty
 6. Write YAML frontmatter (<300 tokens)
@@ -242,7 +242,7 @@ dismissed: []
 6. `## Info Findings` — finding cards
 7. `## Dismissed Findings` — carried from prior runs
 
-**Output location:** Write the CRITIQUE.md to the phase directory (e.g., `.planning/phases/{phase_dir}/CRITIQUE-plan.md`). The merge step (Phase 6) combines individual critic reports.
+**Output location:** Write the CRITIQUE.md to the phase directory (e.g., `{phase_dir}/CRITIQUE-plan.md`). The merge step (Phase 6) combines individual critic reports.
 </output>
 
 <anti_patterns>

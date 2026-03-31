@@ -35,9 +35,9 @@ BEFORE reviewing milestone strategy, load these files to understand the strategi
 **Hierarchical loading strategy (milestone-scope is wider than phase-scope — be disciplined):**
 
 **Tier 1: Always load FULLY (strategic authority documents):**
-- `.planning/ROADMAP.md` — Phase definitions, requirements per phase, success criteria, anti-goals, deferred items. This is the MASTER strategic document.
-- `.planning/REQUIREMENTS.md` — Full requirement descriptions, priorities, acceptance criteria. These define WHAT was committed to.
-- `.planning/STATE.md` — Current position, accumulated decisions, blockers, concerns. This is the living record.
+- `{roadmap_path}` — Phase definitions, requirements per phase, success criteria, anti-goals, deferred items. This is the MASTER strategic document.
+- `{requirements_path}` — Full requirement descriptions, priorities, acceptance criteria. These define WHAT was committed to.
+- `{state_path}` — Current position, accumulated decisions, blockers, concerns. This is the living record.
 
 **Tier 2: Always load for each phase (decisions and outcomes):**
 - Phase `CONTEXT.md` — Locked decisions, deferred items, Claude's discretion areas. Compare early decisions against later learnings.
@@ -49,8 +49,8 @@ BEFORE reviewing milestone strategy, load these files to understand the strategi
 - Phase `PLAN.md` files — Load only to verify specific scope claims (e.g., plan count vs ROADMAP estimate)
 
 **Always load (severity/output references):**
-- `.planning/severity-reference.md` — Severity calibration rubric
-- `.planning/critique-template.md` — CRITIQUE.md output format specification
+- `{planning_root}/severity-reference.md` — Severity calibration rubric
+- `{planning_root}/critique-template.md` — CRITIQUE.md output format specification
 
 **Context budget discipline:**
 - Strategy review is primarily about DOCUMENTS, not code. Never load source files.
@@ -160,14 +160,14 @@ note to STATE.md."]
 </finding_format>
 
 <output>
-Generate a CRITIQUE-strategy.md report following the `.planning/critique-template.md` structure exactly.
+Generate a CRITIQUE-strategy.md report following the `{planning_root}/critique-template.md` structure exactly.
 
 **Step-by-step process:**
 1. Load strategic authority documents (ROADMAP.md, REQUIREMENTS.md, STATE.md)
 2. For each phase, load CONTEXT.md and SUMMARY.md
 3. Build the strategic boundary: what was promised (ROADMAP), what was delivered (SUMMARYs), what was deferred
 4. For each Lane, evaluate all checklist items with cross-phase evidence
-5. Classify severity using `.planning/severity-reference.md`
+5. Classify severity using `{planning_root}/severity-reference.md`
 6. Assign finding IDs: `strategy-C-001`, `strategy-W-001`, `strategy-I-001`
 7. Determine status: `fail` (any critical), `warn` (warnings, no criticals), `pass` (info-only)
 8. Write YAML frontmatter (<300 tokens)
@@ -190,9 +190,9 @@ severity_counts:
   total: N
 
 reviewed_artifacts:
-  - path: ".planning/ROADMAP.md"
+  - path: "{roadmap_path}"
     type: doc
-  - path: ".planning/REQUIREMENTS.md"
+  - path: "{requirements_path}"
     type: doc
   # Plus each phase CONTEXT.md and SUMMARY.md loaded
 
@@ -204,7 +204,7 @@ dismissed: []
 ---
 ```
 
-**Output location:** Write to `.planning/phases/{last_phase_dir}/CRITIQUE-strategy.md`
+**Output location:** Write to `{planning_root}/phases/{last_phase_dir}/CRITIQUE-strategy.md`
 </output>
 
 <anti_patterns>

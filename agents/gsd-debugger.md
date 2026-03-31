@@ -741,8 +741,8 @@ Can I observe the behavior directly?
 ## File Location
 
 ```
-DEBUG_DIR=.planning/debug
-DEBUG_RESOLVED_DIR=.planning/debug/resolved
+DEBUG_DIR={planning_root}/debug
+DEBUG_RESOLVED_DIR={planning_root}/debug/resolved
 ```
 
 ## File Structure
@@ -838,7 +838,7 @@ The file IS the debugging brain.
 **First:** Check for active debug sessions.
 
 ```bash
-ls .planning/debug/*.md 2>/dev/null | grep -v resolved
+ls {planning_root}/debug/*.md 2>/dev/null | grep -v resolved
 ```
 
 **If active sessions exist AND no $ARGUMENTS:**
@@ -861,7 +861,7 @@ ls .planning/debug/*.md 2>/dev/null | grep -v resolved
 **ALWAYS use the Write tool to create files** — never use `Bash(cat << 'EOF')` or heredoc commands for file creation.
 
 1. Generate slug from user input (lowercase, hyphens, max 30 chars)
-2. `mkdir -p .planning/debug`
+2. `mkdir -p {planning_root}/debug`
 3. Create file with initial state:
    - status: gathering
    - trigger: verbatim $ARGUMENTS
@@ -934,7 +934,7 @@ Return structured diagnosis:
 ```markdown
 ## ROOT CAUSE FOUND
 
-**Debug Session:** .planning/debug/{slug}.md
+**Debug Session:** {planning_root}/debug/{slug}.md
 
 **Root Cause:** {from Resolution.root_cause}
 
@@ -953,7 +953,7 @@ If inconclusive:
 ```markdown
 ## INVESTIGATION INCONCLUSIVE
 
-**Debug Session:** .planning/debug/{slug}.md
+**Debug Session:** {planning_root}/debug/{slug}.md
 
 **What Was Checked:**
 - {area}: {finding}
@@ -995,7 +995,7 @@ Return:
 ## CHECKPOINT REACHED
 
 **Type:** human-verify
-**Debug Session:** .planning/debug/{slug}.md
+**Debug Session:** {planning_root}/debug/{slug}.md
 **Progress:** {evidence_count} evidence entries, {eliminated_count} hypotheses eliminated
 
 ### Investigation State
@@ -1031,8 +1031,8 @@ Only run this step when checkpoint response confirms the fix works end-to-end.
 Update status to "resolved".
 
 ```bash
-mkdir -p .planning/debug/resolved
-mv .planning/debug/{slug}.md .planning/debug/resolved/
+mkdir -p {planning_root}/debug/resolved
+mv {planning_root}/debug/{slug}.md {planning_root}/debug/resolved/
 ```
 
 **Check planning config using state load (commit_docs is available from the output):**
@@ -1056,7 +1056,7 @@ Root cause: {root_cause}"
 
 Then commit planning docs via CLI (respects `commit_docs` config automatically):
 ```bash
-node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs: resolve debug {slug}" --files .planning/debug/resolved/{slug}.md
+node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs: resolve debug {slug}" --files {planning_root}/debug/resolved/{slug}.md
 ```
 
 Report completion and offer next steps.
@@ -1079,7 +1079,7 @@ Return a checkpoint when:
 ## CHECKPOINT REACHED
 
 **Type:** [human-verify | human-action | decision]
-**Debug Session:** .planning/debug/{slug}.md
+**Debug Session:** {planning_root}/debug/{slug}.md
 **Progress:** {evidence_count} evidence entries, {eliminated_count} hypotheses eliminated
 
 ### Investigation State
@@ -1150,7 +1150,7 @@ Orchestrator presents checkpoint to user, gets response, spawns fresh continuati
 ```markdown
 ## ROOT CAUSE FOUND
 
-**Debug Session:** .planning/debug/{slug}.md
+**Debug Session:** {planning_root}/debug/{slug}.md
 
 **Root Cause:** {specific cause with evidence}
 
@@ -1171,7 +1171,7 @@ Orchestrator presents checkpoint to user, gets response, spawns fresh continuati
 ```markdown
 ## DEBUG COMPLETE
 
-**Debug Session:** .planning/debug/resolved/{slug}.md
+**Debug Session:** {planning_root}/debug/resolved/{slug}.md
 
 **Root Cause:** {what was wrong}
 **Fix Applied:** {what was changed}
@@ -1191,7 +1191,7 @@ Only return this after human verification confirms the fix.
 ```markdown
 ## INVESTIGATION INCONCLUSIVE
 
-**Debug Session:** .planning/debug/{slug}.md
+**Debug Session:** {planning_root}/debug/{slug}.md
 
 **What Was Checked:**
 - {area 1}: {finding}

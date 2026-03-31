@@ -5,9 +5,9 @@
  * Scans all .cjs and .md source files for hardcoded .planning/ references
  * and fails if any unallowlisted references remain.
  *
- * REPORT MODE: This test runs and reports violations but is NOT added to the
- * main test runner (scripts/run-tests.cjs) until Plan 05 activates BLOCKING MODE.
- * Run explicitly: node --test tests/audit-paths.test.cjs
+ * BLOCKING MODE: Active — included in main test runner (scripts/run-tests.cjs).
+ * Any unallowlisted .planning/ reference causes test failure.
+ * Activated by Plan 02-05.
  */
 
 const { describe, it } = require('node:test');
@@ -22,7 +22,7 @@ describe('PATH-13: Grep audit gate', () => {
     let grepOutput;
     try {
       grepOutput = execSync(
-        'grep -rn "\\.planning/" --include="*.cjs" .',
+        'grep -rn "\\.planning/" --include="*.cjs" --exclude-dir=tests --exclude-dir=node_modules .',
         { cwd: repoRoot, encoding: 'utf-8' }
       ).trim();
     } catch (err) {
@@ -40,6 +40,8 @@ describe('PATH-13: Grep audit gate', () => {
       'core.cjs',       // getPlanningRoot resolver, legacy detector, _resolvePlanningRootSoft fallback
       'identity.cjs',   // user-map.json at repo-root (not user-qualified)
       'context.cjs',    // context resolution internals
+      'commands.cjs',   // cmdCommit default staging uses .planning/ container dir (repo-root, not user-qualified)
+      'gsd-tools.cjs',  // CLI help text references .planning/ in usage descriptions
       'audit-paths.test.cjs', // this test itself
       'helpers.cjs',    // test helper that builds .planning/ directories
     ];
@@ -133,10 +135,23 @@ describe('PATH-13: Grep audit gate', () => {
     if (!grepOutput) return;
 
     // Allowlist: test files that legitimately reference .planning/
+    // These construct .planning/users/<user>/<project>/ paths for test setup
+    // or pass .planning/ paths as CLI arguments to test commands.
     const allowlist = [
       'audit-paths.test.cjs', // this test itself
       'helpers.cjs',          // test helper that builds .planning/ directories
-      'core.test.cjs',        // already migrated in Plan 01
+      'core.test.cjs',        // tests getPlanningRoot, legacy detection, path resolution
+      'context.test.cjs',     // tests context resolution with .planning/users/ paths
+      'state.test.cjs',       // test setup constructs .planning/users/ + fixture data
+      'commands.test.cjs',    // CLI command tests pass .planning/ paths as arguments
+      'config.test.cjs',      // test setup constructs .planning/users/ paths
+      'dispatcher.test.cjs',  // test setup constructs .planning/users/ paths
+      'init.test.cjs',        // tests init functions with multi-user structure
+      'milestone.test.cjs',   // test setup constructs .planning/users/ paths
+      'phase.test.cjs',       // test setup constructs .planning/users/ paths + fixture data
+      'roadmap.test.cjs',     // test setup constructs .planning/users/ paths
+      'verify.test.cjs',      // CLI verify tests pass .planning/ paths as arguments
+      'verify-health.test.cjs', // test setup constructs .planning/users/ paths
     ];
 
     const violations = grepOutput.split('\n').filter(line => {

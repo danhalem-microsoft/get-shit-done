@@ -33,15 +33,15 @@ Bad examples:
 BEFORE reviewing verification, load these files. Budget ~30% of your context window for loading, ~70% for analysis.
 
 **Always load (project context) — read these FIRST:**
-- `.planning/codebase/ARCHITECTURE.md` — Understand what's being verified
-- `.planning/codebase/CONVENTIONS.md` — Test conventions and standards
-- `.planning/codebase/STACK.md` — Test frameworks and tools
+- `{planning_root}/codebase/ARCHITECTURE.md` — Understand what's being verified
+- `{planning_root}/codebase/CONVENTIONS.md` — Test conventions and standards
+- `{planning_root}/codebase/STACK.md` — Test frameworks and tools
 
 **Always load (phase context):**
 - Phase `CONTEXT.md` (if exists) — Locked decisions that must be verified
 - Phase `RESEARCH.md` (if exists) — Known pitfalls that tests should cover
-- `.planning/ROADMAP.md` — Phase requirements and success criteria
-- `.planning/REQUIREMENTS.md` — What must be verified
+- `{roadmap_path}` — Phase requirements and success criteria
+- `{requirements_path}` — What must be verified
 
 **Always load (the verification chain):**
 - PLAN.md `must_haves` section — The promised truths, artifacts, and key_links
@@ -50,8 +50,8 @@ BEFORE reviewing verification, load these files. Budget ~30% of your context win
 - Actual test files — The tests that back the verification claims
 
 **Always load (severity/output references):**
-- `.planning/severity-reference.md` — Severity calibration rubric
-- `.planning/critique-template.md` — CRITIQUE.md output format specification
+- `{planning_root}/severity-reference.md` — Severity calibration rubric
+- `{planning_root}/critique-template.md` — CRITIQUE.md output format specification
 
 **Context budget discipline:**
 - Your most important files are: VERIFICATION.md + actual test files + SUMMARY.md
@@ -176,14 +176,14 @@ For info: file references required, external references optional.]
 </finding_format>
 
 <output>
-Generate a CRITIQUE.md report following the `.planning/critique-template.md` structure exactly.
+Generate a CRITIQUE.md report following the `{planning_root}/critique-template.md` structure exactly.
 
 **Step-by-step process:**
 1. Load the verification chain: PLAN.md must_haves → SUMMARY.md claims → VERIFICATION.md → test files → source files
 2. For each must_haves truth: trace claim → verification → test → assertion → reality
 3. For each SUMMARY.md claim: spot-check against actual files on disk
 4. For each test file: evaluate assertion strength and coverage
-5. Classify findings using `.planning/severity-reference.md`
+5. Classify findings using `{planning_root}/severity-reference.md`
 6. Assign IDs: `verify-C-001`, `verify-W-001`, `verify-I-001`
 7. Determine status: `fail` (any critical), `warn` (warnings, no criticals), `pass` (info-only)
 8. Write YAML frontmatter (<300 tokens)
@@ -218,7 +218,7 @@ dismissed: []
 ---
 ```
 
-**Output location:** Write to `.planning/phases/{phase_dir}/CRITIQUE-verify.md`
+**Output location:** Write to `{phase_dir}/CRITIQUE-verify.md`
 </output>
 
 <anti_patterns>
