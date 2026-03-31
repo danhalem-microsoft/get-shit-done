@@ -20,10 +20,10 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Path Resolution
 
 - [x] **PATH-01**: A single `getPlanningRoot(cwd)` function in `core.cjs` reads active context and returns the user-qualified planning directory (`.planning/users/<user>/<project>/`)
-- [ ] **PATH-02**: `state.cjs` module uses `getPlanningRoot()` for all path construction instead of hardcoded `.planning/`
-- [ ] **PATH-03**: `phase.cjs` module uses `getPlanningRoot()` for all path construction
-- [ ] **PATH-04**: `roadmap.cjs` module uses `getPlanningRoot()` for all path construction
-- [ ] **PATH-05**: `config.cjs` module uses `getPlanningRoot()` for all path construction
+- [x] **PATH-02**: `state.cjs` module uses `getPlanningRoot()` for all path construction instead of hardcoded `.planning/`
+- [x] **PATH-03**: `phase.cjs` module uses `getPlanningRoot()` for all path construction
+- [x] **PATH-04**: `roadmap.cjs` module uses `getPlanningRoot()` for all path construction
+- [x] **PATH-05**: `config.cjs` module uses `getPlanningRoot()` for all path construction
 - [ ] **PATH-06**: `verify.cjs` module uses `getPlanningRoot()` for all path construction
 - [ ] **PATH-07**: `template.cjs` module uses `getPlanningRoot()` for all path construction
 - [ ] **PATH-08**: `milestone.cjs` module uses `getPlanningRoot()` for all path construction
@@ -96,10 +96,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | IDEN-06 | Phase 1 | Pending |
 | IDEN-07 | Phase 1 | Pending |
 | PATH-01 | Phase 1 | Pending |
-| PATH-02 | Phase 2 | Pending |
-| PATH-03 | Phase 2 | Pending |
-| PATH-04 | Phase 2 | Pending |
-| PATH-05 | Phase 2 | Pending |
+| PATH-02 | Phase 2 | Complete |
+| PATH-03 | Phase 2 | Complete |
+| PATH-04 | Phase 2 | Complete |
+| PATH-05 | Phase 2 | Complete |
 | PATH-06 | Phase 2 | Pending |
 | PATH-07 | Phase 2 | Pending |
 | PATH-08 | Phase 2 | Pending |
