@@ -72,7 +72,7 @@ Keep Accumulated Context section from previous milestone.
 Delete MILESTONE-CONTEXT.md if exists (consumed).
 
 ```bash
-node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs: start milestone v[X.Y] [Name]" --files .planning/PROJECT.md .planning/STATE.md
+node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs: start milestone v[X.Y] [Name]" --files ${planning_root}/PROJECT.md ${planning_root}/STATE.md
 ```
 
 ## 7. Load Context and Resolve Models
@@ -116,7 +116,7 @@ node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" config-set workflow.researc
 ```
 
 ```bash
-mkdir -p .planning/research
+mkdir -p ${planning_root}/research
 ```
 
 ### Step 8.1: Check Registry Availability
@@ -152,7 +152,7 @@ Filter `always_include` against actual `researchers` names — silently drop any
 - Current milestone goals and target features
 - What shipped in previous milestone (from MILESTONES.md)
 - Codebase signals from init
-- If codebase map exists: read `.planning/codebase/ARCHITECTURE.md` and `STACK.md` — **de-prioritize** stack/architecture researchers when existing stack/architecture is well-documented
+- If codebase map exists: read `${planning_root}/codebase/ARCHITECTURE.md` and `STACK.md` — **de-prioritize** stack/architecture researchers when existing stack/architecture is well-documented
 - Available researcher types from `researchers` (name + description for each)
 - `always_include` list from config (these get "high" relevance by default)
 
@@ -316,7 +316,7 @@ Build Task() prompt from the type file's prompt_template:
 - Replace `{MILESTONE_CONTEXT}` with: `SUBSEQUENT MILESTONE — Adding [target features] to existing app. Existing validated capabilities (DO NOT re-research): [from PROJECT.md].`
 - Replace `{RESEARCH_QUESTION}` with dimension-appropriate question (from prompt_template)
 - Replace `{PROJECT_CONTEXT}` with PROJECT.md summary including current milestone goals
-- Set output path: `.planning/research/{output_file}`
+- Set output path: `${planning_root}/research/{output_file}`
 - Use template: `~/.claude/get-shit-done/templates/research-project/{output_file}` (if it exists, otherwise let researcher create from output_template in type file)
 
 Batch into waves of 4:
@@ -351,7 +351,7 @@ for i, wave in enumerate(waves):
   {researcher.prompt_template with variables substituted}
 
   <output>
-  Write to: .planning/research/{researcher.output_file}
+  Write to: ${planning_root}/research/{researcher.output_file}
   Use template (if exists): ~/.claude/get-shit-done/templates/research-project/{researcher.output_file}
   </output>
   ", subagent_type="gsd-project-researcher", model="{researcher_model}", description="{researcher.name} research")
@@ -428,7 +428,7 @@ Focus ONLY on what's needed for the NEW features.
 <question>{QUESTION}</question>
 
 <files_to_read>
-- .planning/PROJECT.md (Project context)
+- ${planning_root}/PROJECT.md (Project context)
 </files_to_read>
 
 <downstream_consumer>{CONSUMER}</downstream_consumer>
@@ -436,7 +436,7 @@ Focus ONLY on what's needed for the NEW features.
 <quality_gate>{GATES}</quality_gate>
 
 <output>
-Write to: .planning/research/{FILE}
+Write to: ${planning_root}/research/{FILE}
 Use template: ~/.claude/get-shit-done/templates/research-project/{FILE}
 </output>
 ", subagent_type="gsd-project-researcher", model="{researcher_model}", description="{DIMENSION} research")
@@ -462,12 +462,12 @@ After all researchers complete, read and validate research files, then spawn syn
 
 ```
 For each selected researcher:
-  Read .planning/research/{researcher.output_file} → ${FILE_CONTENT}
+  Read ${planning_root}/research/{researcher.output_file} → ${FILE_CONTENT}
 ```
 
 If any file is missing or empty, fail with clear error:
 ```
-Error: Research file missing or empty: .planning/research/{FILE}.md
+Error: Research file missing or empty: ${planning_root}/research/{FILE}.md
 All research files must exist before synthesis. Check researcher agent output.
 ```
 
@@ -478,11 +478,11 @@ Task(prompt="First, read the gsd-research-synthesizer agent file for your role a
 <research_files>
 
 <research_file name="{output_file_1}">
-{content of .planning/research/{output_file_1}}
+{content of ${planning_root}/research/{output_file_1}}
 </research_file>
 
 <research_file name="{output_file_2}">
-{content of .planning/research/{output_file_2}}
+{content of ${planning_root}/research/{output_file_2}}
 </research_file>
 
 ...repeat for each research file...
@@ -490,8 +490,8 @@ Task(prompt="First, read the gsd-research-synthesizer agent file for your role a
 </research_files>
 
 <output>
-Write to: .planning/research/SUMMARY.md
-Commit all research files in .planning/research/ after writing.
+Write to: ${planning_root}/research/SUMMARY.md
+Commit all research files in ${planning_root}/research/ after writing.
 </output>
 ", subagent_type="gsd-research-synthesizer", model="{synthesizer_model}", description="Synthesize research")
 ```
@@ -585,7 +585,7 @@ If "adjust": Return to scoping.
 
 **Commit requirements:**
 ```bash
-node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs: define milestone v[X.Y] requirements" --files .planning/REQUIREMENTS.md
+node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs: define milestone v[X.Y] requirements" --files ${planning_root}/REQUIREMENTS.md
 ```
 
 ## 10. Create Roadmap
@@ -604,11 +604,11 @@ node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs: define milest
 Task(prompt="
 <planning_context>
 <files_to_read>
-- .planning/PROJECT.md
-- .planning/REQUIREMENTS.md
-- .planning/research/SUMMARY.md (if exists)
-- .planning/config.json
-- .planning/MILESTONES.md
+- ${planning_root}/PROJECT.md
+- ${planning_root}/REQUIREMENTS.md
+- ${planning_root}/research/SUMMARY.md (if exists)
+- ${planning_root}/config.json
+- ${planning_root}/MILESTONES.md
 </files_to_read>
 </planning_context>
 
@@ -662,7 +662,7 @@ Success criteria:
 
 **Commit roadmap** (after approval):
 ```bash
-node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs: create milestone v[X.Y] roadmap ([N] phases)" --files .planning/ROADMAP.md .planning/STATE.md .planning/REQUIREMENTS.md
+node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs: create milestone v[X.Y] roadmap ([N] phases)" --files ${planning_root}/ROADMAP.md ${planning_root}/STATE.md ${planning_root}/REQUIREMENTS.md
 ```
 
 ## 11. Done
@@ -676,10 +676,10 @@ node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs: create milest
 
 | Artifact       | Location                    |
 |----------------|-----------------------------|
-| Project        | `.planning/PROJECT.md`      |
-| Research       | `.planning/research/`       |
-| Requirements   | `.planning/REQUIREMENTS.md` |
-| Roadmap        | `.planning/ROADMAP.md`      |
+| Project        | `${planning_root}/PROJECT.md`      |
+| Research       | `${planning_root}/research/`       |
+| Requirements   | `${planning_root}/REQUIREMENTS.md` |
+| Roadmap        | `${planning_root}/ROADMAP.md`      |
 
 **[N] phases** | **[X] requirements** | Ready to build ✓
 

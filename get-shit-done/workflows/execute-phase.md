@@ -24,7 +24,7 @@ Parse JSON for: `executor_model`, `verifier_model`, `commit_docs`, `parallelizat
 
 **If `phase_found` is false:** Error — phase directory not found.
 **If `plan_count` is 0:** Error — no plans found in phase.
-**If `state_exists` is false but `.planning/` exists:** Offer reconstruct or continue.
+**If `state_exists` is false but `${planning_root}/` exists:** Offer reconstruct or continue.
 
 When `parallelization` is false, plans within a wave execute sequentially.
 
@@ -137,8 +137,8 @@ Execute each wave in sequence. Within a wave: parallel if `PARALLELIZATION=true`
        <files_to_read>
        Read these files at execution start using the Read tool:
        - {phase_dir}/{plan_file} (Plan)
-       - .planning/STATE.md (State)
-       - .planning/config.json (Config, if exists)
+       - ${planning_root}/STATE.md (State)
+       - ${planning_root}/config.json (Config, if exists)
        - ./CLAUDE.md (Project instructions, if exists — follow project-specific guidelines and coding conventions)
        - .claude/skills/ or .agents/skills/ (Project skills, if either exists — list skills, read SKILL.md for each, follow relevant rules during implementation)
        </files_to_read>
@@ -209,7 +209,7 @@ Execute each wave in sequence. Within a wave: parallel if `PARALLELIZATION=true`
    - `WAVE_PLAN_PATHS`: Paths to PLAN.md files executed in this wave (from plan index)
    - `CONTEXT_PATH`: `${PHASE_DIR}/*-CONTEXT.md` (phase-specific CONTEXT.md)
    - `SUMMARY_PATH`: Most recent SUMMARY.md in phase dir (if any exist from prior waves)
-   - `STATE_PATH`: `.planning/STATE.md`
+   - `STATE_PATH`: `${planning_root}/STATE.md`
    - `DEVIATION_COMMITS`: Wave commit messages for deviation exemption check:
      ```bash
      DEVIATION_COMMITS=$(git log --format="%s%n%b" ${WAVE_START_SHA}..${WAVE_END_SHA})
@@ -231,7 +231,7 @@ Execute each wave in sequence. Within a wave: parallel if `PARALLELIZATION=true`
    <objective>
    You are being invoked as part of execute-phase for Phase {phase_number}: {phase_name}.
    Review wave {wave_num} implementation for code quality AND cross-artifact contradictions.
-   Produce CRITIQUE-code.md following .planning/critique-template.md format.
+   Produce CRITIQUE-code.md following ${planning_root}/critique-template.md format.
    Timeout: 5 minutes.
    </objective>
 
@@ -247,13 +247,13 @@ Execute each wave in sequence. Within a wave: parallel if `PARALLELIZATION=true`
    - Wave diff files: {wave_diff_files_list}
    - Plan(s) executed in this wave: {wave_plan_paths}
    - Phase CONTEXT.md: {context_path} (if exists — for cross-artifact check)
-   - Severity ref: .planning/severity-reference.md
-   - Critique template: .planning/critique-template.md
-   - Project context: .planning/codebase/ARCHITECTURE.md, CONVENTIONS.md, STACK.md (if they exist)
+   - Severity ref: ${planning_root}/severity-reference.md
+   - Critique template: ${planning_root}/critique-template.md
+   - Project context: ${planning_root}/codebase/ARCHITECTURE.md, CONVENTIONS.md, STACK.md (if they exist)
    {if SUMMARY.md exists from prior waves:}
    - Prior SUMMARY.md: {summary_path} (check Deviations section for exemptions)
    {endif}
-   - STATE.md: .planning/STATE.md (check for executor deviation notes)
+   - STATE.md: ${planning_root}/STATE.md (check for executor deviation notes)
    </files_to_read>
 
    <cross_artifact_context>
@@ -352,7 +352,7 @@ Execute each wave in sequence. Within a wave: parallel if `PARALLELIZATION=true`
    **Fix cycle:** {M}/2
 
    **Project State:**
-   @.planning/STATE.md
+   @${planning_root}/STATE.md
 
    </planning_context>
 
@@ -396,8 +396,8 @@ Execute each wave in sequence. Within a wave: parallel if `PARALLELIZATION=true`
        <files_to_read>
        Read these files at execution start using the Read tool:
        - Plan: {phase_dir}/{fix_plan_file}
-       - State: .planning/STATE.md
-       - Config: .planning/config.json (if exists)
+       - State: ${planning_root}/STATE.md
+       - Config: ${planning_root}/config.json (if exists)
        </files_to_read>
 
        <success_criteria>
@@ -630,13 +630,13 @@ For each gap that has a `debug_session:` field:
 - Update frontmatter `updated:` timestamp
 - Move to resolved directory:
 ```bash
-mkdir -p .planning/debug/resolved
-mv .planning/debug/{slug}.md .planning/debug/resolved/
+mkdir -p ${planning_root}/debug/resolved
+mv ${planning_root}/debug/{slug}.md ${planning_root}/debug/resolved/
 ```
 
 **6. Commit updated artifacts:**
 ```bash
-node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs(phase-${PARENT_PHASE}): resolve UAT gaps and debug sessions after ${PHASE_NUMBER} gap closure" --files .planning/phases/*${PARENT_PHASE}*/*-UAT.md .planning/debug/resolved/*.md
+node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs(phase-${PARENT_PHASE}): resolve UAT gaps and debug sessions after ${PHASE_NUMBER} gap closure" --files ${planning_root}/phases/*${PARENT_PHASE}*/*-UAT.md ${planning_root}/debug/resolved/*.md
 ```
 </step>
 
@@ -691,7 +691,7 @@ Gather paths for the verification chain:
 - `SUMMARY_PATHS`: All SUMMARY.md files in phase dir (for claim spot-checking)
 - `CONTEXT_PATH`: `${PHASE_DIR}/*-CONTEXT.md`
 - `RESEARCH_PATH`: `${PHASE_DIR}/*-RESEARCH.md`
-- `ROADMAP_PATH`: `.planning/ROADMAP.md`
+- `ROADMAP_PATH`: `${planning_root}/ROADMAP.md`
 
 **Sub-operation E: Spawn verification-auditor**
 
@@ -709,7 +709,7 @@ Auditor prompt (assembled from context paths):
 <objective>
 You are being invoked as part of execute-phase verification audit for Phase {phase_number}: {phase_name}.
 Review the verifier's VERIFICATION.md for weak assertions, missed paths, false passes, and SUMMARY.md claim accuracy.
-Produce CRITIQUE-verify.md following .planning/critique-template.md format.
+Produce CRITIQUE-verify.md following ${planning_root}/critique-template.md format.
 Timeout: 5 minutes.
 </objective>
 
@@ -729,10 +729,10 @@ Read these files at start using the Read tool:
 - SUMMARY.md(s): {summary_paths} — claims to spot-check against codebase
 - Phase CONTEXT.md: {context_path} (if exists — locked decisions that must be verified)
 - Phase RESEARCH.md: {research_path} (if exists — known pitfalls that tests should cover)
-- ROADMAP.md: .planning/ROADMAP.md — phase success criteria as top-level frame
-- Severity ref: .planning/severity-reference.md
-- Critique template: .planning/critique-template.md
-- Project context: .planning/codebase/ARCHITECTURE.md, CONVENTIONS.md, STACK.md (if they exist)
+- ROADMAP.md: ${planning_root}/ROADMAP.md — phase success criteria as top-level frame
+- Severity ref: ${planning_root}/severity-reference.md
+- Critique template: ${planning_root}/critique-template.md
+- Project context: ${planning_root}/codebase/ARCHITECTURE.md, CONVENTIONS.md, STACK.md (if they exist)
 </files_to_read>
 
 <output>
@@ -942,7 +942,7 @@ The CLI handles:
 Extract from result: `next_phase`, `next_phase_name`, `is_last_phase`.
 
 ```bash
-node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs(phase-{X}): complete phase execution" --files .planning/ROADMAP.md .planning/STATE.md .planning/REQUIREMENTS.md {phase_dir}/*-VERIFICATION.md
+node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs(phase-{X}): complete phase execution" --files ${planning_root}/ROADMAP.md ${planning_root}/STATE.md ${planning_root}/REQUIREMENTS.md {phase_dir}/*-VERIFICATION.md
 ```
 </step>
 
