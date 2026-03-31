@@ -12,17 +12,18 @@ const assert = require('node:assert');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
-const { runGsdTools, createTempProject, cleanup } = require('./helpers.cjs');
+const { runGsdTools, createTempMultiUserProject, cleanup } = require('./helpers.cjs');
+const { clearPlanningRootCache } = require('../get-shit-done/bin/lib/core.cjs');
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
-function readConfig(tmpDir) {
-  const configPath = path.join(tmpDir, '.planning', 'config.json');
+function readConfig(tmpDir, planningRoot) {
+  const configPath = path.join(tmpDir, planningRoot, 'config.json');
   return JSON.parse(fs.readFileSync(configPath, 'utf-8'));
 }
 
-function writeConfig(tmpDir, obj) {
-  const configPath = path.join(tmpDir, '.planning', 'config.json');
+function writeConfig(tmpDir, planningRoot, obj) {
+  const configPath = path.join(tmpDir, planningRoot, 'config.json');
   fs.writeFileSync(configPath, JSON.stringify(obj, null, 2), 'utf-8');
 }
 
@@ -30,12 +31,16 @@ function writeConfig(tmpDir, obj) {
 
 describe('config-ensure-section command', () => {
   let tmpDir;
+  let planningRoot;
 
   beforeEach(() => {
-    tmpDir = createTempProject();
+    const t = createTempMultiUserProject();
+    tmpDir = t.tmpDir;
+    planningRoot = `.planning/users/${t.userSlug}/${t.projectName}`;
   });
 
   afterEach(() => {
+    clearPlanningRootCache();
     cleanup(tmpDir);
   });
 
@@ -46,7 +51,7 @@ describe('config-ensure-section command', () => {
     const output = JSON.parse(result.output);
     assert.strictEqual(output.created, true);
 
-    const config = readConfig(tmpDir);
+    const config = readConfig(tmpDir, planningRoot);
     // Verify structure and types — exact values may vary if ~/.gsd/defaults.json exists
     assert.strictEqual(typeof config.model_profile, 'string');
     assert.strictEqual(typeof config.commit_docs, 'boolean');
@@ -99,7 +104,7 @@ describe('config-ensure-section command', () => {
       const result = runGsdTools('config-ensure-section', tmpDir);
       assert.ok(result.success, `Command failed: ${result.error}`);
 
-      const config = readConfig(tmpDir);
+      const config = readConfig(tmpDir, planningRoot);
       assert.strictEqual(config.brave_search, true);
     } finally {
       // Clean up
@@ -136,7 +141,7 @@ describe('config-ensure-section command', () => {
       const result = runGsdTools('config-ensure-section', tmpDir);
       assert.ok(result.success, `Command failed: ${result.error}`);
 
-      const config = readConfig(tmpDir);
+      const config = readConfig(tmpDir, planningRoot);
       assert.strictEqual(config.model_profile, 'quality', 'model_profile should be overridden');
       assert.strictEqual(config.commit_docs, false, 'commit_docs should be overridden');
       assert.strictEqual(typeof config.branching_strategy, 'string', 'branching_strategy should be a string');
@@ -177,7 +182,7 @@ describe('config-ensure-section command', () => {
       const result = runGsdTools('config-ensure-section', tmpDir);
       assert.ok(result.success, `Command failed: ${result.error}`);
 
-      const config = readConfig(tmpDir);
+      const config = readConfig(tmpDir, planningRoot);
       assert.strictEqual(config.workflow.research, false, 'research should be overridden');
       assert.strictEqual(typeof config.workflow.plan_check, 'boolean', 'plan_check should be a boolean');
       assert.strictEqual(typeof config.workflow.verifier, 'boolean', 'verifier should be a boolean');
@@ -198,14 +203,18 @@ describe('config-ensure-section command', () => {
 
 describe('config-set command', () => {
   let tmpDir;
+  let planningRoot;
 
   beforeEach(() => {
-    tmpDir = createTempProject();
+    const t = createTempMultiUserProject();
+    tmpDir = t.tmpDir;
+    planningRoot = `.planning/users/${t.userSlug}/${t.projectName}`;
     // Create initial config
     runGsdTools('config-ensure-section', tmpDir);
   });
 
   afterEach(() => {
+    clearPlanningRootCache();
     cleanup(tmpDir);
   });
 
@@ -218,7 +227,7 @@ describe('config-set command', () => {
     assert.strictEqual(output.key, 'model_profile');
     assert.strictEqual(output.value, 'quality');
 
-    const config = readConfig(tmpDir);
+    const config = readConfig(tmpDir, planningRoot);
     assert.strictEqual(config.model_profile, 'quality');
   });
 
@@ -226,7 +235,7 @@ describe('config-set command', () => {
     const result = runGsdTools('config-set commit_docs true', tmpDir);
     assert.ok(result.success, `Command failed: ${result.error}`);
 
-    const config = readConfig(tmpDir);
+    const config = readConfig(tmpDir, planningRoot);
     assert.strictEqual(config.commit_docs, true);
     assert.strictEqual(typeof config.commit_docs, 'boolean');
   });
@@ -235,7 +244,7 @@ describe('config-set command', () => {
     const result = runGsdTools('config-set commit_docs false', tmpDir);
     assert.ok(result.success, `Command failed: ${result.error}`);
 
-    const config = readConfig(tmpDir);
+    const config = readConfig(tmpDir, planningRoot);
     assert.strictEqual(config.commit_docs, false);
     assert.strictEqual(typeof config.commit_docs, 'boolean');
   });
@@ -244,7 +253,7 @@ describe('config-set command', () => {
     const result = runGsdTools('config-set some_number 42', tmpDir);
     assert.ok(result.success, `Command failed: ${result.error}`);
 
-    const config = readConfig(tmpDir);
+    const config = readConfig(tmpDir, planningRoot);
     assert.strictEqual(config.some_number, 42);
     assert.strictEqual(typeof config.some_number, 'number');
   });
@@ -253,7 +262,7 @@ describe('config-set command', () => {
     const result = runGsdTools('config-set some_string hello', tmpDir);
     assert.ok(result.success, `Command failed: ${result.error}`);
 
-    const config = readConfig(tmpDir);
+    const config = readConfig(tmpDir, planningRoot);
     assert.strictEqual(config.some_string, 'hello');
     assert.strictEqual(typeof config.some_string, 'string');
   });
@@ -262,18 +271,18 @@ describe('config-set command', () => {
     const result = runGsdTools('config-set workflow.research false', tmpDir);
     assert.ok(result.success, `Command failed: ${result.error}`);
 
-    const config = readConfig(tmpDir);
+    const config = readConfig(tmpDir, planningRoot);
     assert.strictEqual(config.workflow.research, false);
   });
 
   test('auto-creates nested objects for deep dot-notation', () => {
     // Start with empty config
-    writeConfig(tmpDir, {});
+    writeConfig(tmpDir, planningRoot, {});
 
     const result = runGsdTools('config-set a.b.c deep_value', tmpDir);
     assert.ok(result.success, `Command failed: ${result.error}`);
 
-    const config = readConfig(tmpDir);
+    const config = readConfig(tmpDir, planningRoot);
     assert.strictEqual(config.a.b.c, 'deep_value');
     assert.strictEqual(typeof config.a, 'object');
     assert.strictEqual(typeof config.a.b, 'object');
@@ -289,10 +298,13 @@ describe('config-set command', () => {
 
 describe('config-get command', () => {
   let tmpDir;
+  let planningRoot;
   let origHome;
 
   beforeEach(() => {
-    tmpDir = createTempProject();
+    const t = createTempMultiUserProject();
+    tmpDir = t.tmpDir;
+    planningRoot = `.planning/users/${t.userSlug}/${t.projectName}`;
     // Isolate from user defaults (~/.gsd/defaults.json)
     origHome = process.env.HOME;
     process.env.HOME = tmpDir;
@@ -302,6 +314,7 @@ describe('config-get command', () => {
 
   afterEach(() => {
     process.env.HOME = origHome;
+    clearPlanningRootCache();
     cleanup(tmpDir);
   });
 
@@ -340,7 +353,8 @@ describe('config-get command', () => {
   });
 
   test('errors when config.json does not exist', () => {
-    const emptyTmpDir = createTempProject();
+    const t = createTempMultiUserProject();
+    const emptyTmpDir = t.tmpDir;
     try {
       const result = runGsdTools('config-get model_profile', emptyTmpDir);
       assert.strictEqual(result.success, false);
