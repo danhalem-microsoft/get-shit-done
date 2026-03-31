@@ -180,9 +180,9 @@ Read project-level and prior phase context to avoid re-asking decided questions 
 **Step 1: Read project-level files**
 ```bash
 # Core project files
-cat .planning/PROJECT.md 2>/dev/null
-cat .planning/REQUIREMENTS.md 2>/dev/null
-cat .planning/STATE.md 2>/dev/null
+cat ${planning_root}/PROJECT.md 2>/dev/null
+cat ${planning_root}/REQUIREMENTS.md 2>/dev/null
+cat ${planning_root}/STATE.md 2>/dev/null
 ```
 
 Extract from these:
@@ -193,7 +193,7 @@ Extract from these:
 **Step 2: Read all prior CONTEXT.md files**
 ```bash
 # Find all CONTEXT.md files from phases before current
-find .planning/phases -name "*-CONTEXT.md" 2>/dev/null | sort
+find ${planning_root}/phases -name "*-CONTEXT.md" 2>/dev/null | sort
 ```
 
 For each CONTEXT.md where phase number < current phase:
@@ -267,7 +267,7 @@ Lightweight scan of existing code to inform gray area identification and discuss
 
 **Step 1: Check for existing codebase maps**
 ```bash
-ls .planning/codebase/*.md 2>/dev/null
+ls ${planning_root}/codebase/*.md 2>/dev/null
 ```
 
 **If codebase maps exist:** Read the most relevant ones (CONVENTIONS.md, STRUCTURE.md, STACK.md based on phase type). Extract:
@@ -495,7 +495,7 @@ Use values from init: `phase_dir`, `phase_slug`, `padded_phase`.
 
 If `phase_dir` is null (phase exists in roadmap but no directory):
 ```bash
-mkdir -p ".planning/phases/${padded_phase}-${phase_slug}"
+mkdir -p "${planning_root}/phases/${padded_phase}-${phase_slug}"
 ```
 
 **File location:** `${phase_dir}/${padded_phase}-CONTEXT.md`
@@ -616,22 +616,22 @@ Task(
     <objective>
     You are being invoked after discuss-phase for Phase {phase_number}: {phase_name}.
     Review the CONTEXT.md just created for blind spots, ambiguous decisions, and missing discussion areas.
-    Produce CRITIQUE-discuss.md following .planning/critique-template.md format.
+    Produce CRITIQUE-discuss.md following ${planning_root}/critique-template.md format.
     </objective>
 
     <files_to_read>
     Read these files at start using the Read tool:
     - CONTEXT.md just written: {phase_dir}/{padded_phase}-CONTEXT.md
-    - Roadmap: .planning/ROADMAP.md
-    - Requirements: .planning/REQUIREMENTS.md
-    - Severity ref: .planning/severity-reference.md
-    - Critique template: .planning/critique-template.md
-    - Project context: .planning/codebase/ARCHITECTURE.md, CONVENTIONS.md, STACK.md (if they exist)
+    - Roadmap: ${planning_root}/ROADMAP.md
+    - Requirements: ${planning_root}/REQUIREMENTS.md
+    - Severity ref: ${planning_root}/severity-reference.md
+    - Critique template: ${planning_root}/critique-template.md
+    - Project context: ${planning_root}/codebase/ARCHITECTURE.md, CONVENTIONS.md, STACK.md (if they exist)
     </files_to_read>
 
     <output>
     Write your critique report to: {phase_dir}/CRITIQUE-discuss.md
-    Follow .planning/critique-template.md format EXACTLY.
+    Follow ${planning_root}/critique-template.md format EXACTLY.
     Use critique_type: discuss in frontmatter.
     Use finding ID prefix: discuss-
     </output>
@@ -724,7 +724,7 @@ Failure to execute these steps is a workflow violation.
 Present summary and next steps:
 
 ```
-Created: .planning/phases/${PADDED_PHASE}-${SLUG}/${PADDED_PHASE}-CONTEXT.md
+Created: ${planning_root}/phases/${PADDED_PHASE}-${SLUG}/${PADDED_PHASE}-CONTEXT.md
 
 ## Decisions Captured
 
@@ -780,7 +780,7 @@ node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" state record-session \
 Commit STATE.md:
 
 ```bash
-node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs(state): record phase ${PHASE} context session" --files .planning/STATE.md
+node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs(state): record phase ${PHASE} context session" --files ${planning_root}/STATE.md
 ```
 </step>
 

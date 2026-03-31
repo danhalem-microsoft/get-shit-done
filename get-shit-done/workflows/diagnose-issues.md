@@ -7,9 +7,9 @@ Orchestrator stays lean: parse gaps, spawn agents, collect results, update UAT.
 </purpose>
 
 <paths>
-DEBUG_DIR=.planning/debug
+DEBUG_DIR=${planning_root}/debug
 
-Debug files use the `.planning/debug/` path (hidden directory with leading dot).
+Debug files use the `${planning_root}/debug/` path (hidden directory with leading dot).
 </paths>
 
 <core_principle>
@@ -79,7 +79,7 @@ For each gap, fill the debug-subagent-prompt template and spawn:
 
 ```
 Task(
-  prompt=filled_debug_subagent_prompt + "\n\n<files_to_read>\n- {phase_dir}/{phase_num}-UAT.md\n- .planning/STATE.md\n</files_to_read>",
+  prompt=filled_debug_subagent_prompt + "\n\n<files_to_read>\n- {phase_dir}/{phase_num}-UAT.md\n- ${planning_root}/STATE.md\n</files_to_read>",
   subagent_type="gsd-debugger",
   description="Debug: {truth_short}"
 )
@@ -151,14 +151,14 @@ For each gap in the Gaps section, add artifacts and missing fields:
   missing:
     - "Add commentCount to useEffect dependency array"
     - "Trigger re-render when new comment added"
-  debug_session: .planning/debug/comment-not-refreshing.md
+  debug_session: ${planning_root}/debug/comment-not-refreshing.md
 ```
 
 Update status in frontmatter to "diagnosed".
 
 Commit the updated UAT.md:
 ```bash
-node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs({phase_num}): add root causes from diagnosis" --files ".planning/phases/XX-name/{phase_num}-UAT.md"
+node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs({phase_num}): add root causes from diagnosis" --files "${planning_root}/phases/XX-name/{phase_num}-UAT.md"
 ```
 </step>
 

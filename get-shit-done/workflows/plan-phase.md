@@ -35,7 +35,7 @@ Extract `--prd <filepath>` from $ARGUMENTS. If present, set PRD_FILE to the file
 
 **If `phase_found` is false:** Validate phase exists in ROADMAP.md. If valid, create the directory using `phase_slug` and `padded_phase` from init:
 ```bash
-mkdir -p ".planning/phases/${padded_phase}-${phase_slug}"
+mkdir -p "${planning_root}/phases/${padded_phase}-${phase_slug}"
 ```
 
 **Existing artifacts from init:** `has_research`, `has_plans`, `plan_count`.
@@ -691,22 +691,22 @@ Plan-critic prompt:
 <objective>
 You are being invoked as part of plan-phase for Phase {phase_number}: {phase_name}.
 Review all plans in this phase for quality issues.
-Produce CRITIQUE-plan.md following .planning/critique-template.md format.
+Produce CRITIQUE-plan.md following ${planning_root}/critique-template.md format.
 </objective>
 
 <files_to_read>
 Read these files at start using the Read tool:
 - Phase directory contents: {phase_dir}/ (list with Glob, then read PLANs, CONTEXT, RESEARCH)
-- Roadmap: .planning/ROADMAP.md
-- Requirements: .planning/REQUIREMENTS.md
-- Severity ref: .planning/severity-reference.md
-- Critique template: .planning/critique-template.md
-- Project context: .planning/codebase/ARCHITECTURE.md, CONVENTIONS.md, STACK.md (if they exist)
+- Roadmap: ${planning_root}/ROADMAP.md
+- Requirements: ${planning_root}/REQUIREMENTS.md
+- Severity ref: ${planning_root}/severity-reference.md
+- Critique template: ${planning_root}/critique-template.md
+- Project context: ${planning_root}/codebase/ARCHITECTURE.md, CONVENTIONS.md, STACK.md (if they exist)
 </files_to_read>
 
 <output>
 Write your critique report to: {phase_dir}/CRITIQUE-plan.md
-Follow .planning/critique-template.md format EXACTLY.
+Follow ${planning_root}/critique-template.md format EXACTLY.
 Use critique_type: plan in frontmatter.
 Use finding ID prefix: plan-
 </output>
@@ -1017,14 +1017,14 @@ Verification: {Passed | Passed with override | Skipped}
 ───────────────────────────────────────────────────────────────
 
 **Also available:**
-- cat .planning/phases/{phase-dir}/*-PLAN.md — review plans
+- cat ${planning_root}/phases/{phase-dir}/*-PLAN.md — review plans
 - /gsd:plan-phase {X} --research — re-research first
 
 ───────────────────────────────────────────────────────────────
 </offer_next>
 
 <success_criteria>
-- [ ] .planning/ directory validated
+- [ ] ${planning_root}/ directory validated
 - [ ] Phase validated against roadmap
 - [ ] Phase directory created if needed
 - [ ] CONTEXT.md loaded early (step 4) and passed to ALL agents

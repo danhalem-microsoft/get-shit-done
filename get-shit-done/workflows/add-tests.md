@@ -42,7 +42,7 @@ Extract from init JSON: `phase_dir`, `phase_number`, `phase_name`.
 Verify the phase directory exists. If not:
 ```
 ERROR: Phase directory not found for phase ${PHASE_ARG}
-Ensure the phase exists in .planning/phases/
+Ensure the phase exists in ${planning_root}/phases/
 ```
 Exit.
 

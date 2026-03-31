@@ -1,5 +1,5 @@
 <purpose>
-Execute small, ad-hoc tasks with GSD guarantees (atomic commits, STATE.md tracking). Quick mode spawns gsd-planner (quick mode) + gsd-executor(s), tracks tasks in `.planning/quick/`, and updates STATE.md's "Quick Tasks Completed" table.
+Execute small, ad-hoc tasks with GSD guarantees (atomic commits, STATE.md tracking). Quick mode spawns gsd-planner (quick mode) + gsd-executor(s), tracks tasks in `${planning_root}/quick/`, and updates STATE.md's "Quick Tasks Completed" table.
 
 With `--discuss` flag: lightweight discussion phase before planning. Surfaces assumptions, clarifies gray areas, captures decisions in CONTEXT.md so the planner treats them as locked.
 
@@ -93,7 +93,7 @@ mkdir -p "${task_dir}"
 Create the directory for this quick task:
 
 ```bash
-QUICK_DIR=".planning/quick/${next_num}-${slug}"
+QUICK_DIR="${planning_root}/quick/${next_num}-${slug}"
 mkdir -p "$QUICK_DIR"
 ```
 
@@ -241,7 +241,7 @@ Task(
 **Description:** ${DESCRIPTION}
 
 <files_to_read>
-- .planning/STATE.md (Project State)
+- ${planning_root}/STATE.md (Project State)
 - ./CLAUDE.md (if exists — follow project-specific guidelines)
 ${DISCUSS_MODE ? '- ' + QUICK_DIR + '/' + next_num + '-CONTEXT.md (User decisions — locked, do not revisit)' : ''}
 </files_to_read>
@@ -396,7 +396,7 @@ Execute quick task ${next_num}.
 
 <files_to_read>
 - ${QUICK_DIR}/${next_num}-PLAN.md (Plan)
-- .planning/STATE.md (Project state)
+- ${planning_root}/STATE.md (Project state)
 - ./CLAUDE.md (Project instructions, if exists)
 - .claude/skills/ or .agents/skills/ (Project skills, if either exists — list skills, read SKILL.md for each, follow relevant rules during implementation)
 </files_to_read>
@@ -534,7 +534,7 @@ Stage and commit quick task artifacts:
 Build file list:
 - `${QUICK_DIR}/${next_num}-PLAN.md`
 - `${QUICK_DIR}/${next_num}-SUMMARY.md`
-- `.planning/STATE.md`
+- `${planning_root}/STATE.md`
 - If `$DISCUSS_MODE` and context file exists: `${QUICK_DIR}/${next_num}-CONTEXT.md`
 - If `$FULL_MODE` and verification file exists: `${QUICK_DIR}/${next_num}-VERIFICATION.md`
 
@@ -590,7 +590,7 @@ Ready for next task: /gsd:quick
 - [ ] `--full` and `--discuss` flags parsed from arguments when present
 - [ ] Slug generated (lowercase, hyphens, max 40 chars)
 - [ ] Next number calculated (001, 002, 003...)
-- [ ] Directory created at `.planning/quick/NNN-slug/`
+- [ ] Directory created at `${planning_root}/quick/NNN-slug/`
 - [ ] (--discuss) Gray areas identified and presented, decisions captured in `${next_num}-CONTEXT.md`
 - [ ] `${next_num}-PLAN.md` created by planner (honors CONTEXT.md decisions when --discuss)
 - [ ] (--full) Plan checker validates plan, revision loop capped at 2

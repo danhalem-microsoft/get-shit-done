@@ -1,6 +1,6 @@
 <purpose>
 Capture a mistake pattern from conversation context or guided input, create a structured
-entry in .planning/mistakes/, and commit. Supports two capture modes: conversation extraction
+entry in ${planning_root}/mistakes/, and commit. Supports two capture modes: conversation extraction
 ("what just happened?") and guided Q&A (deliberate documentation). Both produce identical output.
 </purpose>
 
@@ -21,7 +21,7 @@ Extract from init JSON: `commit_docs`, `timestamp`, `date`, `mistake_count`, `mi
 
 Ensure directory exists:
 ```bash
-mkdir -p .planning/mistakes
+mkdir -p ${planning_root}/mistakes
 ```
 
 Note existing entries from the mistakes array for slug collision detection.
@@ -141,7 +141,7 @@ slug=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" generate-slug "$titl
 ```
 
 **Collision check:**
-If `.planning/mistakes/${slug}.md` already exists:
+If `${planning_root}/mistakes/${slug}.md` already exists:
 - Use AskUserQuestion:
   - header: "Slug collision"
   - question: "A mistake entry named '${slug}.md' already exists. Please provide a different name or modify the title."
@@ -151,7 +151,7 @@ If `.planning/mistakes/${slug}.md` already exists:
 </step>
 
 <step name="create_file">
-Write the entry file to `.planning/mistakes/${slug}.md`.
+Write the entry file to `${planning_root}/mistakes/${slug}.md`.
 
 **File format:**
 ```markdown
@@ -197,7 +197,7 @@ ${provenance_notes}
 Validate the created file against the mistake schema:
 
 ```bash
-node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" frontmatter validate .planning/mistakes/${slug}.md --schema mistake
+node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" frontmatter validate ${planning_root}/mistakes/${slug}.md --schema mistake
 ```
 
 If validation fails:
@@ -210,7 +210,7 @@ If validation fails:
 Commit the entry:
 
 ```bash
-node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs: capture mistake - ${title}" --files .planning/mistakes/${slug}.md
+node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs: capture mistake - ${title}" --files ${planning_root}/mistakes/${slug}.md
 ```
 
 Tool respects `commit_docs` config and gitignore automatically.
@@ -220,7 +220,7 @@ Tool respects `commit_docs` config and gitignore automatically.
 Display confirmation to user:
 
 ```
-Mistake captured: .planning/mistakes/${slug}.md
+Mistake captured: ${planning_root}/mistakes/${slug}.md
 
   ${id}: ${title}
   Area: ${area}

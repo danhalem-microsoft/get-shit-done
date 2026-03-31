@@ -1,7 +1,7 @@
 <purpose>
 Extract taste patterns from unprocessed decision logs. Analyzes decision exchanges
 across multiple sessions to identify recurring preferences, cross-references against
-existing taste entries, and creates confirmed entries in .planning/taste/.
+existing taste entries, and creates confirmed entries in ${planning_root}/taste/.
 
 This is the primary automated taste discovery mechanism. Manual entry via /gsd:add-taste
 handles explicit preferences; this workflow discovers implicit patterns from actual decisions.
@@ -17,7 +17,7 @@ Read all files referenced by the invoking prompt's execution_context before star
 Ensure taste directory exists:
 
 ```bash
-mkdir -p .planning/taste
+mkdir -p ${planning_root}/taste
 ```
 
 Load existing taste entries for cross-referencing:
@@ -31,7 +31,7 @@ EXISTING=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" load-active-tast
 Find decision logs that haven't been processed yet:
 
 ```bash
-UNPROCESSED=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" unprocessed-logs .planning/decisions/ --raw)
+UNPROCESSED=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" unprocessed-logs ${planning_root}/decisions/ --raw)
 COUNT=$(echo "$UNPROCESSED" | jq -r '.count')
 LOGS=$(echo "$UNPROCESSED" | jq -r '.unprocessed_logs[]')
 ```
@@ -167,7 +167,7 @@ SLUG=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" generate-slug "$TITL
 
 Collision detection with incrementing suffix (-2, -3).
 
-Write to `.planning/taste/${SLUG}.md`:
+Write to `${planning_root}/taste/${SLUG}.md`:
 ```markdown
 ---
 id: ${SLUG}
@@ -221,7 +221,7 @@ Commit all new/modified taste entries and archived logs:
 # Stage all new taste entries
 # Stage all modified taste entries (reinforcing merges)
 # Stage all modified log files (processed markers)
-node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs: extract ${N} taste patterns from decision logs" --files .planning/taste/*.md .planning/decisions/*.md
+node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs: extract ${N} taste patterns from decision logs" --files ${planning_root}/taste/*.md ${planning_root}/decisions/*.md
 ```
 </step>
 
@@ -239,8 +239,8 @@ Taste extraction complete.
   Rejected by user: ${rejected_count}
 
 New taste entries:
-  - .planning/taste/${slug1}.md -- ${title1}
-  - .planning/taste/${slug2}.md -- ${title2}
+  - ${planning_root}/taste/${slug1}.md -- ${title1}
+  - ${planning_root}/taste/${slug2}.md -- ${title2}
 
 These tastes will be consulted during future /gsd:discuss-phase sessions.
 ```
@@ -257,7 +257,7 @@ These tastes will be consulted during future /gsd:discuss-phase sessions.
 - [ ] Candidates cross-referenced against existing entries
 - [ ] Three-outcome classification applied (new, reinforcing, contradicting)
 - [ ] Each candidate presented to user for confirmation
-- [ ] Confirmed entries written to .planning/taste/
+- [ ] Confirmed entries written to ${planning_root}/taste/
 - [ ] All processed logs archived (<!-- processed: yes --> marker)
 - [ ] Git commit with all changes
 - [ ] Summary displayed with counts

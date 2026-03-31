@@ -27,7 +27,7 @@ If `found` is false: Error and exit.
 ## Step 2: Check Existing Research
 
 ```bash
-ls .planning/phases/${PHASE}-*/RESEARCH.md 2>/dev/null
+ls ${planning_root}/phases/${PHASE}-*/RESEARCH.md 2>/dev/null
 ```
 
 If exists: Offer update/view/skip options.
@@ -334,7 +334,7 @@ Phase description: {description}
 </additional_context>
 
 <output>
-Write to: .planning/phases/${PHASE}-{slug}/${PHASE}-RESEARCH.md
+Write to: ${planning_root}/phases/${PHASE}-{slug}/${PHASE}-RESEARCH.md
 </output>",
   subagent_type="gsd-phase-researcher",
   model="{researcher_model}"

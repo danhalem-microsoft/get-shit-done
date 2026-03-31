@@ -28,7 +28,7 @@ INIT=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" state load)
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 ```
 
-This creates `.planning/config.json` with defaults if missing and loads current config.
+This creates `${planning_root}/config.json` with defaults if missing and loads current config.
 </step>
 
 <step name="update_config">
@@ -41,7 +41,7 @@ Update `model_profile` field:
 }
 ```
 
-Write updated config back to `.planning/config.json`.
+Write updated config back to `${planning_root}/config.json`.
 </step>
 
 <step name="confirm">

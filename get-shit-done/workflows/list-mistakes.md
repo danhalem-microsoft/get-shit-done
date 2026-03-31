@@ -49,7 +49,7 @@ Mistake Registry ({count} entries)
 | MR-001 | Missing bazel sync after dependency change  | 2026-03-03 |
 
 Entries are always active. Delete file manually if truly irrelevant.
-View entry: cat .planning/mistakes/<slug>.md
+View entry: cat ${planning_root}/mistakes/<slug>.md
 ```
 
 No filters. No selection. No actions. Display-only.

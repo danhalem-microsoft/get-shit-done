@@ -22,7 +22,7 @@ TASTES=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" load-active-tastes
 
 Ensure directory exists:
 ```bash
-mkdir -p .planning/taste
+mkdir -p ${planning_root}/taste
 ```
 
 Get current timestamp and date:
@@ -76,14 +76,14 @@ SLUG=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" generate-slug "$TITL
 ```
 
 **Collision detection:**
-If `.planning/taste/${SLUG}.md` already exists:
+If `${planning_root}/taste/${SLUG}.md` already exists:
 - Try `${SLUG}-2.md`, `${SLUG}-3.md`, etc.
 - Auto-resolve with incrementing suffix (no user prompt needed per Phase 21 decision)
 - Use first available slug
 </step>
 
 <step name="create_file">
-Write the taste entry file to `.planning/taste/${SLUG}.md`.
+Write the taste entry file to `${planning_root}/taste/${SLUG}.md`.
 
 **File format (9 frontmatter fields + 2 body sections):**
 
@@ -124,7 +124,7 @@ ${when_to_apply}
 Commit the entry:
 
 ```bash
-node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs: add taste entry - ${TITLE}" --files .planning/taste/${SLUG}.md
+node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs: add taste entry - ${TITLE}" --files ${planning_root}/taste/${SLUG}.md
 ```
 
 Tool respects `commit_docs` config automatically.
@@ -134,7 +134,7 @@ Tool respects `commit_docs` config automatically.
 Display confirmation:
 
 ```
-Taste entry created: .planning/taste/${SLUG}.md
+Taste entry created: ${planning_root}/taste/${SLUG}.md
 
   Domain: ${domain}
   Title: ${title}

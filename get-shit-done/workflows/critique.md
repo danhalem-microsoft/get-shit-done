@@ -198,17 +198,17 @@ Task(
     <objective>
     You are being invoked as part of /gsd:critique for Phase {phase_number}: {phase_name}.
     Review all relevant artifacts in this phase.
-    Produce CRITIQUE-{type}.md following .planning/critique-template.md format.
+    Produce CRITIQUE-{type}.md following ${planning_root}/critique-template.md format.
     </objective>
 
     <files_to_read>
     Read these files at start using the Read tool:
     - Phase directory contents: {phase_dir}/ (list with Glob, then read PLANs, SUMMARYs, CONTEXT, RESEARCH)
-    - Roadmap: .planning/ROADMAP.md
-    - Requirements: .planning/REQUIREMENTS.md
-    - Severity ref: .planning/severity-reference.md
-    - Critique template: .planning/critique-template.md
-    - Project context: .planning/codebase/ARCHITECTURE.md, CONVENTIONS.md, STACK.md (if they exist)
+    - Roadmap: ${planning_root}/ROADMAP.md
+    - Requirements: ${planning_root}/REQUIREMENTS.md
+    - Severity ref: ${planning_root}/severity-reference.md
+    - Critique template: ${planning_root}/critique-template.md
+    - Project context: ${planning_root}/codebase/ARCHITECTURE.md, CONVENTIONS.md, STACK.md (if they exist)
     </files_to_read>
 
     {IF REGISTRY_LOADED AND this critic has matched entries from load_registry step:}
@@ -219,7 +219,7 @@ Task(
 
     <output>
     Write your critique report to: {phase_dir}/CRITIQUE-{type}.md
-    Follow .planning/critique-template.md format EXACTLY.
+    Follow ${planning_root}/critique-template.md format EXACTLY.
     Use critique_type: {type} in frontmatter.
     Use finding ID prefix: {type}-
     </output>

@@ -1,5 +1,5 @@
 <purpose>
-Interactive configuration of GSD workflow agents (research, plan_check, verifier) and model profile selection via multi-question prompt. Updates .planning/config.json with user preferences. Optionally saves settings as global defaults (~/.gsd/defaults.json) for future projects.
+Interactive configuration of GSD workflow agents (research, plan_check, verifier) and model profile selection via multi-question prompt. Updates ${planning_root}/config.json with user preferences. Optionally saves settings as global defaults (~/.gsd/defaults.json) for future projects.
 </purpose>
 
 <required_reading>
@@ -17,12 +17,12 @@ INIT=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" state load)
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 ```
 
-Creates `.planning/config.json` with defaults if missing and loads current config values.
+Creates `${planning_root}/config.json` with defaults if missing and loads current config values.
 </step>
 
 <step name="read_current">
 ```bash
-cat .planning/config.json
+cat ${planning_root}/config.json
 ```
 
 Parse current values (default to `true` if not present):
@@ -160,7 +160,7 @@ Map Always Run labels to config names: "Stack" → "stack", "Features" → "feat
 
 Map Max Count labels to numbers: "4" → 4, "8 (Recommended)" → 8, "12" → 12.
 
-Write updated config to `.planning/config.json`.
+Write updated config to `${planning_root}/config.json`.
 </step>
 
 <step name="save_as_defaults">

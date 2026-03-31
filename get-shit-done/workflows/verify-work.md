@@ -35,7 +35,7 @@ Parse JSON for: `planner_model`, `checker_model`, `commit_docs`, `phase_found`, 
 **First: Check for active UAT sessions**
 
 ```bash
-find .planning/phases -name "*-UAT.md" -type f 2>/dev/null | head -5
+find ${planning_root}/phases -name "*-UAT.md" -type f 2>/dev/null | head -5
 ```
 
 **If active sessions exist AND no $ARGUMENTS provided:**
@@ -178,7 +178,7 @@ skipped: 0
 [none yet]
 ```
 
-Write to `.planning/phases/XX-name/{phase_num}-UAT.md`
+Write to `${planning_root}/phases/XX-name/{phase_num}-UAT.md`
 
 Proceed to `present_test`.
 </step>
@@ -306,7 +306,7 @@ Clear Current Test section:
 
 Commit the UAT file:
 ```bash
-node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "test({phase_num}): complete UAT - {passed} passed, {issues} issues" --files ".planning/phases/XX-name/{phase_num}-UAT.md"
+node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "test({phase_num}): complete UAT - {passed} passed, {issues} issues" --files "${planning_root}/phases/XX-name/{phase_num}-UAT.md"
 ```
 
 Present summary:
@@ -381,8 +381,8 @@ Task(
 
 <files_to_read>
 - {phase_dir}/{phase_num}-UAT.md (UAT with diagnoses)
-- .planning/STATE.md (Project State)
-- .planning/ROADMAP.md (Roadmap)
+- ${planning_root}/STATE.md (Project State)
+- ${planning_root}/ROADMAP.md (Roadmap)
 </files_to_read>
 
 </planning_context>
