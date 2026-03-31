@@ -4,18 +4,22 @@
 
 const fs = require('fs');
 const path = require('path');
-const { safeReadFile, output, error } = require('./core.cjs');
+const { safeReadFile, getPlanningRoot, output, error } = require('./core.cjs');
 const { extractFrontmatter } = require('./frontmatter.cjs');
 
 // --- Taste Loading ---------------------------------------------------------------
 
 /**
- * Load active taste entries from .planning/taste/ directory
+ * Load active taste entries from taste directory
  *
- * @param {string} tastesDir - Path to taste directory (default: '.planning/taste/')
+ * @param {string} cwd - Working directory for getPlanningRoot resolution
+ * @param {string} [tastesDir] - Override path to taste directory
  * @returns {Array} Array of active taste entry objects, or [] if directory doesn't exist
  */
-function loadActiveTasteEntries(tastesDir = '.planning/taste/') {
+function loadActiveTasteEntries(cwd, tastesDir) {
+  if (!tastesDir) {
+    tastesDir = path.join(cwd, getPlanningRoot(cwd), 'taste');
+  }
   // Early return if directory doesn't exist -- no errors, no warnings
   if (!fs.existsSync(tastesDir)) {
     return [];
@@ -74,11 +78,12 @@ function loadActiveTasteEntries(tastesDir = '.planning/taste/') {
 /**
  * Batch-update taste entry counters (times_applied, times_overridden)
  *
+ * @param {string} cwd - Working directory for getPlanningRoot resolution
  * @param {Object} counterUpdates - { applied: [{ tasteId, increment }], overridden: [{ tasteId, increment }] }
- * @param {string} tastesDir - Path to taste directory (default: '.planning/taste/')
+ * @param {string} [tastesDir] - Override path to taste directory
  * @returns {Object} - { success: true/false, updated: number, errors: string[] }
  */
-function updateTasteCounters(counterUpdates, tastesDir = '.planning/taste/') {
+function updateTasteCounters(cwd, counterUpdates, tastesDir) {
   const { reconstructFrontmatter } = require('./frontmatter.cjs');
 
   // Early return if no updates queued
@@ -86,6 +91,10 @@ function updateTasteCounters(counterUpdates, tastesDir = '.planning/taste/') {
       (!counterUpdates.applied || counterUpdates.applied.length === 0) &&
       (!counterUpdates.overridden || counterUpdates.overridden.length === 0)) {
     return { success: true, updated: 0, errors: [] };
+  }
+
+  if (!tastesDir) {
+    tastesDir = path.join(cwd, getPlanningRoot(cwd), 'taste');
   }
 
   // Early return if taste directory doesn't exist

@@ -4,7 +4,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { normalizePhaseName, findPhaseInternal, generateSlugInternal, toPosixPath, output, error } = require('./core.cjs');
+const { normalizePhaseName, findPhaseInternal, generateSlugInternal, getPlanningRoot, toPosixPath, output, error } = require('./core.cjs');
 const { reconstructFrontmatter } = require('./frontmatter.cjs');
 
 function cmdTemplateSelect(cwd, planPath, raw) {
@@ -131,6 +131,7 @@ function cmdTemplateFill(cwd, templateType, options, raw) {
         must_haves: { truths: [], artifacts: [], key_links: [] },
         ...fields,
       };
+      const planningRoot = getPlanningRoot(cwd);
       body = [
         `# Phase ${options.phase} Plan ${planNum}: [Title]`,
         '',
@@ -140,9 +141,9 @@ function cmdTemplateFill(cwd, templateType, options, raw) {
         '- **Output:** [Concrete deliverable]',
         '',
         '## Context',
-        '@.planning/PROJECT.md',
-        '@.planning/ROADMAP.md',
-        '@.planning/STATE.md',
+        `@${planningRoot}/PROJECT.md`,
+        `@${planningRoot}/ROADMAP.md`,
+        `@${planningRoot}/STATE.md`,
         '',
         '## Tasks',
         '',
