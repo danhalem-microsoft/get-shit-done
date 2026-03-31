@@ -130,7 +130,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { error, output, loadConfig, pathExistsInternal, tryGetPlanningContext } = require('./lib/core.cjs');
+const { error, output, loadConfig, pathExistsInternal, tryGetPlanningContext, getPlanningRoot } = require('./lib/core.cjs');
 const state = require('./lib/state.cjs');
 const phase = require('./lib/phase.cjs');
 const roadmap = require('./lib/roadmap.cjs');
@@ -147,37 +147,42 @@ const taste = require('./lib/taste.cjs');
 
 function cmdInitMistakes(cwd, raw) {
   const ctx = tryGetPlanningContext(cwd);
+  const planningRoot = ctx.planning_root;
   const cfg = loadConfig(cwd);
   const now = new Date();
-  const mistakesDir = path.join(cwd, '.planning', 'mistakes');
+  const mistakesDir = planningRoot
+    ? path.join(cwd, planningRoot, 'mistakes')
+    : null;
   let count = 0;
   const mistakes = [];
   let maxId = 0;
 
-  try {
-    const files = fs.readdirSync(mistakesDir).filter(f => f.endsWith('.md'));
-    for (const file of files) {
-      try {
-        const content = fs.readFileSync(path.join(mistakesDir, file), 'utf-8');
-        const fm = frontmatter.extractFrontmatter(content);
-        const idMatch = (fm.id || '').match(/^MR-(\d+)$/);
+  if (mistakesDir) {
+    try {
+      const files = fs.readdirSync(mistakesDir).filter(f => f.endsWith('.md'));
+      for (const file of files) {
+        try {
+          const content = fs.readFileSync(path.join(mistakesDir, file), 'utf-8');
+          const fm = frontmatter.extractFrontmatter(content);
+          const idMatch = (fm.id || '').match(/^MR-(\d+)$/);
 
-        const numericId = idMatch ? parseInt(idMatch[1], 10) : 0;
-        if (numericId > maxId) maxId = numericId;
+          const numericId = idMatch ? parseInt(idMatch[1], 10) : 0;
+          if (numericId > maxId) maxId = numericId;
 
-        count++;
-        mistakes.push({
-          file,
-          id: fm.id || 'unknown',
-          created: fm.created || 'unknown',
-          title: fm.title || 'Untitled',
-          area: fm.area || 'general',
-          files: Array.isArray(fm.files) ? fm.files : [],
-          path: path.join('.planning', 'mistakes', file),
-        });
-      } catch {}
-    }
-  } catch {}
+          count++;
+          mistakes.push({
+            file,
+            id: fm.id || 'unknown',
+            created: fm.created || 'unknown',
+            title: fm.title || 'Untitled',
+            area: fm.area || 'general',
+            files: Array.isArray(fm.files) ? fm.files : [],
+            path: `${planningRoot}/mistakes/${file}`,
+          });
+        } catch {}
+      }
+    } catch {}
+  }
 
   // Sort by created date, newest first
   mistakes.sort((a, b) => {
@@ -192,15 +197,17 @@ function cmdInitMistakes(cwd, raw) {
   output({
     active_user: ctx.active_user,
     active_project: ctx.active_project,
-    planning_root: ctx.planning_root,
+    planning_root: planningRoot,
     commit_docs: cfg.commit_docs,
     date: now.toISOString().split('T')[0],
     timestamp: now.toISOString(),
     mistake_count: count,
     mistakes,
     next_id: nextId,
-    mistakes_dir: '.planning/mistakes',
-    mistakes_dir_exists: pathExistsInternal(cwd, '.planning/mistakes'),
+    mistakes_dir: planningRoot ? `${planningRoot}/mistakes` : null,
+    mistakes_dir_exists: planningRoot
+      ? pathExistsInternal(cwd, `${planningRoot}/mistakes`)
+      : false,
     planning_exists: pathExistsInternal(cwd, '.planning'),
   }, raw);
 }
@@ -208,11 +215,19 @@ function cmdInitMistakes(cwd, raw) {
 // ─── Helper Functions ─────────────────────────────────────────────────────────
 
 /**
- * Get unprocessed decision logs from .planning/decisions/
- * @param {string} decisionsDir - Path to decisions directory
+ * Get unprocessed decision logs from decisions directory
+ * @param {string} cwd - Working directory
+ * @param {string} [decisionsDir] - Absolute path to decisions directory (auto-resolved if omitted)
  * @returns {string[]} Array of unprocessed log file paths
  */
-function getUnprocessedDecisionLogs(decisionsDir = '.planning/decisions/') {
+function getUnprocessedDecisionLogs(cwd, decisionsDir) {
+  if (!decisionsDir) {
+    const ctx = tryGetPlanningContext(cwd);
+    const planningRoot = ctx && ctx.planning_root;
+    decisionsDir = planningRoot
+      ? path.join(cwd, planningRoot, 'decisions')
+      : path.join(cwd, '.planning', 'decisions');
+  }
   // Early return if directory doesn't exist
   if (!fs.existsSync(decisionsDir)) {
     return [];
@@ -704,8 +719,8 @@ async function main() {
     }
 
     case 'unprocessed-logs': {
-      const decisionsDir = args[1] || path.join(cwd, '.planning/decisions/');
-      const logs = getUnprocessedDecisionLogs(decisionsDir);
+      const decisionsDir = args[1] || null;
+      const logs = getUnprocessedDecisionLogs(cwd, decisionsDir);
       if (raw) {
         console.log(JSON.stringify({ unprocessed_logs: logs, count: logs.length }));
       } else {

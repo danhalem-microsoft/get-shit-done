@@ -12,7 +12,17 @@ const { test, describe, beforeEach, afterEach } = require('node:test');
 const assert = require('node:assert');
 const fs = require('fs');
 const path = require('path');
-const { runGsdTools, createTempProject, cleanup } = require('./helpers.cjs');
+const { runGsdTools, createTempMultiUserProject, cleanup } = require('./helpers.cjs');
+const { clearPlanningRootCache } = require('../get-shit-done/bin/lib/core.cjs');
+
+/** Helper: create multi-user project with common planning files. */
+function setupMultiUserProject(opts = {}) {
+  const { tmpDir, userSlug, projectName } = createTempMultiUserProject(opts);
+  const planningRoot = `.planning/users/${userSlug}/${projectName}`;
+  const projectDir = path.join(tmpDir, planningRoot);
+
+  return { tmpDir, userSlug, projectName, planningRoot, projectDir };
+}
 
 // ─── Dispatcher Error Paths ──────────────────────────────────────────────────
 
@@ -20,10 +30,12 @@ describe('dispatcher error paths', () => {
   let tmpDir;
 
   beforeEach(() => {
-    tmpDir = createTempProject();
+    const ctx = setupMultiUserProject();
+    tmpDir = ctx.tmpDir;
   });
 
   afterEach(() => {
+    clearPlanningRootCache();
     cleanup(tmpDir);
   });
 
@@ -43,13 +55,19 @@ describe('dispatcher error paths', () => {
 
   // --cwd= form with valid directory
   test('--cwd= form overrides working directory', () => {
-    // Create STATE.md in tmpDir so state load can find it
-    fs.writeFileSync(
-      path.join(tmpDir, '.planning', 'STATE.md'),
-      '# Project State\n\n## Current Position\n\nPhase: 1 of 1 (Test)\n'
-    );
-    const result = runGsdTools(`--cwd=${tmpDir} state load`, process.cwd());
-    assert.strictEqual(result.success, true, `Should succeed with --cwd=, got: ${result.error}`);
+    const { tmpDir: cwdDir, projectDir } = setupMultiUserProject();
+    try {
+      // Create STATE.md in project dir so state load can find it
+      fs.writeFileSync(
+        path.join(projectDir, 'STATE.md'),
+        '# Project State\n\n## Current Position\n\nPhase: 1 of 1 (Test)\n'
+      );
+      const result = runGsdTools(`--cwd=${cwdDir} state load`, process.cwd());
+      assert.strictEqual(result.success, true, `Should succeed with --cwd=, got: ${result.error}`);
+    } finally {
+      clearPlanningRootCache();
+      cleanup(cwdDir);
+    }
   });
 
   // --cwd= with empty value
@@ -147,19 +165,23 @@ describe('dispatcher error paths', () => {
 // ─── Dispatcher Routing Branches ─────────────────────────────────────────────
 
 describe('dispatcher routing branches', () => {
-  let tmpDir;
+  let tmpDir, planningRoot, projectDir;
 
   beforeEach(() => {
-    tmpDir = createTempProject();
+    const ctx = setupMultiUserProject();
+    tmpDir = ctx.tmpDir;
+    planningRoot = ctx.planningRoot;
+    projectDir = ctx.projectDir;
   });
 
   afterEach(() => {
+    clearPlanningRootCache();
     cleanup(tmpDir);
   });
 
   // find-phase
   test('find-phase locates phase directory by number', () => {
-    const phaseDir = path.join(tmpDir, '.planning', 'phases', '01-test-phase');
+    const phaseDir = path.join(projectDir, 'phases', '01-test-phase');
     fs.mkdirSync(phaseDir, { recursive: true });
 
     const result = runGsdTools('find-phase 01', tmpDir);
@@ -170,7 +192,7 @@ describe('dispatcher routing branches', () => {
   // init resume
   test('init resume returns valid JSON', () => {
     fs.writeFileSync(
-      path.join(tmpDir, '.planning', 'STATE.md'),
+      path.join(projectDir, 'STATE.md'),
       '# Project State\n\n## Current Position\n\nPhase: 1 of 1 (Test)\nPlan: 01-01 complete\nStatus: Ready\nLast activity: 2026-01-01\n\nProgress: [##########] 100%\n\n## Session Continuity\n\nLast session: 2026-01-01\nStopped at: Test\nResume file: None\n'
     );
 
@@ -184,18 +206,18 @@ describe('dispatcher routing branches', () => {
   test('init verify-work returns valid JSON', () => {
     // Create STATE.md
     fs.writeFileSync(
-      path.join(tmpDir, '.planning', 'STATE.md'),
+      path.join(projectDir, 'STATE.md'),
       '# Project State\n\n## Current Position\n\nPhase: 1 of 1 (Test)\nPlan: 01-01 complete\nStatus: Ready\nLast activity: 2026-01-01\n\nProgress: [##########] 100%\n\n## Session Continuity\n\nLast session: 2026-01-01\nStopped at: Test\nResume file: None\n'
     );
 
     // Create ROADMAP.md with phase section
     fs.writeFileSync(
-      path.join(tmpDir, '.planning', 'ROADMAP.md'),
+      path.join(projectDir, 'ROADMAP.md'),
       '# Roadmap\n\n## Milestone: v1.0 Test\n\n### Phase 1: Test Phase\n**Goal**: Test goal\n**Depends on**: None\n**Requirements**: TEST-01\n**Success Criteria**:\n  1. Tests pass\n**Plans**: 1 plan\nPlans:\n- [x] 01-01-PLAN.md\n\n## Progress\n\n| Phase | Plans | Status | Date |\n|-------|-------|--------|------|\n| 1 | 1/1 | Complete | 2026-01-01 |\n'
     );
 
     // Create phase dir
-    const phaseDir = path.join(tmpDir, '.planning', 'phases', '01-test');
+    const phaseDir = path.join(projectDir, 'phases', '01-test');
     fs.mkdirSync(phaseDir, { recursive: true });
 
     const result = runGsdTools('init verify-work 01', tmpDir);
@@ -208,12 +230,12 @@ describe('dispatcher routing branches', () => {
   test('roadmap update-plan-progress updates phase progress', () => {
     // Create ROADMAP.md with progress table
     fs.writeFileSync(
-      path.join(tmpDir, '.planning', 'ROADMAP.md'),
+      path.join(projectDir, 'ROADMAP.md'),
       '# Roadmap\n\n## Milestone: v1.0 Test\n\n### Phase 1: Test Phase\n**Goal**: Test goal\n**Depends on**: None\n**Requirements**: TEST-01\n**Success Criteria**:\n  1. Tests pass\n**Plans**: 1 plan\nPlans:\n- [ ] 01-01-PLAN.md\n\n## Progress\n\n| Phase | Plans | Status | Date |\n|-------|-------|--------|------|\n| 1 | 0/1 | Not Started | - |\n'
     );
 
     // Create phase dir with PLAN and SUMMARY
-    const phaseDir = path.join(tmpDir, '.planning', 'phases', '01-test-phase');
+    const phaseDir = path.join(projectDir, 'phases', '01-test-phase');
     fs.mkdirSync(phaseDir, { recursive: true });
     fs.writeFileSync(
       path.join(phaseDir, '01-01-PLAN.md'),
@@ -231,7 +253,7 @@ describe('dispatcher routing branches', () => {
   // state (no subcommand) — default load
   test('state with no subcommand calls cmdStateLoad', () => {
     fs.writeFileSync(
-      path.join(tmpDir, '.planning', 'STATE.md'),
+      path.join(projectDir, 'STATE.md'),
       '# Project State\n\n## Current Position\n\nPhase: 1 of 1 (Test)\nPlan: 01-01 complete\nStatus: Ready\nLast activity: 2026-01-01\n\nProgress: [##########] 100%\n\n## Session Continuity\n\nLast session: 2026-01-01\nStopped at: Test\nResume file: None\n'
     );
 
@@ -243,7 +265,7 @@ describe('dispatcher routing branches', () => {
 
   // summary-extract
   test('summary-extract parses SUMMARY.md frontmatter', () => {
-    const phaseDir = path.join(tmpDir, '.planning', 'phases', '01-test');
+    const phaseDir = path.join(projectDir, 'phases', '01-test');
     fs.mkdirSync(phaseDir, { recursive: true });
 
     const summaryContent = `---
@@ -267,11 +289,11 @@ requirements-completed: [TEST-01]
     fs.writeFileSync(summaryPath, summaryContent);
 
     // Use relative path from tmpDir
-    const result = runGsdTools(`summary-extract .planning/phases/01-test/01-01-SUMMARY.md`, tmpDir);
+    const result = runGsdTools(`summary-extract ${planningRoot}/phases/01-test/01-01-SUMMARY.md`, tmpDir);
     assert.strictEqual(result.success, true, `summary-extract failed: ${result.error}`);
     const parsed = JSON.parse(result.output);
     assert.ok(typeof parsed === 'object', 'Output should be valid JSON object');
-    assert.strictEqual(parsed.path, '.planning/phases/01-test/01-01-SUMMARY.md', 'Path should match input');
+    assert.strictEqual(parsed.path, `${planningRoot}/phases/01-test/01-01-SUMMARY.md`, 'Path should match input');
     assert.deepStrictEqual(parsed.requirements_completed, ['TEST-01'], 'requirements_completed should contain TEST-01');
   });
 });
