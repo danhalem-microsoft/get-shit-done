@@ -791,6 +791,9 @@ async function main() {
         case 'progress':
           init.cmdInitProgress(cwd, raw);
           break;
+        case 'project-setup':
+          init.cmdInitProjectSetup(cwd, raw);
+          break;
         default:
           error(`Unknown init workflow: ${workflow}\nAvailable: execute-phase, plan-phase, new-project, new-milestone, quick, resume, verify-work, phase-op, todos, mistakes, milestone-op, map-codebase, progress`);
       }
@@ -872,6 +875,21 @@ async function main() {
           logs.forEach(log => console.log(`  - ${log}`));
         }
       }
+      break;
+    }
+
+    case 'switch': {
+      init.cmdInitSwitch(cwd, args[1] || null, raw);
+      break;
+    }
+
+    case 'archive-project': {
+      init.cmdArchiveProject(cwd, args[1], raw);
+      break;
+    }
+
+    case 'restore-project': {
+      init.cmdRestoreProject(cwd, args[1], raw);
       break;
     }
 

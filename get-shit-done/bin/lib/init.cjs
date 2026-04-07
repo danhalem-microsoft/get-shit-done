@@ -5,7 +5,9 @@
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
-const { loadConfig, resolveModelInternal, findPhaseInternal, getRoadmapPhaseInternal, pathExistsInternal, generateSlugInternal, getMilestoneInfo, normalizePhaseName, toPosixPath, output, error, tryGetPlanningContext } = require('./core.cjs');
+const { loadConfig, resolveModelInternal, findPhaseInternal, getRoadmapPhaseInternal, pathExistsInternal, generateSlugInternal, getMilestoneInfo, normalizePhaseName, toPosixPath, safeReadFile, output, error, tryGetPlanningContext } = require('./core.cjs');
+const { resolveIdentity } = require('./identity.cjs');
+const { readActiveContext, writeActiveContext, listProjects } = require('./context.cjs');
 
 function cmdInitExecutePhase(cwd, phase, raw) {
   if (!phase) {
@@ -846,6 +848,197 @@ function cmdInitProgress(cwd, raw) {
   output(result, raw);
 }
 
+// ─── Switch / Archive / Restore / Project Setup ──────────────────────────────
+
+function cmdInitSwitch(cwd, projectArg, raw) {
+  // Resolve user identity
+  const identity = resolveIdentity(cwd);
+  if (!identity) {
+    error('GSD Error: Cannot resolve user identity. Set git user.name or GSD_USER environment variable.');
+  }
+  const user = identity.slug;
+
+  // Get project list
+  const projects = listProjects(cwd, user);
+
+  if (projectArg) {
+    // Try exact slug match first
+    let matched = projects.find(p => p.name === projectArg);
+
+    if (!matched) {
+      // Try fuzzy: substring match
+      const fuzzy = projects.filter(p => p.name.includes(projectArg));
+      if (fuzzy.length === 1) {
+        matched = fuzzy[0];
+      } else if (fuzzy.length === 0) {
+        error('GSD Error: Project "' + projectArg + '" not found. Available: ' + projects.map(p => p.name).join(', '));
+      } else {
+        error('GSD Error: Ambiguous match for "' + projectArg + '". Matches: ' + fuzzy.map(p => p.name).join(', '));
+      }
+    }
+
+    // Set active context
+    writeActiveContext(cwd, user, matched.name);
+
+    const planning_root = toPosixPath(path.join('.planning', 'users', user, matched.name));
+    output({
+      active_user: user,
+      active_project: matched.name,
+      planning_root,
+      switched: true,
+      project: matched.name,
+    }, raw);
+  } else {
+    // Listing mode
+    output({
+      active_user: user,
+      active_project: null,
+      planning_root: null,
+      switched: false,
+      projects,
+      user,
+    }, raw);
+  }
+}
+
+function cmdInitProjectSetup(cwd, raw) {
+  // Resolve identity directly — no project needed
+  const identity = resolveIdentity(cwd);
+  if (!identity) {
+    error('GSD Error: Cannot resolve user identity. Set git user.name or GSD_USER environment variable.');
+  }
+  const user = identity.slug;
+
+  // Ensure user directory exists
+  const userDir = path.join(cwd, '.planning', 'users', user);
+  fs.mkdirSync(userDir, { recursive: true });
+
+  // Scan for existing projects
+  const projects = listProjects(cwd, user);
+
+  // Read global config
+  const globalConfigPath = path.join(cwd, '.planning', 'config.json');
+  const globalConfigRaw = safeReadFile(globalConfigPath);
+  let global_config = {};
+  if (globalConfigRaw) {
+    try { global_config = JSON.parse(globalConfigRaw); } catch { /* ignore parse errors */ }
+  }
+
+  const planning_exists = fs.existsSync(path.join(cwd, '.planning'));
+
+  output({
+    user,
+    projects,
+    global_config,
+    planning_exists,
+  }, raw);
+}
+
+function cmdArchiveProject(cwd, projectArg, raw) {
+  if (!projectArg) {
+    error('GSD Error: Project name required for archive-project.');
+  }
+
+  // Resolve user identity
+  const identity = resolveIdentity(cwd);
+  if (!identity) {
+    error('GSD Error: Cannot resolve user identity. Set git user.name or GSD_USER environment variable.');
+  }
+  const user = identity.slug;
+  const userDir = path.join(cwd, '.planning', 'users', user);
+  const projectDir = path.join(userDir, projectArg);
+  const archivedDir = path.join(userDir, '_archived');
+  const archivedProjectDir = path.join(archivedDir, projectArg);
+
+  // Verify project exists
+  if (!fs.existsSync(projectDir) || !fs.statSync(projectDir).isDirectory()) {
+    error('GSD Error: Project "' + projectArg + '" not found.');
+  }
+
+  // Check if already archived
+  if (fs.existsSync(archivedProjectDir)) {
+    error('GSD Error: Project "' + projectArg + '" is already archived.');
+  }
+
+  // Create _archived/ if needed
+  fs.mkdirSync(archivedDir, { recursive: true });
+
+  // Move project to _archived/
+  fs.renameSync(projectDir, archivedProjectDir);
+
+  // Check if the archived project was the active one
+  const active = readActiveContext(cwd, user);
+  if (active && active.project === projectArg) {
+    // Clear .active
+    const activePath = path.join(userDir, '.active');
+    try { fs.unlinkSync(activePath); } catch { /* ignore if doesn't exist */ }
+
+    // Auto-select if exactly one project remains
+    const { scanProjects } = (() => {
+      // Re-scan projects (import scanProjects indirectly via listProjects)
+      try {
+        const entries = fs.readdirSync(userDir, { withFileTypes: true });
+        const remaining = entries
+          .filter(e => e.isDirectory() && e.name !== '_archived' && !e.name.startsWith('.'))
+          .map(e => e.name);
+        return { scanProjects: () => remaining };
+      } catch { return { scanProjects: () => [] }; }
+    })();
+
+    const remaining = scanProjects();
+    if (remaining.length === 1) {
+      writeActiveContext(cwd, user, remaining[0]);
+    }
+  }
+
+  output({
+    active_user: user,
+    archived: true,
+    project: projectArg,
+  }, raw);
+}
+
+function cmdRestoreProject(cwd, projectArg, raw) {
+  if (!projectArg) {
+    error('GSD Error: Project name required for restore-project.');
+  }
+
+  // Resolve user identity
+  const identity = resolveIdentity(cwd);
+  if (!identity) {
+    error('GSD Error: Cannot resolve user identity. Set git user.name or GSD_USER environment variable.');
+  }
+  const user = identity.slug;
+  const userDir = path.join(cwd, '.planning', 'users', user);
+  const archivedProjectDir = path.join(userDir, '_archived', projectArg);
+  const targetDir = path.join(userDir, projectArg);
+
+  // Verify project exists in _archived/
+  if (!fs.existsSync(archivedProjectDir) || !fs.statSync(archivedProjectDir).isDirectory()) {
+    error('GSD Error: Project "' + projectArg + '" not found in _archived/.');
+  }
+
+  // Check for duplicate name in active directory
+  if (fs.existsSync(targetDir)) {
+    error('GSD Error: Project "' + projectArg + '" already exists. Cannot restore.');
+  }
+
+  // Move from _archived/ back to active
+  fs.renameSync(archivedProjectDir, targetDir);
+
+  // Set restored project as active
+  writeActiveContext(cwd, user, projectArg);
+
+  const planning_root = toPosixPath(path.join('.planning', 'users', user, projectArg));
+  output({
+    active_user: user,
+    active_project: projectArg,
+    planning_root,
+    restored: true,
+    project: projectArg,
+  }, raw);
+}
+
 module.exports = {
   cmdInitExecutePhase,
   cmdInitPlanPhase,
@@ -859,4 +1052,8 @@ module.exports = {
   cmdInitMilestoneOp,
   cmdInitMapCodebase,
   cmdInitProgress,
+  cmdInitSwitch,
+  cmdInitProjectSetup,
+  cmdArchiveProject,
+  cmdRestoreProject,
 };
