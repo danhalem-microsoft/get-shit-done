@@ -297,3 +297,101 @@ requirements-completed: [TEST-01]
     assert.deepStrictEqual(parsed.requirements_completed, ['TEST-01'], 'requirements_completed should contain TEST-01');
   });
 });
+
+// ─── Switch / Archive / Restore / Project-Setup Dispatcher ──────────────────
+
+describe('switch dispatcher', () => {
+  afterEach(() => {
+    clearPlanningRootCache();
+  });
+
+  test('switch <project> routes to cmdInitSwitch and switches', () => {
+    const { tmpDir, userSlug, planningRoot } = setupMultiUserProject({ projectName: 'alpha' });
+    // Create a second project
+    fs.mkdirSync(path.join(tmpDir, '.planning', 'users', userSlug, 'beta', 'phases'), { recursive: true });
+    try {
+      const result = runGsdTools('switch beta', tmpDir);
+      assert.ok(result.success, `switch failed: ${result.error}`);
+      const output = JSON.parse(result.output);
+      assert.strictEqual(output.switched, true);
+      assert.strictEqual(output.project, 'beta');
+    } finally {
+      cleanup(tmpDir);
+    }
+  });
+
+  test('switch without args routes to listing mode', () => {
+    const { tmpDir, userSlug } = setupMultiUserProject({ projectName: 'alpha' });
+    fs.mkdirSync(path.join(tmpDir, '.planning', 'users', userSlug, 'beta', 'phases'), { recursive: true });
+    try {
+      const result = runGsdTools('switch', tmpDir);
+      assert.ok(result.success, `switch listing failed: ${result.error}`);
+      const output = JSON.parse(result.output);
+      assert.strictEqual(output.switched, false);
+      assert.ok(Array.isArray(output.projects));
+    } finally {
+      cleanup(tmpDir);
+    }
+  });
+});
+
+describe('archive-project dispatcher', () => {
+  afterEach(() => {
+    clearPlanningRootCache();
+  });
+
+  test('archive-project <name> routes correctly', () => {
+    const { tmpDir, userSlug } = setupMultiUserProject({ projectName: 'to-archive' });
+    fs.mkdirSync(path.join(tmpDir, '.planning', 'users', userSlug, 'other', 'phases'), { recursive: true });
+    try {
+      const result = runGsdTools('archive-project to-archive', tmpDir);
+      assert.ok(result.success, `archive-project failed: ${result.error}`);
+      const output = JSON.parse(result.output);
+      assert.strictEqual(output.archived, true);
+      assert.strictEqual(output.project, 'to-archive');
+    } finally {
+      cleanup(tmpDir);
+    }
+  });
+});
+
+describe('restore-project dispatcher', () => {
+  afterEach(() => {
+    clearPlanningRootCache();
+  });
+
+  test('restore-project <name> routes correctly', () => {
+    const { tmpDir, userSlug } = setupMultiUserProject({ projectName: 'current' });
+    // Create archived project
+    fs.mkdirSync(path.join(tmpDir, '.planning', 'users', userSlug, '_archived', 'old', 'phases'), { recursive: true });
+    try {
+      const result = runGsdTools('restore-project old', tmpDir);
+      assert.ok(result.success, `restore-project failed: ${result.error}`);
+      const output = JSON.parse(result.output);
+      assert.strictEqual(output.restored, true);
+      assert.strictEqual(output.project, 'old');
+    } finally {
+      cleanup(tmpDir);
+    }
+  });
+});
+
+describe('init project-setup dispatcher', () => {
+  afterEach(() => {
+    clearPlanningRootCache();
+  });
+
+  test('init project-setup routes correctly', () => {
+    const { tmpDir, userSlug, projectName } = setupMultiUserProject();
+    try {
+      const result = runGsdTools('init project-setup', tmpDir);
+      assert.ok(result.success, `init project-setup failed: ${result.error}`);
+      const output = JSON.parse(result.output);
+      assert.strictEqual(output.user, userSlug);
+      assert.ok(Array.isArray(output.projects));
+      assert.strictEqual(output.planning_exists, true);
+    } finally {
+      cleanup(tmpDir);
+    }
+  });
+});
