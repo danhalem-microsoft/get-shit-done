@@ -627,6 +627,51 @@ function cmdResearcherLoad(name, raw) {
   }
 }
 
+// ─── Team Status ────────────────────────────────────────────────────────────
+
+/**
+ * Format a timestamp into a relative time string (e.g., "2 hours ago").
+ */
+function formatRelativeTime(isoTimestamp) {
+  if (!isoTimestamp) return '(unknown)';
+  const diff = Date.now() - new Date(isoTimestamp).getTime();
+  if (isNaN(diff) || diff < 0) return '(unknown)';
+  const minutes = Math.floor(diff / 60000);
+  if (minutes < 1) return 'just now';
+  if (minutes < 60) return `${minutes} minute${minutes === 1 ? '' : 's'} ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days} day${days === 1 ? '' : 's'} ago`;
+  const weeks = Math.floor(days / 7);
+  return `${weeks} week${weeks === 1 ? '' : 's'} ago`;
+}
+
+function cmdTeamStatus(cwd, raw) {
+  const { scanAllUsers } = require('./context.cjs');
+  const users = scanAllUsers(cwd);
+
+  const formattedUsers = users.map(u => ({
+    user: u.user,
+    project: u.project || '(no active project)',
+    status: u.status,
+    milestone: u.milestone,
+    progress: u.progress.total_plans > 0
+      ? `${u.progress.completed_plans}/${u.progress.total_plans} plans`
+      : u.progress.total_phases > 0
+        ? `${u.progress.completed_phases}/${u.progress.total_phases} phases`
+        : '0/0',
+    last_active: formatRelativeTime(u.last_active),
+    last_active_raw: u.last_active,
+  }));
+
+  output({
+    users: formattedUsers,
+    count: users.length,
+    timestamp: new Date().toISOString(),
+  }, raw);
+}
+
 module.exports = {
   cmdGenerateSlug,
   cmdCurrentTimestamp,
@@ -644,4 +689,5 @@ module.exports = {
   cmdResearcherLoad,
   scanResearcherTypes,
   loadResearcherType,
+  cmdTeamStatus,
 };

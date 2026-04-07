@@ -176,9 +176,90 @@ function extractCoreValue(content) {
   return match ? match[1].trim() : null;
 }
 
+// --- Cross-User Scanning (team-status) ------------------------------------
+
+/**
+ * Scan all user directories under .planning/users/ and return structured
+ * status data for each user's active project.  READ-ONLY — never writes.
+ *
+ * @param {string} cwd — repository root
+ * @returns {Array<{user, project, status, milestone, progress, last_active}>}
+ */
+function scanAllUsers(cwd) {
+  const usersDir = path.join(cwd, '.planning', 'users');
+
+  try {
+    const entries = fs.readdirSync(usersDir, { withFileTypes: true });
+    const results = [];
+
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue;
+      if (entry.name.startsWith('.') || entry.name === '_archived') continue;
+
+      const userSlug = entry.name;
+      const userDir = path.join(usersDir, userSlug);
+
+      // Read .active file for active project
+      let activeProject = null;
+      try {
+        const activeContent = fs.readFileSync(path.join(userDir, '.active'), 'utf-8');
+        const parsed = JSON.parse(activeContent);
+        activeProject = parsed.project || null;
+      } catch { /* no active project */ }
+
+      // Read STATE.md frontmatter from active project (if any)
+      let stateFm = {};
+      if (activeProject) {
+        const statePath = path.join(userDir, activeProject, 'STATE.md');
+        const stateContent = safeReadFile(statePath);
+        if (stateContent) {
+          stateFm = extractFrontmatter(stateContent);
+        }
+      }
+
+      // Extract fields with safe defaults
+      const status = stateFm.status || 'unknown';
+      const milestone = stateFm.milestone || null;
+      const lastActive = stateFm.last_updated || null;
+      const totalPhases = (stateFm.progress && stateFm.progress.total_phases)
+        ? parseInt(stateFm.progress.total_phases, 10) || 0
+        : 0;
+      const completedPhases = (stateFm.progress && stateFm.progress.completed_phases)
+        ? parseInt(stateFm.progress.completed_phases, 10) || 0
+        : 0;
+      const totalPlans = (stateFm.progress && stateFm.progress.total_plans)
+        ? parseInt(stateFm.progress.total_plans, 10) || 0
+        : 0;
+      const completedPlans = (stateFm.progress && stateFm.progress.completed_plans)
+        ? parseInt(stateFm.progress.completed_plans, 10) || 0
+        : 0;
+
+      results.push({
+        user: userSlug,
+        project: activeProject,
+        status,
+        milestone,
+        progress: {
+          total_phases: totalPhases,
+          completed_phases: completedPhases,
+          total_plans: totalPlans,
+          completed_plans: completedPlans,
+        },
+        last_active: lastActive,
+      });
+    }
+
+    return results;
+  } catch {
+    // .planning/users/ doesn't exist or can't be read
+    return [];
+  }
+}
+
 module.exports = {
   readActiveContext,
   writeActiveContext,
   resolveContext,
   listProjects,
+  scanAllUsers,
 };
