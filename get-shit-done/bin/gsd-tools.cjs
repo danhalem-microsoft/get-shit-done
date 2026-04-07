@@ -804,6 +804,9 @@ async function main() {
         case 'project-setup':
           init.cmdInitProjectSetup(cwd, raw);
           break;
+        case 'team-status':
+          init.cmdInitTeamStatus(cwd, raw);
+          break;
         default:
           error(`Unknown init workflow: ${workflow}\nAvailable: execute-phase, plan-phase, new-project, new-milestone, quick, resume, verify-work, phase-op, todos, mistakes, milestone-op, map-codebase, progress`);
       }
@@ -912,6 +915,11 @@ async function main() {
       } else {
         error('Unknown researcher subcommand. Available: scan, load');
       }
+      break;
+    }
+
+    case 'team-status': {
+      commands.cmdTeamStatus(cwd, raw);
       break;
     }
 

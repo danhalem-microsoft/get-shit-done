@@ -1052,6 +1052,18 @@ function cmdRestoreProject(cwd, projectArg, raw) {
   }, raw);
 }
 
+function cmdInitTeamStatus(cwd, raw) {
+  const ctx = tryGetPlanningContext(cwd);
+  const planningExists = fs.existsSync(path.join(cwd, '.planning', 'users'));
+
+  output({
+    active_user: ctx ? ctx.active_user : null,
+    active_project: ctx ? ctx.active_project : null,
+    planning_root: ctx ? ctx.planning_root : null,
+    planning_exists: planningExists,
+  }, raw);
+}
+
 module.exports = {
   cmdInitExecutePhase,
   cmdInitPlanPhase,
@@ -1069,4 +1081,5 @@ module.exports = {
   cmdInitProjectSetup,
   cmdArchiveProject,
   cmdRestoreProject,
+  cmdInitTeamStatus,
 };
