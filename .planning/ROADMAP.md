@@ -52,7 +52,7 @@ Plans:
 - [x] 02-02-PLAN.md — state.cjs + phase.cjs + roadmap.cjs + config.cjs migration
 - [x] 02-03-PLAN.md — verify.cjs + template.cjs + milestone.cjs + taste.cjs + commands.cjs migration
 - [x] 02-04-PLAN.md — init.cjs + gsd-tools.cjs dispatcher migration
-- [ ] 02-05-PLAN.md — Workflow + agent + template markdown migration + grep audit gate activation
+- [x] 02-05-PLAN.md — Workflow + agent + template markdown migration + grep audit gate activation
 
 ### Requirements
 
@@ -102,7 +102,8 @@ Plans:
 | LIFE-06 | Per-project config overrides global defaults |
 | LIFE-07 | `/gsd:progress` shows project context and lists available projects if none active |
 | LIFE-08 | All existing GSD commands operate transparently on the active project context |
-| LIFE-09 | Completed projects archivable to `_archived/` and excluded from listings |
+| LIFE-09 | Completed projects archivable to `_archived/` and excluded from listings; restorable via `/gsd:restore-project` |
+| LIFE-10 | Decision logging wired into context-gathering workflows via `log-decision-init` and `log-decision` |
 
 ### Success Criteria
 
@@ -163,11 +164,11 @@ Plans:
 | Identity & Context | IDEN-01, IDEN-02, IDEN-03, IDEN-04, IDEN-05, IDEN-06, IDEN-07 | 7 | Phase 1 |
 | Path Resolution (core) | PATH-01, PATH-10 | 2 | Phase 1 |
 | Path Resolution (migration) | PATH-02, PATH-03, PATH-04, PATH-05, PATH-06, PATH-07, PATH-08, PATH-09, PATH-11, PATH-12, PATH-13 | 11 | Phase 2 |
-| Project Lifecycle | LIFE-01, LIFE-02, LIFE-03, LIFE-04, LIFE-05, LIFE-06, LIFE-07, LIFE-08, LIFE-09 | 9 | Phase 3 |
+| Project Lifecycle | LIFE-01, LIFE-02, LIFE-03, LIFE-04, LIFE-05, LIFE-06, LIFE-07, LIFE-08, LIFE-09, LIFE-10 | 10 | Phase 3 |
 | Team Features | TEAM-01, TEAM-02, TEAM-03, TEAM-04, TEAM-05, TEAM-06 | 6 | Phase 4 |
-| **Total** | | **35** | |
+| **Total** | | **36** | |
 
-**All 35 v1 requirements mapped. 0 unmapped. Coverage: 100%.**
+**All 36 v1 requirements mapped. 0 unmapped. Coverage: 100%.**
 
 ---
 

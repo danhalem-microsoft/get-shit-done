@@ -27,7 +27,18 @@
  *   summary-extract <path> [--fields]  Extract structured data from SUMMARY.md
  *   state-snapshot                     Structured parse of STATE.md
  *   phase-plan-index <phase>           Index plans with waves and status
- *   unprocessed-logs [dir]             Check for unprocessed decision logs
+ *   log-decision-init                  Initialize decision log for session
+ *     --workflow <name>                 Workflow name (discuss-phase, new-project, etc.)
+ *     [--phase <N>]                     Phase number (if applicable)
+ *   log-decision                        Append Q&A exchange to decision log
+ *     --log-file <path>                 Relative path to log file (from init)
+ *     --question <text>                 The question asked
+ *     --answer <text>                   The user's response
+ *     [--options "a|b|c"]               Pipe-delimited options (for high-signal detection)
+ *     [--area <area>]                   Gray area being discussed
+ *     [--phase <N>]                     Phase number
+ *     [--high-signal]                   Force high-signal flag
+ *   unprocessed-logs [dir]              Check for unprocessed decision logs
  *     Returns logs without <!-- processed: yes --> marker
  *   websearch <query>                  Search web via Brave API (if configured)
  *     [--limit N] [--freshness day|week|month]
@@ -255,6 +266,103 @@ function getUnprocessedDecisionLogs(cwd, decisionsDir) {
   }
 
   return unprocessedLogs;
+}
+
+// ─── Decision Logging ─────────────────────────────────────────────────────────
+
+/**
+ * Initialize a decision log file for a workflow session.
+ * Creates .planning/users/<user>/<project>/decisions/<workflow>-<timestamp>.md
+ * Silent failure — logging must never break workflows.
+ */
+function cmdLogDecisionInit(cwd, workflow, phase, raw) {
+  try {
+    const cfg = loadConfig(cwd);
+    if (cfg.decision_logging === false) {
+      output({ enabled: false }, raw, '');
+      return;
+    }
+
+    const ctx = tryGetPlanningContext(cwd);
+    const planningRoot = ctx && ctx.planning_root;
+    if (!planningRoot) {
+      output({ enabled: false, reason: 'no_planning_root' }, raw, '');
+      return;
+    }
+
+    const now = new Date();
+    const timestamp = now.toISOString().replace(/:/g, '-').replace(/\..+/, '');
+    const filename = `${workflow}-${timestamp}.md`;
+    const decisionsDir = path.join(cwd, planningRoot, 'decisions');
+
+    fs.mkdirSync(decisionsDir, { recursive: true });
+
+    const logFile = path.join(decisionsDir, filename);
+    const relPath = `${planningRoot}/decisions/${filename}`;
+
+    const header = `# Decision Log: ${workflow}\n\n**Session:** ${now.toISOString()}\n**Phase:** ${phase || 'N/A'}\n\n---\n\n`;
+    fs.writeFileSync(logFile, header, 'utf-8');
+
+    const result = {
+      enabled: true,
+      log_file: relPath,
+      workflow: workflow,
+      session_timestamp: timestamp
+    };
+    output(result, raw, `Decision log initialized: ${relPath}`);
+  } catch (e) {
+    // Silent failure — logging must never break workflows
+    output({ enabled: false, reason: 'error' }, raw, '');
+  }
+}
+
+/**
+ * Append a Q&A exchange to an active decision log.
+ * Auto-detects high-signal answers (user chose "Other" / freeform).
+ * Silent failure — logging must never break workflows.
+ */
+function cmdLogDecision(cwd, logFile, question, answer, options, area, phase, highSignal, raw) {
+  try {
+    const fullPath = path.join(cwd, logFile);
+
+    if (!fs.existsSync(fullPath)) {
+      output({ logged: false }, raw, '');
+      return;
+    }
+
+    const content = fs.readFileSync(fullPath, 'utf-8');
+    const existingCount = (content.match(/^## Exchange/gm) || []).length;
+    const entryNum = existingCount + 1;
+    const now = new Date();
+
+    let isHighSignal = highSignal;
+
+    // High-signal auto-detection: if user's answer isn't in the provided options,
+    // they chose "Other" / freeform — that's a stronger signal of preference
+    if (!isHighSignal && options) {
+      const optionsList = options.split('|').map(o => o.trim());
+      if (!optionsList.includes(answer.trim())) {
+        isHighSignal = true;
+      }
+    }
+
+    let entry = `## Exchange ${entryNum}\n\n`;
+    entry += `**Time:** ${now.toISOString()}\n`;
+    entry += `**Question:** ${question}\n`;
+    if (options) entry += `**Options:** ${options}\n`;
+    entry += `**Answer:** ${answer}\n`;
+    if (area) entry += `**Area:** ${area}\n`;
+    if (phase) entry += `**Phase:** ${phase}\n`;
+    if (isHighSignal) entry += `**High-Signal:** true\n`;
+    entry += `\n---\n\n`;
+
+    fs.appendFileSync(fullPath, entry, 'utf-8');
+
+    output({ logged: true, entry_number: entryNum, log_file: logFile }, raw, `Logged exchange ${entryNum}`);
+  } catch (e) {
+    // Silent failure — logging must never break workflows
+    output({ logged: false }, raw, '');
+  }
 }
 
 // ─── CLI Router ───────────────────────────────────────────────────────────────
@@ -715,6 +823,39 @@ async function main() {
         limit: limitIdx !== -1 ? parseInt(args[limitIdx + 1], 10) : 10,
         freshness: freshnessIdx !== -1 ? args[freshnessIdx + 1] : null,
       }, raw);
+      break;
+    }
+
+    case 'log-decision-init': {
+      const workflowIdx = args.indexOf('--workflow');
+      const phaseIdx = args.indexOf('--phase');
+      const workflow = workflowIdx !== -1 ? args[workflowIdx + 1] : null;
+      const logPhase = phaseIdx !== -1 ? args[phaseIdx + 1] : null;
+      if (!workflow) {
+        error('Usage: log-decision-init --workflow <name> [--phase <N>]');
+      }
+      cmdLogDecisionInit(cwd, workflow, logPhase, raw);
+      break;
+    }
+
+    case 'log-decision': {
+      const logFileIdx = args.indexOf('--log-file');
+      const questionIdx = args.indexOf('--question');
+      const answerIdx = args.indexOf('--answer');
+      const optionsIdx = args.indexOf('--options');
+      const areaIdx = args.indexOf('--area');
+      const phaseIdx2 = args.indexOf('--phase');
+      const highSignal = args.includes('--high-signal');
+      const logFile = logFileIdx !== -1 ? args[logFileIdx + 1] : null;
+      const question = questionIdx !== -1 ? args[questionIdx + 1] : null;
+      const answer = answerIdx !== -1 ? args[answerIdx + 1] : null;
+      const logOptions = optionsIdx !== -1 ? args[optionsIdx + 1] : null;
+      const logArea = areaIdx !== -1 ? args[areaIdx + 1] : null;
+      const logPhase2 = phaseIdx2 !== -1 ? args[phaseIdx2 + 1] : null;
+      if (!logFile || !question || !answer) {
+        error('Usage: log-decision --log-file <path> --question <text> --answer <text> [--options "a|b|c"] [--area <area>] [--phase <N>] [--high-signal]');
+      }
+      cmdLogDecision(cwd, logFile, question, answer, logOptions, logArea, logPhase2, highSignal, raw);
       break;
     }
 
