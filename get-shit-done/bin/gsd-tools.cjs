@@ -923,6 +923,15 @@ async function main() {
       break;
     }
 
+    case 'migrate': {
+      const auto = args.includes('--auto');
+      const pnIdx = args.indexOf('--project-name');
+      const projectNameOverride = pnIdx !== -1 ? args[pnIdx + 1] : null;
+      const { cmdMigrate } = require('./lib/commands.cjs');
+      cmdMigrate(cwd, auto, raw, projectNameOverride);
+      break;
+    }
+
     default:
       error(`Unknown command: ${command}`);
   }

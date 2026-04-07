@@ -77,7 +77,7 @@ Deferred to future release. Tracked but not in current roadmap.
 | Real-time collaboration / live sync | GSD is async-by-design (git-based); requires server/WebSockets — fundamentally incompatible |
 | Shared roadmaps across users | Each user owns their planning; team coordination happens through code and PRs |
 | Same-phase concurrency (two users, same phase, same project) | Executors make atomic commits to same files — git conflicts in source code |
-| Migration from old `.planning/` structure | Old structure fundamentally incompatible; clean break is simpler and clearer |
+| Migration from old `.planning/` structure | ~~Old structure fundamentally incompatible; clean break is simpler and clearer~~ Moved into scope for Phase 4 — automated migration via `cmdMigrate` |
 | GSD-specific user identity system | Git identity is sufficient; every GSD user already has git configured |
 | Centralized task assignment / project management | Different product category; external tools (Linear, Jira) handle this |
 | File locking / pessimistic concurrency | Directory isolation makes locks unnecessary; file locks add stale-lock failure modes |

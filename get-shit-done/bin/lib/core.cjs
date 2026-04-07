@@ -711,10 +711,10 @@ function getPlanningRoot(cwd) {
     error('GSD Error: CI/CD environment detected. GSD is not supported in CI.');
   }
 
-  // 2. Old flat structure detection (hard error)
+  // 2. Old flat structure detection (actionable migration instructions)
   if (fs.existsSync(path.join(cwd, '.planning', 'PROJECT.md')) &&
       !fs.existsSync(path.join(cwd, '.planning', 'users'))) {
-    error('GSD Error: Legacy .planning/ structure detected. To start fresh: Remove .planning/ and run /gsd:new-project. To preserve work: Move your files to .planning/users/<your-slug>/<project-name>/');
+    error('GSD Error: Legacy .planning/ structure detected.\n\nRun: /gsd:migrate to auto-migrate your project to the multi-user structure.\nOr run: gsd-tools.cjs migrate --auto to migrate from the command line.\n\nThis will move your files to .planning/users/<your-user>/<project-name>/ and set up the active project context.');
   }
 
   // 3. Delegate to context.cjs (lazy require)
@@ -745,10 +745,10 @@ function tryGetPlanningContext(cwd) {
   if (ciVars.some(v => process.env[v])) {
     error('GSD Error: CI/CD environment detected. GSD is not supported in CI.');
   }
-  // Old structure check (hard error)
+  // Old structure check — return legacy_detected flag instead of hard error
   if (fs.existsSync(path.join(cwd, '.planning', 'PROJECT.md')) &&
       !fs.existsSync(path.join(cwd, '.planning', 'users'))) {
-    error('GSD Error: Legacy .planning/ structure detected. To start fresh: Remove .planning/ and run /gsd:new-project. To preserve work: Move your files to .planning/users/<your-slug>/<project-name>/');
+    return { active_user: null, active_project: null, planning_root: null, legacy_detected: true };
   }
 
   // Soft resolution -- return nulls instead of hard erroring

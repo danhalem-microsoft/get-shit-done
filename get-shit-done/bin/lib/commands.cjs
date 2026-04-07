@@ -703,6 +703,126 @@ function cmdTeamStatus(cwd, raw) {
   }, raw);
 }
 
+// ─── Legacy Migration ──────────────────────────────────────────────────────
+
+function cmdMigrate(cwd, auto, raw, projectNameOverride) {
+  // Pre-checks
+  if (!fs.existsSync(path.join(cwd, '.planning'))) {
+    error('No .planning/ directory found. Nothing to migrate.');
+  }
+  if (fs.existsSync(path.join(cwd, '.planning', 'users'))) {
+    error('Multi-user structure already exists. Nothing to migrate.');
+  }
+  if (!fs.existsSync(path.join(cwd, '.planning', 'PROJECT.md')) &&
+      !projectNameOverride) {
+    // No PROJECT.md and no override
+    if (auto) {
+      error('Cannot auto-migrate: PROJECT.md is missing or unreadable. Provide a project name with --project-name <name>');
+    }
+    // Non-auto mode: return plan with needs_project_name
+    const { resolveIdentity } = require('./identity.cjs');
+    const identity = resolveIdentity(cwd);
+    output({
+      needs_project_name: true,
+      user: identity ? identity.slug : null,
+      message: 'PROJECT.md not found. Provide a project name to proceed.',
+    }, raw);
+    return;
+  }
+
+  // Resolve project name
+  let projectSlug = projectNameOverride;
+  if (!projectSlug) {
+    const projectMdContent = fs.readFileSync(path.join(cwd, '.planning', 'PROJECT.md'), 'utf-8');
+    const headingMatch = projectMdContent.match(/^#\s+(.+)$/m);
+    const projectName = headingMatch ? headingMatch[1].trim() : null;
+    if (!projectName) {
+      // Fall back to first non-empty line
+      const firstLine = projectMdContent.split('\n').find(l => l.trim().length > 0);
+      projectSlug = firstLine
+        ? generateSlugInternal(firstLine.replace(/^#+\s*/, '').trim())
+        : null;
+    } else {
+      projectSlug = generateSlugInternal(projectName);
+    }
+  }
+
+  if (!projectSlug) {
+    if (auto) {
+      error('Cannot auto-migrate: Could not determine project name from PROJECT.md. Provide one with --project-name <name>');
+    }
+    output({ needs_project_name: true, message: 'Could not determine project name from PROJECT.md.' }, raw);
+    return;
+  }
+
+  // Resolve user identity
+  const { resolveIdentity } = require('./identity.cjs');
+  const identity = resolveIdentity(cwd);
+  if (!identity) {
+    error('Cannot resolve user identity. Set git user.name or GSD_USER environment variable.');
+  }
+  const userSlug = identity.slug;
+
+  // Non-auto mode: output migration plan
+  if (!auto) {
+    output({
+      user: userSlug,
+      project: projectSlug,
+      target: `.planning/users/${userSlug}/${projectSlug}`,
+      message: `Will migrate .planning/ to .planning/users/${userSlug}/${projectSlug}/`,
+    }, raw);
+    return;
+  }
+
+  // Auto mode: perform migration
+  const targetDir = path.join(cwd, '.planning', 'users', userSlug, projectSlug);
+  fs.mkdirSync(targetDir, { recursive: true });
+
+  // Items to skip during migration (stay at .planning/ root)
+  const skipItems = new Set(['config.json', 'user-map.json', 'users']);
+
+  // List all items in .planning/
+  const items = fs.readdirSync(path.join(cwd, '.planning'));
+
+  // Copy each item to target
+  for (const item of items) {
+    if (skipItems.has(item)) continue;
+
+    const srcPath = path.join(cwd, '.planning', item);
+    const destPath = path.join(targetDir, item);
+    const stat = fs.statSync(srcPath);
+
+    if (stat.isDirectory()) {
+      fs.cpSync(srcPath, destPath, { recursive: true });
+    } else {
+      fs.cpSync(srcPath, destPath);
+    }
+  }
+
+  // Verify copies succeeded
+  for (const item of items) {
+    if (skipItems.has(item)) continue;
+    const destPath = path.join(targetDir, item);
+    if (!fs.existsSync(destPath)) {
+      error(`Migration failed: ${item} was not copied to target directory.`);
+    }
+  }
+
+  // Remove originals (except skipped items)
+  for (const item of items) {
+    if (skipItems.has(item)) continue;
+    const srcPath = path.join(cwd, '.planning', item);
+    fs.rmSync(srcPath, { recursive: true, force: true });
+  }
+
+  // Create .active file
+  const { writeActiveContext } = require('./context.cjs');
+  writeActiveContext(cwd, userSlug, projectSlug);
+
+  const targetPath = toPosixPath(path.join('.planning', 'users', userSlug, projectSlug));
+  output({ migrated: true, user: userSlug, project: projectSlug, target: targetPath }, raw);
+}
+
 module.exports = {
   cmdGenerateSlug,
   cmdCurrentTimestamp,
@@ -721,4 +841,5 @@ module.exports = {
   scanResearcherTypes,
   loadResearcherType,
   cmdTeamStatus,
+  cmdMigrate,
 };

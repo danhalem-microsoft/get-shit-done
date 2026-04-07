@@ -154,6 +154,7 @@ describe('PATH-13: Grep audit gate', () => {
       'verify.test.cjs',      // CLI verify tests pass .planning/ paths as arguments
       'verify-health.test.cjs', // test setup constructs .planning/users/ paths
       'team-status.test.cjs', // test setup constructs .planning/users/ paths for cross-user scanning
+      'migration.test.cjs',   // test setup constructs legacy .planning/ and migrated .planning/users/ paths
     ];
 
     const violations = grepOutput.split('\n').filter(line => {

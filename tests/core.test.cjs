@@ -1129,6 +1129,10 @@ describe('getPlanningRoot', () => {
         err.stderr.includes('Legacy .planning/ structure detected'),
         `Expected "Legacy .planning/ structure detected" in stderr, got: ${err.stderr}`
       );
+      assert.ok(
+        err.stderr.includes('migrate'),
+        `Expected migration instructions in stderr, got: ${err.stderr}`
+      );
     }
   });
 
@@ -1210,7 +1214,7 @@ describe('getPlanningRoot', () => {
     }
   });
 
-  test('tryGetPlanningContext: old structure still hard-errors', () => {
+  test('tryGetPlanningContext: old structure returns legacy_detected flag', () => {
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gsd-core-test-'));
     fs.mkdirSync(path.join(tmpDir, '.planning'), { recursive: true });
     fs.writeFileSync(path.join(tmpDir, '.planning', 'PROJECT.md'), '# Project\n');
@@ -1219,15 +1223,12 @@ describe('getPlanningRoot', () => {
     const dir = tmpDir.replace(/\\/g, '/');
     const script = `const core = require('${corePath}'); const r = core.tryGetPlanningContext('${dir}'); process.stdout.write(JSON.stringify(r));`;
 
-    try {
-      runSubprocess(script, { GSD_USER: 'test-user' });
-      assert.fail('Should have thrown');
-    } catch (err) {
-      assert.ok(
-        err.stderr.includes('Legacy .planning/ structure detected'),
-        `Expected "Legacy .planning/ structure detected" in stderr, got: ${err.stderr}`
-      );
-    }
+    const output = runSubprocess(script, { GSD_USER: 'test-user' });
+    const result = JSON.parse(output);
+    assert.strictEqual(result.legacy_detected, true, 'should have legacy_detected flag');
+    assert.strictEqual(result.active_user, null, 'active_user should be null');
+    assert.strictEqual(result.active_project, null, 'active_project should be null');
+    assert.strictEqual(result.planning_root, null, 'planning_root should be null');
   });
 
   test('clearPlanningRootCache is a callable function', () => {
