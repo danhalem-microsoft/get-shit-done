@@ -41,10 +41,10 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **LIFE-04**: `/gsd:switch` without arguments lists the current user's projects with status summary and lets user choose
 - [x] **LIFE-05**: If a user has only one project, it is auto-selected without requiring `/gsd:switch`
 - [x] **LIFE-06**: Per-project config at `.planning/users/<user>/<project>/config.json` overrides global defaults at `.planning/config.json`
-- [ ] **LIFE-07**: `/gsd:progress` shows project context (active user/project) and lists available projects if no active project is set
-- [ ] **LIFE-08**: All existing GSD commands (plan-phase, execute-phase, verify-work, discuss-phase, debug, etc.) operate transparently on the active project context
+- [x] **LIFE-07**: `/gsd:progress` shows project context (active user/project) and lists available projects if no active project is set
+- [x] **LIFE-08**: All existing GSD commands (plan-phase, execute-phase, verify-work, discuss-phase, debug, etc.) operate transparently on the active project context
 - [x] **LIFE-09**: Completed projects can be archived to `.planning/users/<user>/_archived/<project>/` and excluded from default project listings. Archived projects can be restored via `/gsd:restore-project`.
-- [ ] **LIFE-10**: Decision logging is wired into context-gathering workflows (`discuss-phase`, `new-project`, `new-milestone`, `plan-phase`) via `log-decision-init` and `log-decision` CLI commands
+- [x] **LIFE-10**: Decision logging is wired into context-gathering workflows (`discuss-phase`, `new-project`, `new-milestone`, `plan-phase`) via `log-decision-init` and `log-decision` CLI commands
 
 ### Team Features
 
@@ -115,10 +115,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | LIFE-04 | Phase 3 | Complete |
 | LIFE-05 | Phase 3 | Complete |
 | LIFE-06 | Phase 3 | Complete |
-| LIFE-07 | Phase 3 | Pending |
-| LIFE-08 | Phase 3 | Pending |
+| LIFE-07 | Phase 3 | Complete |
+| LIFE-08 | Phase 3 | Complete |
 | LIFE-09 | Phase 3 | Complete |
-| LIFE-10 | Phase 3 | Pending |
+| LIFE-10 | Phase 3 | Complete |
 | TEAM-01 | Phase 4 | Pending |
 | TEAM-02 | Phase 4 | Pending |
 | TEAM-03 | Phase 4 | Pending |
