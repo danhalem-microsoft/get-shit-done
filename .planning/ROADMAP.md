@@ -90,6 +90,15 @@ Plans:
 
 **Goal:** Implement user-facing commands for creating projects in the multi-user structure, switching between projects, and ensuring all existing GSD commands transparently operate on the active project context.
 
+**Plans:** 5 plans
+
+Plans:
+- [ ] 03-01-PLAN.md — Core module changes: resolveContext auto-select, listProjects redesign, loadConfig two-file merge
+- [ ] 03-02-PLAN.md — Switch, archive, restore CLI commands + dispatcher wiring
+- [ ] 03-03-PLAN.md — New-project workflow rewrite with two-step bootstrap
+- [ ] 03-04-PLAN.md — Workflow files: switch/archive/restore commands, progress enhancement, decision logging
+- [ ] 03-05-PLAN.md — Command transparency integration tests
+
 ### Requirements
 
 | Requirement | Description |
