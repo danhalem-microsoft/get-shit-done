@@ -53,7 +53,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **TEAM-03**: Path resolver supports an explicit cross-user read scope for team-status without breaking user isolation
 - [x] **TEAM-04**: Config resolution follows explicit precedence: hardcoded defaults < shared `.planning/config.json` < per-project `users/<user>/<project>/config.json` < environment variables
 - [x] **TEAM-05**: A `gsd-tools.cjs config resolve <key>` command shows which layer a config value came from
-- [ ] **TEAM-06**: Git commit messages for planning artifact changes include user/project context (e.g., `docs(dan/frontend): ...`)
+- [x] **TEAM-06**: Git commit messages for planning artifact changes include user/project context (e.g., `docs(dan/frontend): ...`)
 
 ## v2 Requirements
 
@@ -124,7 +124,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TEAM-03 | Phase 4 | Complete |
 | TEAM-04 | Phase 4 | Complete |
 | TEAM-05 | Phase 4 | Complete |
-| TEAM-06 | Phase 4 | Pending |
+| TEAM-06 | Phase 4 | Complete |
 
 **Coverage:**
 - v1 requirements: 36 total

@@ -3,19 +3,19 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-04-07T21:32:26.274Z"
+last_updated: "2026-04-07T21:52:19.393Z"
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 20
-  completed_plans: 14
+  completed_plans: 16
 ---
 
 # Project State: GSD Multi-User Monorepo Support
 
 ## Current Phase
 
-**Phase 4: Team Visibility and Hardening** — In Progress (2/3 plans)
+**Phase 4: Team Visibility and Hardening** — Complete (3/3 plans)
 
 ## Phase Summary
 
@@ -24,7 +24,7 @@ progress:
 | 1 | Identity and Path Resolution Core | Complete (3/3 plans) |
 | 2 | Module Path Migration | Complete (5/5 plans) |
 | 3 | Project Lifecycle Commands | Complete (5/5 plans) |
-| 4 | Team Visibility and Hardening | In Progress (2/3 plans) |
+| 4 | Team Visibility and Hardening | Complete (3/3 plans) |
 
 ## Key Decisions
 
@@ -71,6 +71,11 @@ progress:
 | scanAllUsers reads .active JSON directly instead of readActiveContext | 04-02 | Simpler for cross-user reads; avoids requiring cwd+user signature |
 | cmdTeamStatus lazy-requires context.cjs | 04-02 | Avoids circular dependency with commands.cjs |
 | Relative time uses simple helper (min/hrs/days/weeks ago) | 04-02 | No external dependency needed for approximate recency |
+| cmdCommit wraps tryGetPlanningContext in try/catch for attribution | 04-03 | Prevents breakage if legacy detection throws during commit |
+| tryGetPlanningContext returns legacy_detected flag instead of hard error | 04-03 | Enables migration flow; commands can detect and offer migration |
+| cmdMigrate uses copy-then-delete pattern | 04-03 | Ensures no data loss during legacy structure migration |
+| bootstrap_path added to cmdInitProjectSetup output | 04-03 | Resolves PATH-13 chicken-and-egg: workflow uses resolved path instead of raw .planning/ ref |
+| new-project.md remaining .planning/ refs allowlisted as documentation | 04-03 | 2 illustrative comments explaining bootstrap_path value, not operational paths |
 
 ## Session Log
 
@@ -98,6 +103,7 @@ progress:
 | 2026-04-07 | Phase 4 context | Context gathered, research completed, 3 plans created |
 | 2026-04-07 | Plan 04-01 executed | ENV_KEY_MAP + 4-tier loadConfig + cmdConfigResolve + config-resolve dispatcher — 5 min, 2 tasks, 3 files |
 | 2026-04-07 | Plan 04-02 executed | scanAllUsers + cmdTeamStatus + workflow/command files + TDD (11 tests) — 6 min, 3 tasks, 8 files |
+| 2026-04-07 | Plan 04-03 executed | Commit attribution + legacy migration flow + PATH-13 fix — 7 min, 3 tasks, 10 files. Phase 4 complete |
 
 ---
 *State initialized: 2026-03-17*
