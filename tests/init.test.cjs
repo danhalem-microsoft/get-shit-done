@@ -1067,3 +1067,305 @@ describe('init context fields', () => {
     }
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// cmdInitSwitch (LIFE-03, LIFE-04)
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('cmdInitSwitch', () => {
+  afterEach(() => {
+    clearPlanningRootCache();
+  });
+
+  test('switch with exact project match returns switched result', () => {
+    const { tmpDir, userSlug } = createTempMultiUserProject({ projectName: 'alpha' });
+    // Create a second project
+    fs.mkdirSync(path.join(tmpDir, '.planning', 'users', userSlug, 'beta', 'phases'), { recursive: true });
+    try {
+      const result = runGsdTools('switch beta', tmpDir);
+      assert.ok(result.success, `Command failed: ${result.error}`);
+
+      const output = JSON.parse(result.output);
+      assert.strictEqual(output.switched, true);
+      assert.strictEqual(output.project, 'beta');
+      assert.ok(output.planning_root.includes('beta'));
+    } finally {
+      cleanup(tmpDir);
+    }
+  });
+
+  test('switch with fuzzy match (substring) finds project', () => {
+    const { tmpDir, userSlug } = createTempMultiUserProject({ projectName: 'my-frontend-app' });
+    // Create a second project to prevent auto-select
+    fs.mkdirSync(path.join(tmpDir, '.planning', 'users', userSlug, 'my-backend-api', 'phases'), { recursive: true });
+    try {
+      const result = runGsdTools('switch frontend', tmpDir);
+      assert.ok(result.success, `Command failed: ${result.error}`);
+
+      const output = JSON.parse(result.output);
+      assert.strictEqual(output.switched, true);
+      assert.strictEqual(output.project, 'my-frontend-app');
+    } finally {
+      cleanup(tmpDir);
+    }
+  });
+
+  test('switch with no match returns error', () => {
+    const { tmpDir } = createTempMultiUserProject({ projectName: 'alpha' });
+    try {
+      const result = runGsdTools('switch nonexistent', tmpDir);
+      assert.strictEqual(result.success, false);
+      assert.ok(result.error.includes('not found'), `Expected "not found" in error: ${result.error}`);
+    } finally {
+      cleanup(tmpDir);
+    }
+  });
+
+  test('switch without args returns project listing', () => {
+    const { tmpDir, userSlug } = createTempMultiUserProject({ projectName: 'alpha' });
+    // Create a second project
+    fs.mkdirSync(path.join(tmpDir, '.planning', 'users', userSlug, 'beta', 'phases'), { recursive: true });
+    try {
+      const result = runGsdTools('switch', tmpDir);
+      assert.ok(result.success, `Command failed: ${result.error}`);
+
+      const output = JSON.parse(result.output);
+      assert.strictEqual(output.switched, false);
+      assert.ok(Array.isArray(output.projects));
+      assert.ok(output.projects.length >= 2);
+    } finally {
+      cleanup(tmpDir);
+    }
+  });
+
+  test('switch writes .active on successful match', () => {
+    const { tmpDir, userSlug } = createTempMultiUserProject({ projectName: 'alpha' });
+    // Create a second project
+    fs.mkdirSync(path.join(tmpDir, '.planning', 'users', userSlug, 'beta', 'phases'), { recursive: true });
+    try {
+      const result = runGsdTools('switch beta', tmpDir);
+      assert.ok(result.success, `Command failed: ${result.error}`);
+
+      // Check .active file was updated
+      const activePath = path.join(tmpDir, '.planning', 'users', userSlug, '.active');
+      const activeContent = JSON.parse(fs.readFileSync(activePath, 'utf-8'));
+      assert.strictEqual(activeContent.project, 'beta');
+    } finally {
+      cleanup(tmpDir);
+    }
+  });
+
+  test('switch with ambiguous match returns error', () => {
+    const { tmpDir, userSlug } = createTempMultiUserProject({ projectName: 'app-frontend' });
+    fs.mkdirSync(path.join(tmpDir, '.planning', 'users', userSlug, 'app-backend', 'phases'), { recursive: true });
+    try {
+      const result = runGsdTools('switch app', tmpDir);
+      assert.strictEqual(result.success, false);
+      assert.ok(result.error.includes('Ambiguous'), `Expected "Ambiguous" in error: ${result.error}`);
+    } finally {
+      cleanup(tmpDir);
+    }
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// cmdInitProjectSetup (LIFE-01, LIFE-02)
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('cmdInitProjectSetup', () => {
+  afterEach(() => {
+    clearPlanningRootCache();
+  });
+
+  test('returns user identity and existing projects list', () => {
+    const { tmpDir, userSlug, projectName } = createTempMultiUserProject();
+    try {
+      const result = runGsdTools('init project-setup', tmpDir);
+      assert.ok(result.success, `Command failed: ${result.error}`);
+
+      const output = JSON.parse(result.output);
+      assert.strictEqual(output.user, userSlug);
+      assert.ok(Array.isArray(output.projects));
+      assert.ok(output.projects.some(p => p.name === projectName));
+      assert.strictEqual(output.planning_exists, true);
+    } finally {
+      cleanup(tmpDir);
+    }
+  });
+
+  test('works without any existing projects', () => {
+    const { tmpDir, userSlug } = createTempMultiUserProject({ withActive: false });
+    // Remove the default project directory
+    const projectDir = path.join(tmpDir, '.planning', 'users', userSlug, 'test-project');
+    if (fs.existsSync(projectDir)) {
+      fs.rmSync(projectDir, { recursive: true, force: true });
+    }
+    try {
+      const result = runGsdTools('init project-setup', tmpDir);
+      assert.ok(result.success, `Command failed: ${result.error}`);
+
+      const output = JSON.parse(result.output);
+      assert.strictEqual(output.user, userSlug);
+      assert.deepStrictEqual(output.projects, []);
+    } finally {
+      cleanup(tmpDir);
+    }
+  });
+
+  test('returns global config when present', () => {
+    const { tmpDir } = createTempMultiUserProject();
+    // Create a global config
+    fs.writeFileSync(
+      path.join(tmpDir, '.planning', 'config.json'),
+      JSON.stringify({ mode: 'yolo', granularity: 'fine' }, null, 2),
+      'utf-8'
+    );
+    try {
+      const result = runGsdTools('init project-setup', tmpDir);
+      assert.ok(result.success, `Command failed: ${result.error}`);
+
+      const output = JSON.parse(result.output);
+      assert.strictEqual(output.global_config.mode, 'yolo');
+      assert.strictEqual(output.global_config.granularity, 'fine');
+    } finally {
+      cleanup(tmpDir);
+    }
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// cmdArchiveProject / cmdRestoreProject (LIFE-09)
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('cmdArchiveProject', () => {
+  afterEach(() => {
+    clearPlanningRootCache();
+  });
+
+  test('archive moves project directory to _archived/', () => {
+    const { tmpDir, userSlug } = createTempMultiUserProject({ projectName: 'old-project' });
+    // Create a second project so we have something after archive
+    fs.mkdirSync(path.join(tmpDir, '.planning', 'users', userSlug, 'current-project', 'phases'), { recursive: true });
+    try {
+      const result = runGsdTools('archive-project old-project', tmpDir);
+      assert.ok(result.success, `Command failed: ${result.error}`);
+
+      const output = JSON.parse(result.output);
+      assert.strictEqual(output.archived, true);
+      assert.strictEqual(output.project, 'old-project');
+
+      // Verify directory was moved
+      const archivedPath = path.join(tmpDir, '.planning', 'users', userSlug, '_archived', 'old-project');
+      const originalPath = path.join(tmpDir, '.planning', 'users', userSlug, 'old-project');
+      assert.ok(fs.existsSync(archivedPath), 'Archived directory should exist');
+      assert.ok(!fs.existsSync(originalPath), 'Original directory should not exist');
+    } finally {
+      cleanup(tmpDir);
+    }
+  });
+
+  test('archive clears .active when archiving active project', () => {
+    const { tmpDir, userSlug } = createTempMultiUserProject({ projectName: 'active-project' });
+    // Create a second project
+    fs.mkdirSync(path.join(tmpDir, '.planning', 'users', userSlug, 'other-project', 'phases'), { recursive: true });
+    try {
+      const result = runGsdTools('archive-project active-project', tmpDir);
+      assert.ok(result.success, `Command failed: ${result.error}`);
+
+      // .active should either be cleared or point to the remaining project
+      const activePath = path.join(tmpDir, '.planning', 'users', userSlug, '.active');
+      if (fs.existsSync(activePath)) {
+        const activeContent = JSON.parse(fs.readFileSync(activePath, 'utf-8'));
+        assert.notStrictEqual(activeContent.project, 'active-project', 'Should not still point to archived project');
+      }
+    } finally {
+      cleanup(tmpDir);
+    }
+  });
+
+  test('archive errors on nonexistent project', () => {
+    const { tmpDir } = createTempMultiUserProject();
+    try {
+      const result = runGsdTools('archive-project nonexistent', tmpDir);
+      assert.strictEqual(result.success, false);
+      assert.ok(result.error.includes('not found') || result.error.includes('does not exist'),
+        `Expected error about missing project: ${result.error}`);
+    } finally {
+      cleanup(tmpDir);
+    }
+  });
+});
+
+describe('cmdRestoreProject', () => {
+  afterEach(() => {
+    clearPlanningRootCache();
+  });
+
+  test('restore moves project from _archived/ back', () => {
+    const { tmpDir, userSlug } = createTempMultiUserProject({ projectName: 'current' });
+    // Create an archived project
+    const archivedPath = path.join(tmpDir, '.planning', 'users', userSlug, '_archived', 'old-project', 'phases');
+    fs.mkdirSync(archivedPath, { recursive: true });
+    try {
+      const result = runGsdTools('restore-project old-project', tmpDir);
+      assert.ok(result.success, `Command failed: ${result.error}`);
+
+      const output = JSON.parse(result.output);
+      assert.strictEqual(output.restored, true);
+      assert.strictEqual(output.project, 'old-project');
+
+      // Verify directory was moved
+      const restoredPath = path.join(tmpDir, '.planning', 'users', userSlug, 'old-project');
+      const archivedDir = path.join(tmpDir, '.planning', 'users', userSlug, '_archived', 'old-project');
+      assert.ok(fs.existsSync(restoredPath), 'Restored directory should exist');
+      assert.ok(!fs.existsSync(archivedDir), 'Archived directory should not exist');
+    } finally {
+      cleanup(tmpDir);
+    }
+  });
+
+  test('restore errors on duplicate name', () => {
+    const { tmpDir, userSlug } = createTempMultiUserProject({ projectName: 'my-project' });
+    // Create a project with the same name in _archived
+    const archivedPath = path.join(tmpDir, '.planning', 'users', userSlug, '_archived', 'my-project', 'phases');
+    fs.mkdirSync(archivedPath, { recursive: true });
+    try {
+      const result = runGsdTools('restore-project my-project', tmpDir);
+      assert.strictEqual(result.success, false);
+      assert.ok(result.error.includes('already exists'),
+        `Expected "already exists" in error: ${result.error}`);
+    } finally {
+      cleanup(tmpDir);
+    }
+  });
+
+  test('restore errors on project not found in _archived', () => {
+    const { tmpDir } = createTempMultiUserProject();
+    try {
+      const result = runGsdTools('restore-project nonexistent', tmpDir);
+      assert.strictEqual(result.success, false);
+      assert.ok(result.error.includes('not found'),
+        `Expected "not found" in error: ${result.error}`);
+    } finally {
+      cleanup(tmpDir);
+    }
+  });
+
+  test('restore sets restored project as active', () => {
+    const { tmpDir, userSlug } = createTempMultiUserProject({ projectName: 'current' });
+    // Create an archived project
+    const archivedPath = path.join(tmpDir, '.planning', 'users', userSlug, '_archived', 'restored-project', 'phases');
+    fs.mkdirSync(archivedPath, { recursive: true });
+    try {
+      const result = runGsdTools('restore-project restored-project', tmpDir);
+      assert.ok(result.success, `Command failed: ${result.error}`);
+
+      // Check .active file was updated
+      const activePath = path.join(tmpDir, '.planning', 'users', userSlug, '.active');
+      const activeContent = JSON.parse(fs.readFileSync(activePath, 'utf-8'));
+      assert.strictEqual(activeContent.project, 'restored-project');
+    } finally {
+      cleanup(tmpDir);
+    }
+  });
+});
