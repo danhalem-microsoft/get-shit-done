@@ -3,19 +3,19 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-04-07T19:13:40.305Z"
+last_updated: "2026-04-07T21:32:26.274Z"
 progress:
   total_phases: 4
   completed_phases: 0
-  total_plans: 16
-  completed_plans: 13
+  total_plans: 20
+  completed_plans: 14
 ---
 
 # Project State: GSD Multi-User Monorepo Support
 
 ## Current Phase
 
-**Phase 3: Project Lifecycle Commands** — Complete (5/5 plans)
+**Phase 4: Team Visibility and Hardening** — In Progress (1/3 plans)
 
 ## Phase Summary
 
@@ -24,7 +24,7 @@ progress:
 | 1 | Identity and Path Resolution Core | Complete (3/3 plans) |
 | 2 | Module Path Migration | Complete (5/5 plans) |
 | 3 | Project Lifecycle Commands | Complete (5/5 plans) |
-| 4 | Team Visibility and Hardening | Not Started |
+| 4 | Team Visibility and Hardening | In Progress (1/3 plans) |
 
 ## Key Decisions
 
@@ -65,6 +65,9 @@ progress:
 | Decision logging uses silent failure (2>/dev/null or true) in all 4 workflows | 03-04 | Logging never breaks workflows; mandatory per LIFE-10 |
 | tryGetPlanningContext gets LIFE-05 auto-select (was missing vs resolveContext) | 03-05 | Soft resolver must match hard resolver behavior for command transparency |
 | Existing null-path tests updated to zero-project scenarios | 03-05 | Single-project now correctly auto-selects; null requires zero projects |
+| ENV_KEY_MAP covers 9 keys; branching templates and search_gitignored excluded | 04-01 | Env-only override makes no practical sense for path templates |
+| Env var loop placed AFTER parallelization normalization and model_overrides merge | 04-01 | Env vars always win over file-based values; post-normalization ensures correct types |
+| cmdConfigResolve duplicates defaults/keyMap locally | 04-01 | loadConfig scopes them as function-local variables; no clean way to share |
 
 ## Session Log
 
@@ -89,6 +92,8 @@ progress:
 | 2026-04-07 | Plan 03-03 executed | new-project workflow rewrite with two-step bootstrap + enhanced init output — 8 min, 3 tasks, 4 files |
 | 2026-04-07 | Plan 03-04 executed | switch/archive/restore workflows + progress enhancement + decision logging — 6 min, 2 tasks, 11 files |
 | 2026-04-07 | Plan 03-05 executed | Integration tests: 6 commands x 3 resolution methods + LIFE-05 auto-select fix — 10 min, 1 task, 4 files. Phase 3 complete |
+| 2026-04-07 | Phase 4 context | Context gathered, research completed, 3 plans created |
+| 2026-04-07 | Plan 04-01 executed | ENV_KEY_MAP + 4-tier loadConfig + cmdConfigResolve + config-resolve dispatcher — 5 min, 2 tasks, 3 files |
 
 ---
 *State initialized: 2026-03-17*
