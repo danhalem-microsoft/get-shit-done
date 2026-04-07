@@ -27,6 +27,8 @@ const {
   searchPhaseInDir,
   findPhaseInternal,
   clearPlanningRootCache,
+  ENV_KEY_MAP,
+  cmdConfigResolve,
 } = require('../get-shit-done/bin/lib/core.cjs');
 const { execSync } = require('child_process');
 const { createTempMultiUserProject, cleanup } = require('./helpers.cjs');
@@ -1232,5 +1234,257 @@ describe('getPlanningRoot', () => {
     assert.strictEqual(typeof clearPlanningRootCache, 'function');
     // Should not throw
     clearPlanningRootCache();
+  });
+});
+
+// ─── loadConfig env var overrides ──────────────────────────────────────────────
+
+describe('loadConfig env var overrides', () => {
+  let tmpDir;
+  let planningRoot;
+  let savedGsdUser;
+  let savedGsdProject;
+  const savedEnvVars = {};
+
+  beforeEach(() => {
+    savedGsdUser = process.env.GSD_USER;
+    savedGsdProject = process.env.GSD_PROJECT;
+    // Save all GSD_ env vars we might set
+    for (const envName of Object.values(ENV_KEY_MAP)) {
+      savedEnvVars[envName] = process.env[envName];
+    }
+    const result = createTempMultiUserProject();
+    tmpDir = result.tmpDir;
+    planningRoot = `.planning/users/${result.userSlug}/${result.projectName}`;
+    process.env.GSD_USER = result.userSlug;
+    process.env.GSD_PROJECT = result.projectName;
+  });
+
+  afterEach(() => {
+    cleanup(tmpDir);
+    clearPlanningRootCache();
+    if (savedGsdUser !== undefined) process.env.GSD_USER = savedGsdUser;
+    else delete process.env.GSD_USER;
+    if (savedGsdProject !== undefined) process.env.GSD_PROJECT = savedGsdProject;
+    else delete process.env.GSD_PROJECT;
+    // Restore all GSD_ env vars
+    for (const envName of Object.values(ENV_KEY_MAP)) {
+      if (savedEnvVars[envName] !== undefined) process.env[envName] = savedEnvVars[envName];
+      else delete process.env[envName];
+    }
+  });
+
+  function writeConfig(obj) {
+    fs.writeFileSync(
+      path.join(tmpDir, planningRoot, 'config.json'),
+      JSON.stringify(obj, null, 2)
+    );
+  }
+
+  function writeGlobalConfig(obj) {
+    fs.writeFileSync(
+      path.join(tmpDir, '.planning', 'config.json'),
+      JSON.stringify(obj, null, 2)
+    );
+  }
+
+  test('GSD_MODEL_PROFILE env var overrides file-based model_profile', () => {
+    writeConfig({ model_profile: 'budget' });
+    process.env.GSD_MODEL_PROFILE = 'quality';
+    clearPlanningRootCache();
+    const config = loadConfig(tmpDir);
+    assert.strictEqual(config.model_profile, 'quality');
+  });
+
+  test('GSD_COMMIT_DOCS=false resolves as boolean false', () => {
+    writeConfig({ planning: { commit_docs: true } });
+    process.env.GSD_COMMIT_DOCS = 'false';
+    clearPlanningRootCache();
+    const config = loadConfig(tmpDir);
+    assert.strictEqual(config.commit_docs, false);
+    assert.strictEqual(typeof config.commit_docs, 'boolean');
+  });
+
+  test('GSD_COMMIT_DOCS=true resolves as boolean true', () => {
+    process.env.GSD_COMMIT_DOCS = 'true';
+    clearPlanningRootCache();
+    const config = loadConfig(tmpDir);
+    assert.strictEqual(config.commit_docs, true);
+    assert.strictEqual(typeof config.commit_docs, 'boolean');
+  });
+
+  test('GSD_PARALLELIZATION=false resolves as boolean false', () => {
+    writeConfig({ parallelization: true });
+    process.env.GSD_PARALLELIZATION = 'false';
+    clearPlanningRootCache();
+    const config = loadConfig(tmpDir);
+    assert.strictEqual(config.parallelization, false);
+    assert.strictEqual(typeof config.parallelization, 'boolean');
+  });
+
+  test('env var overrides per-project config which overrides global config', () => {
+    writeGlobalConfig({ model_profile: 'budget' });
+    writeConfig({ model_profile: 'balanced' });
+    process.env.GSD_MODEL_PROFILE = 'quality';
+    clearPlanningRootCache();
+    const config = loadConfig(tmpDir);
+    assert.strictEqual(config.model_profile, 'quality');
+  });
+
+  test('_sources tracks env var layer as "env:GSD_MODEL_PROFILE" format', () => {
+    process.env.GSD_MODEL_PROFILE = 'quality';
+    clearPlanningRootCache();
+    const config = loadConfig(tmpDir);
+    assert.strictEqual(config._sources.model_profile, 'env:GSD_MODEL_PROFILE');
+  });
+
+  test('unrecognized env vars (e.g., GSD_RANDOM_KEY) are ignored', () => {
+    process.env.GSD_RANDOM_KEY = 'should-be-ignored';
+    clearPlanningRootCache();
+    const config = loadConfig(tmpDir);
+    assert.strictEqual(config.GSD_RANDOM_KEY, undefined);
+    assert.ok(!('GSD_RANDOM_KEY' in config));
+    delete process.env.GSD_RANDOM_KEY;
+  });
+
+  test('when no env var is set, existing 2-layer behavior is unchanged', () => {
+    writeGlobalConfig({ model_profile: 'budget' });
+    writeConfig({ model_profile: 'quality' });
+    clearPlanningRootCache();
+    const config = loadConfig(tmpDir);
+    assert.strictEqual(config.model_profile, 'quality');
+    // _sources should NOT have env: prefix
+    assert.ok(!config._sources.model_profile.startsWith('env:'));
+  });
+
+  test('numeric env var values are parsed as integers', () => {
+    process.env.GSD_BRAVE_SEARCH = '42';
+    clearPlanningRootCache();
+    const config = loadConfig(tmpDir);
+    assert.strictEqual(config.brave_search, 42);
+    assert.strictEqual(typeof config.brave_search, 'number');
+  });
+});
+
+// ─── cmdConfigResolve ────────────────────────────────────────────────────────
+
+describe('cmdConfigResolve', () => {
+  let tmpDir;
+  let planningRoot;
+  let savedGsdUser;
+  let savedGsdProject;
+  const savedEnvVars = {};
+
+  beforeEach(() => {
+    savedGsdUser = process.env.GSD_USER;
+    savedGsdProject = process.env.GSD_PROJECT;
+    for (const envName of Object.values(ENV_KEY_MAP)) {
+      savedEnvVars[envName] = process.env[envName];
+    }
+    const result = createTempMultiUserProject();
+    tmpDir = result.tmpDir;
+    planningRoot = `.planning/users/${result.userSlug}/${result.projectName}`;
+    process.env.GSD_USER = result.userSlug;
+    process.env.GSD_PROJECT = result.projectName;
+  });
+
+  afterEach(() => {
+    cleanup(tmpDir);
+    clearPlanningRootCache();
+    if (savedGsdUser !== undefined) process.env.GSD_USER = savedGsdUser;
+    else delete process.env.GSD_USER;
+    if (savedGsdProject !== undefined) process.env.GSD_PROJECT = savedGsdProject;
+    else delete process.env.GSD_PROJECT;
+    for (const envName of Object.values(ENV_KEY_MAP)) {
+      if (savedEnvVars[envName] !== undefined) process.env[envName] = savedEnvVars[envName];
+      else delete process.env[envName];
+    }
+  });
+
+  function writeConfig(obj) {
+    fs.writeFileSync(
+      path.join(tmpDir, planningRoot, 'config.json'),
+      JSON.stringify(obj, null, 2)
+    );
+  }
+
+  function writeGlobalConfig(obj) {
+    fs.writeFileSync(
+      path.join(tmpDir, '.planning', 'config.json'),
+      JSON.stringify(obj, null, 2)
+    );
+  }
+
+  test('returns resolved value, source layer, and layers chain for a known key', () => {
+    writeGlobalConfig({ model_profile: 'budget' });
+    writeConfig({ model_profile: 'quality' });
+    clearPlanningRootCache();
+
+    // cmdConfigResolve calls output() which calls process.exit(0)
+    // We need to test via subprocess
+    const corePath = require.resolve('../get-shit-done/bin/lib/core.cjs').replace(/\\/g, '/');
+    const dir = tmpDir.replace(/\\/g, '/');
+    const cleanEnv = { ...process.env };
+    delete cleanEnv.CI;
+    delete cleanEnv.GITHUB_ACTIONS;
+    delete cleanEnv.GITLAB_CI;
+    delete cleanEnv.JENKINS_URL;
+    delete cleanEnv.CIRCLECI;
+    delete cleanEnv.TRAVIS;
+    // Remove GSD_ config env vars to avoid interference
+    for (const envName of Object.values(ENV_KEY_MAP)) {
+      delete cleanEnv[envName];
+    }
+    cleanEnv.GSD_USER = process.env.GSD_USER;
+    cleanEnv.GSD_PROJECT = process.env.GSD_PROJECT;
+
+    const script = `const core = require('${corePath}'); core.cmdConfigResolve('${dir}', 'model_profile', false);`;
+    const result = execSync(`node -e "${script.replace(/"/g, '\\"')}"`, {
+      encoding: 'utf-8',
+      stdio: ['pipe', 'pipe', 'pipe'],
+      env: cleanEnv,
+    });
+
+    const parsed = JSON.parse(result.trim());
+    assert.strictEqual(parsed.key, 'model_profile');
+    assert.strictEqual(parsed.value, 'quality');
+    assert.ok(parsed.source, 'should have source field');
+    assert.ok(parsed.layers, 'should have layers field');
+    assert.strictEqual(parsed.layers.default, 'balanced');
+  });
+
+  test('returns error for unknown key', () => {
+    clearPlanningRootCache();
+
+    const corePath = require.resolve('../get-shit-done/bin/lib/core.cjs').replace(/\\/g, '/');
+    const dir = tmpDir.replace(/\\/g, '/');
+    const cleanEnv = { ...process.env };
+    delete cleanEnv.CI;
+    delete cleanEnv.GITHUB_ACTIONS;
+    delete cleanEnv.GITLAB_CI;
+    delete cleanEnv.JENKINS_URL;
+    delete cleanEnv.CIRCLECI;
+    delete cleanEnv.TRAVIS;
+    for (const envName of Object.values(ENV_KEY_MAP)) {
+      delete cleanEnv[envName];
+    }
+    cleanEnv.GSD_USER = process.env.GSD_USER;
+    cleanEnv.GSD_PROJECT = process.env.GSD_PROJECT;
+
+    const script = `const core = require('${corePath}'); core.cmdConfigResolve('${dir}', 'nonexistent_key', false);`;
+
+    try {
+      execSync(`node -e "${script.replace(/"/g, '\\"')}"`, {
+        encoding: 'utf-8',
+        stdio: ['pipe', 'pipe', 'pipe'],
+        env: cleanEnv,
+      });
+      assert.fail('Should have exited with error');
+    } catch (err) {
+      assert.ok(
+        err.stderr.includes('Unknown config key'),
+        `Expected "Unknown config key" in stderr, got: ${err.stderr}`
+      );
+    }
   });
 });
