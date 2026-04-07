@@ -41,16 +41,98 @@ The document should describe what you want to build.
 
 <process>
 
-## 1. Setup
+## 1. Setup (Two-Step Bootstrap)
 
-**MANDATORY FIRST STEP — Execute these checks before ANY user interaction:**
+**MANDATORY FIRST STEP — Execute pre-init bootstrap before ANY user interaction.**
+
+The new-project workflow uses a two-step bootstrap to solve the chicken-and-egg problem: `init new-project` needs an active project, but the project doesn't exist yet.
+
+### Step 1.0: Pre-init bootstrap (no active project needed)
+
+```bash
+SETUP=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" init project-setup)
+if [[ "$SETUP" == @file:* ]]; then SETUP=$(cat "${SETUP#@file:}"); fi
+```
+
+Parse JSON for: `user`, `projects` (array), `global_config` (object), `planning_exists` (bool).
+
+**If `has_git` is false:** Initialize git:
+```bash
+git init
+```
+
+### Step 1.1: Show existing projects and ask for project name
+
+**If `projects` array is non-empty:** Display existing projects with status summary before creating a new one:
+
+```
+You have ${projects.length} project(s):
+
+| Project | Phase | Progress |
+|---------|-------|----------|
+| ${project.name} | ${project.current_phase || 'Not started'} | ${project.progress || '-'} |
+| ... | ... | ... |
+
+Create a new project?
+```
+
+**Ask for project name — this is the FIRST question:**
+
+Ask inline (freeform): "What should this project be called?"
+
+Wait for response. This is the project's human-readable name (e.g., "My Auth Service", "E-Commerce Platform").
+
+### Step 1.2: Slugify, confirm, and check duplicates
+
+Slugify the name:
+```bash
+SLUG=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" generate-slug "${USER_INPUT}")
+```
+
+**Show slug and confirm:** "Project will be created as: `${SLUG}`. Proceed?"
+
+**Check for duplicates:** If `SLUG` exists in `projects` array (match against `project.name`):
+```
+Error: Project "${SLUG}" already exists. Use /gsd:switch ${SLUG} to work on it.
+```
+Stop execution.
+
+### Step 1.3: Ask scope
+
+Ask inline (freeform): "Which monorepo subdirectory or Bazel target is this project scoped to? (press Enter to skip)"
+
+Store response as `SCOPE_PATH` (null/empty if skipped).
+
+### Step 1.4: Create directory structure and set active context
+
+```bash
+USER_SLUG="${user}"  # from project-setup response
+mkdir -p ".planning/users/${USER_SLUG}/${SLUG}"
+```
+
+**Seed config from global defaults:** If `global_config` is non-empty, write it to the new project's config.json:
+```bash
+# Write global_config as the new project's config.json
+# If SCOPE_PATH was provided, add scope_path field to the config
+```
+
+Write `${planning_root}/config.json` with contents of `global_config`. If `SCOPE_PATH` was provided, add `"scope_path": "${SCOPE_PATH}"` to the JSON.
+
+**Set active context:**
+```bash
+node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" switch "${SLUG}"
+```
+
+The new project is now the active context. `planning_root` = `.planning/users/${USER_SLUG}/${SLUG}`.
+
+### Step 1.5: Normal init (now has active project)
 
 ```bash
 INIT=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" init new-project)
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 ```
 
-Parse JSON for: `researcher_model`, `synthesizer_model`, `roadmapper_model`, `commit_docs`, `project_exists`, `has_codebase_map`, `planning_exists`, `has_existing_code`, `has_package_file`, `is_brownfield`, `needs_codebase_map`, `has_git`, `project_path`.
+Parse JSON for: `researcher_model`, `synthesizer_model`, `roadmapper_model`, `commit_docs`, `project_exists`, `has_codebase_map`, `planning_exists`, `has_existing_code`, `has_package_file`, `is_brownfield`, `needs_codebase_map`, `has_git`, `project_path`, `project_name`, `scope_path`, `config_path`.
 
 **Scan researcher registry:**
 ```bash
@@ -60,11 +142,6 @@ RESEARCHERS=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" researcher sc
 Parse `RESEARCHERS` JSON for: `count`, `researchers` (array of `{name, output_file, description, file_path}` objects).
 
 **If `project_exists` is true:** Error — project already initialized. Use `/gsd:progress`.
-
-**If `has_git` is false:** Initialize git:
-```bash
-git init
-```
 
 ## 2. Brownfield Offer
 
@@ -1426,7 +1503,13 @@ Exit skill and invoke SlashCommand("/gsd:discuss-phase 1 --auto")
 
 <success_criteria>
 
-- [ ] ${planning_root}/ directory created
+- [ ] Project name asked FIRST (before any context gathering)
+- [ ] Name slugified and confirmed with user
+- [ ] Duplicate names blocked with clear error directing to /gsd:switch
+- [ ] ${planning_root}/ directory created under `.planning/users/<user>/<project>/`
+- [ ] Active context set to new project via /gsd:switch
+- [ ] config.json seeded from global config defaults
+- [ ] Scope path asked and stored in config.json (if provided)
 - [ ] Git repo initialized
 - [ ] Brownfield detection completed
 - [ ] Deep questioning completed (threads followed, not rushed)
