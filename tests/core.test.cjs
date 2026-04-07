@@ -137,6 +137,146 @@ describe('loadConfig', () => {
     const config = loadConfig(tmpDir);
     assert.strictEqual(config.commit_docs, false);
   });
+
+  // ─── Two-file merge and source tracking ────────────────────────────────────
+
+  function writeGlobalConfig(obj) {
+    fs.writeFileSync(
+      path.join(tmpDir, '.planning', 'config.json'),
+      JSON.stringify(obj, null, 2)
+    );
+  }
+
+  test('reads from global config when per-project config is missing', () => {
+    // Remove per-project config
+    const projectConfigPath = path.join(tmpDir, planningRoot, 'config.json');
+    if (fs.existsSync(projectConfigPath)) fs.unlinkSync(projectConfigPath);
+    writeGlobalConfig({ model_profile: 'budget' });
+    clearPlanningRootCache();
+    const config = loadConfig(tmpDir);
+    assert.strictEqual(config.model_profile, 'budget');
+  });
+
+  test('per-project config overrides global config', () => {
+    writeGlobalConfig({ model_profile: 'budget', brave_search: true });
+    writeConfig({ model_profile: 'quality' });
+    clearPlanningRootCache();
+    const config = loadConfig(tmpDir);
+    assert.strictEqual(config.model_profile, 'quality', 'per-project should override global');
+    assert.strictEqual(config.brave_search, true, 'global key not in per-project should persist');
+  });
+
+  test('returns defaults when neither config exists', () => {
+    // Remove both configs
+    const projectConfigPath = path.join(tmpDir, planningRoot, 'config.json');
+    if (fs.existsSync(projectConfigPath)) fs.unlinkSync(projectConfigPath);
+    const globalConfigPath = path.join(tmpDir, '.planning', 'config.json');
+    if (fs.existsSync(globalConfigPath)) fs.unlinkSync(globalConfigPath);
+    clearPlanningRootCache();
+    const config = loadConfig(tmpDir);
+    assert.strictEqual(config.model_profile, 'balanced');
+    assert.strictEqual(config.commit_docs, true);
+  });
+
+  test('_sources tracks correct source per key', () => {
+    writeGlobalConfig({ model_profile: 'budget', brave_search: true });
+    writeConfig({ model_profile: 'quality' });
+    clearPlanningRootCache();
+    const config = loadConfig(tmpDir);
+    assert.ok(config._sources, '_sources should exist');
+    // model_profile from per-project
+    assert.ok(config._sources.model_profile.includes(planningRoot), 'model_profile should come from per-project config');
+    // brave_search from global
+    assert.ok(config._sources.brave_search.includes('.planning/config.json') || config._sources.brave_search.includes('.planning'), 'brave_search should come from global config');
+    // commit_docs from defaults
+    assert.strictEqual(config._sources.commit_docs, 'default', 'commit_docs should come from defaults');
+  });
+
+  test('_sources is default for all keys when no config files exist', () => {
+    const projectConfigPath = path.join(tmpDir, planningRoot, 'config.json');
+    if (fs.existsSync(projectConfigPath)) fs.unlinkSync(projectConfigPath);
+    const globalConfigPath = path.join(tmpDir, '.planning', 'config.json');
+    if (fs.existsSync(globalConfigPath)) fs.unlinkSync(globalConfigPath);
+    clearPlanningRootCache();
+    const config = loadConfig(tmpDir);
+    assert.ok(config._sources);
+    assert.strictEqual(config._sources.model_profile, 'default');
+    assert.strictEqual(config._sources.commit_docs, 'default');
+  });
+
+  test('depth migration in global config', () => {
+    writeGlobalConfig({ depth: 'comprehensive' });
+    const projectConfigPath = path.join(tmpDir, planningRoot, 'config.json');
+    if (fs.existsSync(projectConfigPath)) fs.unlinkSync(projectConfigPath);
+    clearPlanningRootCache();
+    const config = loadConfig(tmpDir);
+    assert.strictEqual(config.granularity, 'fine', 'depth: comprehensive should migrate to granularity: fine');
+    // Verify the file was updated
+    const globalContent = JSON.parse(fs.readFileSync(path.join(tmpDir, '.planning', 'config.json'), 'utf-8'));
+    assert.ok(!('depth' in globalContent), 'depth key should be removed from global config');
+    assert.strictEqual(globalContent.granularity, 'fine', 'granularity should be written to global config');
+  });
+
+  test('depth migration in per-project config takes precedence', () => {
+    writeGlobalConfig({ depth: 'quick' });
+    writeConfig({ depth: 'comprehensive' });
+    clearPlanningRootCache();
+    const config = loadConfig(tmpDir);
+    assert.strictEqual(config.granularity, 'fine', 'per-project depth: comprehensive should take precedence');
+  });
+
+  test('model_overrides from per-project overrides global', () => {
+    writeGlobalConfig({ model_overrides: { 'gsd-executor': 'sonnet' } });
+    writeConfig({ model_overrides: { 'gsd-executor': 'opus' } });
+    clearPlanningRootCache();
+    const config = loadConfig(tmpDir);
+    assert.deepStrictEqual(config.model_overrides, { 'gsd-executor': 'opus' });
+  });
+
+  test('model_overrides from global when per-project has none', () => {
+    writeGlobalConfig({ model_overrides: { 'gsd-planner': 'haiku' } });
+    writeConfig({ model_profile: 'balanced' });
+    clearPlanningRootCache();
+    const config = loadConfig(tmpDir);
+    assert.deepStrictEqual(config.model_overrides, { 'gsd-planner': 'haiku' });
+  });
+
+  test('loadConfig works when no active project (global + defaults only)', () => {
+    // Remove per-project by clearing env vars so no project resolves
+    delete process.env.GSD_PROJECT;
+    clearPlanningRootCache();
+
+    // Create a temp dir with no projects but a global config
+    const os2 = require('os');
+    const noProjectDir = fs.mkdtempSync(path.join(os2.tmpdir(), 'gsd-test-'));
+    fs.mkdirSync(path.join(noProjectDir, '.planning', 'users', 'test-user'), { recursive: true });
+    fs.writeFileSync(
+      path.join(noProjectDir, '.planning', 'config.json'),
+      JSON.stringify({ model_profile: 'quality' }, null, 2)
+    );
+    execSync('git init', { cwd: noProjectDir, stdio: 'pipe' });
+    execSync('git config user.email "test@test.com"', { cwd: noProjectDir, stdio: 'pipe' });
+    execSync('git config user.name "Test User"', { cwd: noProjectDir, stdio: 'pipe' });
+    fs.writeFileSync(
+      path.join(noProjectDir, '.planning', 'user-map.json'),
+      JSON.stringify({ _schema: 1, 'Test User': 'test-user' }, null, 2) + '\n'
+    );
+
+    process.env.GSD_USER = 'test-user';
+    clearPlanningRootCache();
+    const config = loadConfig(noProjectDir);
+    assert.strictEqual(config.model_profile, 'quality', 'should read from global config');
+    cleanup(noProjectDir);
+  });
+
+  test('nested config keys work across both config files', () => {
+    writeGlobalConfig({ workflow: { research: false } });
+    writeConfig({ workflow: { plan_check: false } });
+    clearPlanningRootCache();
+    const config = loadConfig(tmpDir);
+    assert.strictEqual(config.research, false, 'research from global workflow section');
+    assert.strictEqual(config.plan_checker, false, 'plan_checker from per-project workflow section');
+  });
 });
 
 // ─── resolveModelInternal ──────────────────────────────────────────────────────
