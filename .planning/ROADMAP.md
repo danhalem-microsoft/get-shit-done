@@ -137,6 +137,13 @@ Plans:
 
 **Goal:** Enable cross-user visibility via `/gsd:team-status`, implement config layering with debug tooling, refine git commit attribution, and harden edge cases (identity stability, CI/CD, performance).
 
+**Plans:** 3 plans
+
+Plans:
+- [ ] 04-01-PLAN.md — Config env var layer (4-tier precedence) + config resolve debug command
+- [ ] 04-02-PLAN.md — Team-status command: cross-user scanning, STATE.md frontmatter parsing, workflow + CLI
+- [ ] 04-03-PLAN.md — Commit attribution + legacy migration flow + PATH-13 bootstrap fix
+
 ### Requirements
 
 | Requirement | Description |
