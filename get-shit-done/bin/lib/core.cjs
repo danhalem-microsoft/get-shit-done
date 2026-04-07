@@ -83,8 +83,6 @@ function _resolvePlanningRootSoft(cwd) {
 }
 
 function loadConfig(cwd) {
-  const planningRoot = _resolvePlanningRootSoft(cwd);
-  const configPath = path.join(cwd, planningRoot, 'config.json');
   const defaults = {
     model_profile: 'balanced',
     commit_docs: true,
@@ -100,51 +98,122 @@ function loadConfig(cwd) {
     brave_search: false,
   };
 
-  try {
-    const raw = fs.readFileSync(configPath, 'utf-8');
-    const parsed = JSON.parse(raw);
+  const depthToGranularity = { quick: 'coarse', standard: 'standard', comprehensive: 'fine' };
 
-    // Migrate deprecated "depth" key to "granularity" with value mapping
+  // Helper: safely read and parse a JSON config file
+  function safeReadJson(filePath) {
+    try {
+      return JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+    } catch {
+      return null;
+    }
+  }
+
+  // Helper: migrate deprecated "depth" key to "granularity" in a config file
+  function migrateDepth(parsed, filePath) {
     if ('depth' in parsed && !('granularity' in parsed)) {
-      const depthToGranularity = { quick: 'coarse', standard: 'standard', comprehensive: 'fine' };
       parsed.granularity = depthToGranularity[parsed.depth] || parsed.depth;
       delete parsed.depth;
-      try { fs.writeFileSync(configPath, JSON.stringify(parsed, null, 2), 'utf-8'); } catch {}
+      try { fs.writeFileSync(filePath, JSON.stringify(parsed, null, 2), 'utf-8'); } catch {}
     }
-
-    const get = (key, nested) => {
-      if (parsed[key] !== undefined) return parsed[key];
-      if (nested && parsed[nested.section] && parsed[nested.section][nested.field] !== undefined) {
-        return parsed[nested.section][nested.field];
-      }
-      return undefined;
-    };
-
-    const parallelization = (() => {
-      const val = get('parallelization');
-      if (typeof val === 'boolean') return val;
-      if (typeof val === 'object' && val !== null && 'enabled' in val) return val.enabled;
-      return defaults.parallelization;
-    })();
-
-    return {
-      model_profile: get('model_profile') ?? defaults.model_profile,
-      commit_docs: get('commit_docs', { section: 'planning', field: 'commit_docs' }) ?? defaults.commit_docs,
-      search_gitignored: get('search_gitignored', { section: 'planning', field: 'search_gitignored' }) ?? defaults.search_gitignored,
-      branching_strategy: get('branching_strategy', { section: 'git', field: 'branching_strategy' }) ?? defaults.branching_strategy,
-      phase_branch_template: get('phase_branch_template', { section: 'git', field: 'phase_branch_template' }) ?? defaults.phase_branch_template,
-      milestone_branch_template: get('milestone_branch_template', { section: 'git', field: 'milestone_branch_template' }) ?? defaults.milestone_branch_template,
-      research: get('research', { section: 'workflow', field: 'research' }) ?? defaults.research,
-      plan_checker: get('plan_checker', { section: 'workflow', field: 'plan_check' }) ?? defaults.plan_checker,
-      verifier: get('verifier', { section: 'workflow', field: 'verifier' }) ?? defaults.verifier,
-      nyquist_validation: get('nyquist_validation', { section: 'workflow', field: 'nyquist_validation' }) ?? defaults.nyquist_validation,
-      parallelization,
-      brave_search: get('brave_search') ?? defaults.brave_search,
-      model_overrides: parsed.model_overrides || null,
-    };
-  } catch {
-    return defaults;
   }
+
+  // Helper: extract a config value from parsed config (top-level first, then nested)
+  function get(parsed, key, nested) {
+    if (parsed[key] !== undefined) return parsed[key];
+    if (nested && parsed[nested.section] && parsed[nested.section][nested.field] !== undefined) {
+      return parsed[nested.section][nested.field];
+    }
+    return undefined;
+  }
+
+  // Layer 1: Global config (always at repo root .planning/)
+  const globalPath = path.join(cwd, '.planning', 'config.json');
+  const globalConfig = safeReadJson(globalPath) || {};
+
+  // Layer 2: Per-project config (only when an active project exists)
+  const planningRoot = _resolvePlanningRootSoft(cwd);
+  // Guard: don't read per-project config when planningRoot is '.planning' (same as global)
+  const projectPath = (planningRoot !== '.planning')
+    ? path.join(cwd, planningRoot, 'config.json')
+    : null;
+  const projectConfig = projectPath ? (safeReadJson(projectPath) || {}) : {};
+
+  // Migrate depth in whichever file contains it
+  // Per-project takes precedence if both have it
+  if (projectPath && 'depth' in projectConfig) {
+    migrateDepth(projectConfig, projectPath);
+  }
+  if ('depth' in globalConfig) {
+    migrateDepth(globalConfig, globalPath);
+  }
+
+  // Define key mapping: config key → nested section lookup
+  const keyMap = {
+    model_profile: null,
+    commit_docs: { section: 'planning', field: 'commit_docs' },
+    search_gitignored: { section: 'planning', field: 'search_gitignored' },
+    branching_strategy: { section: 'git', field: 'branching_strategy' },
+    phase_branch_template: { section: 'git', field: 'phase_branch_template' },
+    milestone_branch_template: { section: 'git', field: 'milestone_branch_template' },
+    research: { section: 'workflow', field: 'research' },
+    plan_checker: { section: 'workflow', field: 'plan_check' },
+    verifier: { section: 'workflow', field: 'verifier' },
+    nyquist_validation: { section: 'workflow', field: 'nyquist_validation' },
+    parallelization: null,
+    brave_search: null,
+    granularity: null,
+  };
+
+  // Merge: per-project > global > defaults
+  const result = {};
+  const sources = {};
+
+  for (const [key, nested] of Object.entries(keyMap)) {
+    const projectVal = get(projectConfig, key, nested);
+    const globalVal = get(globalConfig, key, nested);
+
+    if (projectVal !== undefined) {
+      result[key] = projectVal;
+      sources[key] = projectPath;
+    } else if (globalVal !== undefined) {
+      result[key] = globalVal;
+      sources[key] = globalPath;
+    } else if (defaults[key] !== undefined) {
+      result[key] = defaults[key];
+      sources[key] = 'default';
+    } else {
+      sources[key] = 'default';
+    }
+  }
+
+  // Normalize parallelization (boolean or object with enabled field)
+  const rawParallel = result.parallelization;
+  if (typeof rawParallel === 'boolean') {
+    result.parallelization = rawParallel;
+  } else if (typeof rawParallel === 'object' && rawParallel !== null && 'enabled' in rawParallel) {
+    result.parallelization = rawParallel.enabled;
+  } else if (rawParallel === undefined) {
+    result.parallelization = defaults.parallelization;
+    sources.parallelization = 'default';
+  }
+
+  // Handle model_overrides (not in defaults, special merge)
+  const projectOverrides = projectConfig.model_overrides;
+  const globalOverrides = globalConfig.model_overrides;
+  if (projectOverrides) {
+    result.model_overrides = projectOverrides;
+    sources.model_overrides = projectPath || globalPath;
+  } else if (globalOverrides) {
+    result.model_overrides = globalOverrides;
+    sources.model_overrides = globalPath;
+  } else {
+    result.model_overrides = null;
+    sources.model_overrides = 'default';
+  }
+
+  result._sources = sources;
+  return result;
 }
 
 // ─── Git utilities ────────────────────────────────────────────────────────────
