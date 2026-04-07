@@ -520,6 +520,12 @@ function getPlanningRoot(cwd) {
   // context.cjs requires core.cjs at its top level.
   const { resolveContext } = require('./context.cjs');
   const ctx = resolveContext(cwd);
+
+  // resolveContext may return null project/planning_root when no active project
+  if (!ctx.planning_root) {
+    error('GSD Error: No active project. Run /gsd:new-project to create one, or /gsd:switch to select one.');
+  }
+
   _planningRootCache[cwd] = ctx.planning_root;
   return ctx.planning_root;
 }

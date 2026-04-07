@@ -6,6 +6,7 @@ const fs = require('fs');
 const path = require('path');
 const { safeReadFile, toPosixPath, error } = require('./core.cjs');
 const { resolveIdentity } = require('./identity.cjs');
+const { extractFrontmatter } = require('./frontmatter.cjs');
 
 // --- Active Context I/O ----------------------------------------------------
 
@@ -47,6 +48,21 @@ function ensureActiveGitignored(cwd) {
 
 // --- Context Resolution ----------------------------------------------------
 
+/**
+ * Scan a user directory for non-archived, non-dotfile project directories.
+ * Returns an array of directory names (not metadata).
+ */
+function scanProjects(userDir) {
+  try {
+    const entries = fs.readdirSync(userDir, { withFileTypes: true });
+    return entries
+      .filter(e => e.isDirectory() && e.name !== '_archived' && !e.name.startsWith('.'))
+      .map(e => e.name);
+  } catch {
+    return [];
+  }
+}
+
 function resolveContext(cwd) {
   // 1. Resolve user identity
   const identity = resolveIdentity(cwd);
@@ -59,47 +75,110 @@ function resolveContext(cwd) {
   const userDir = path.join(cwd, '.planning', 'users', user);
   fs.mkdirSync(userDir, { recursive: true });
 
-  // 3. Resolve project (env var override first)
+  // 3. Resolve project (env var override first — highest priority)
   const envProject = process.env.GSD_PROJECT;
   if (envProject) {
     const projectDir = path.join(cwd, '.planning', 'users', user, envProject);
     if (!fs.existsSync(projectDir)) {
-      error('GSD Error: Project "' + envProject + '" not found for user ' + user + '. Available projects: ' + listProjects(cwd, user));
+      error('GSD Error: Project "' + envProject + '" not found for user ' + user + '.');
     }
     const planning_root = toPosixPath(path.join('.planning', 'users', user, envProject));
     return { user, project: envProject, planning_root };
   }
 
-  // 4. Read .active file
-  const active = readActiveContext(cwd, user);
-  if (!active) {
-    error('GSD Error: No active project. Run /gsd:new-project to create one, or /gsd:switch to select one.');
-  }
-  const projectDir = path.join(cwd, '.planning', 'users', user, active.project);
-  if (!fs.existsSync(projectDir)) {
-    error('GSD Error: Active project "' + active.project + '" not found. Run /gsd:switch to select a valid project.');
+  // 4. Auto-select: scan for projects
+  const projects = scanProjects(userDir);
+
+  if (projects.length === 1) {
+    // LIFE-05: auto-select single project
+    const planning_root = toPosixPath(path.join('.planning', 'users', user, projects[0]));
+    return { user, project: projects[0], planning_root };
   }
 
-  // 5. Build and return result
-  const planning_root = toPosixPath(path.join('.planning', 'users', user, active.project));
-  return { user, project: active.project, planning_root };
+  // 5. Read .active file (for multiple-project case)
+  if (projects.length > 1) {
+    const active = readActiveContext(cwd, user);
+    if (active) {
+      const projectDir = path.join(cwd, '.planning', 'users', user, active.project);
+      if (fs.existsSync(projectDir)) {
+        const planning_root = toPosixPath(path.join('.planning', 'users', user, active.project));
+        return { user, project: active.project, planning_root };
+      }
+    }
+  }
+
+  // 6. Zero or multiple projects with no .active → return null (NOT hard-error)
+  return { user, project: null, planning_root: null };
 }
 
 function listProjects(cwd, user) {
   const userDir = path.join(cwd, '.planning', 'users', user);
   try {
     const entries = fs.readdirSync(userDir, { withFileTypes: true });
-    const projects = entries
-      .filter(e => e.isDirectory() && e.name !== '_archived')
-      .map(e => e.name);
-    return projects.length > 0 ? projects.join(', ') : '(none)';
+    return entries
+      .filter(e => e.isDirectory() && e.name !== '_archived' && !e.name.startsWith('.'))
+      .map(e => {
+        const projectDir = path.join(userDir, e.name);
+
+        // Read STATE.md for phase/progress metadata
+        const stateMd = safeReadFile(path.join(projectDir, 'STATE.md'));
+        const stateFm = stateMd ? extractFrontmatter(stateMd) : {};
+
+        // Read PROJECT.md for Core Value description
+        const projectMd = safeReadFile(path.join(projectDir, 'PROJECT.md'));
+        const description = projectMd ? extractCoreValue(projectMd) : null;
+
+        // Get last activity from STATE.md mtime (fallback to null)
+        let last_activity = null;
+        try {
+          const stat = fs.statSync(path.join(projectDir, 'STATE.md'));
+          last_activity = stat.mtime.toISOString();
+        } catch { /* no STATE.md */ }
+
+        // Extract progress
+        const completedPhases = stateFm.progress && stateFm.progress.completed_phases
+          ? parseInt(stateFm.progress.completed_phases, 10) || 0
+          : 0;
+        const totalPhases = stateFm.progress && stateFm.progress.total_phases
+          ? parseInt(stateFm.progress.total_phases, 10) || 0
+          : 0;
+
+        // Extract current phase from frontmatter or body
+        let current_phase = null;
+        if (stateFm.current_phase) {
+          current_phase = stateFm.current_phase;
+        } else if (stateMd) {
+          const phaseMatch = stateMd.match(/\*\*Phase\s+\d+[^*]*\*\*/);
+          if (phaseMatch) {
+            current_phase = phaseMatch[0].replace(/\*\*/g, '').trim();
+          }
+        }
+
+        return {
+          name: e.name,
+          current_phase,
+          progress: `${completedPhases}/${totalPhases}`,
+          last_activity,
+          description,
+        };
+      });
   } catch {
-    return '(none)';
+    return [];
   }
+}
+
+/**
+ * Extract the Core Value line from PROJECT.md content.
+ * Looks for "**Core Value:**" followed by the value text on the same line.
+ */
+function extractCoreValue(content) {
+  const match = content.match(/\*\*Core Value:\*\*\s*(.+)/);
+  return match ? match[1].trim() : null;
 }
 
 module.exports = {
   readActiveContext,
   writeActiveContext,
   resolveContext,
+  listProjects,
 };

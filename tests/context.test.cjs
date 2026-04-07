@@ -183,27 +183,22 @@ describe('resolveContext', () => {
     assert.strictEqual(ctx.planning_root, '.planning/users/test-user/test-project');
   });
 
-  test('error on missing .active (subprocess)', () => {
+  test('auto-selects single project when .active is missing (subprocess)', () => {
     const result = createTempMultiUserProject({ withActive: false });
     tmpDir = result.tmpDir;
 
     const corePath = require.resolve('../get-shit-done/bin/lib/context.cjs').replace(/\\/g, '/');
     const dir = tmpDir.replace(/\\/g, '/');
-    const script = `const { resolveContext } = require('${corePath}'); resolveContext('${dir}');`;
+    const script = `const { resolveContext } = require('${corePath}'); const r = resolveContext('${dir}'); process.stdout.write(JSON.stringify(r));`;
 
-    try {
-      execSync(`node -e "${script.replace(/"/g, '\\"')}"`, {
-        encoding: 'utf-8',
-        stdio: ['pipe', 'pipe', 'pipe'],
-        env: { ...process.env, GSD_USER: 'test-user', GSD_PROJECT: '' },
-      });
-      assert.fail('Should have thrown');
-    } catch (err) {
-      assert.ok(
-        err.stderr.includes('No active project'),
-        `Expected "No active project" in stderr, got: ${err.stderr}`
-      );
-    }
+    const output = execSync(`node -e "${script.replace(/"/g, '\\"')}"`, {
+      encoding: 'utf-8',
+      stdio: ['pipe', 'pipe', 'pipe'],
+      env: { ...process.env, GSD_USER: 'test-user', GSD_PROJECT: '' },
+    });
+    const ctx = JSON.parse(output.trim());
+    assert.strictEqual(ctx.project, 'test-project');
+    assert.strictEqual(ctx.planning_root, '.planning/users/test-user/test-project');
   });
 
   test('error on nonexistent GSD_PROJECT (subprocess)', () => {
