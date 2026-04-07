@@ -94,6 +94,7 @@ describe('PATH-13: Grep audit gate', () => {
     // Allowlist: files that may legitimately reference .planning/ in documentation
     const allowlist = [
       'audit-paths.test.cjs', // this test itself
+      'team-status.md',       // user-facing display text explaining .planning/users/ structure
     ];
 
     const violations = grepOutput.split('\n').filter(line => {
@@ -152,6 +153,7 @@ describe('PATH-13: Grep audit gate', () => {
       'roadmap.test.cjs',     // test setup constructs .planning/users/ paths
       'verify.test.cjs',      // CLI verify tests pass .planning/ paths as arguments
       'verify-health.test.cjs', // test setup constructs .planning/users/ paths
+      'team-status.test.cjs', // test setup constructs .planning/users/ paths for cross-user scanning
     ];
 
     const violations = grepOutput.split('\n').filter(line => {
