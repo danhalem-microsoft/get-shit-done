@@ -82,6 +82,20 @@ function _resolvePlanningRootSoft(cwd) {
   return (ctx && ctx.planning_root) ? ctx.planning_root : '.planning';
 }
 
+// ─── Config env var mapping ──────────────────────────────────────────────────
+
+const ENV_KEY_MAP = {
+  model_profile: 'GSD_MODEL_PROFILE',
+  commit_docs: 'GSD_COMMIT_DOCS',
+  parallelization: 'GSD_PARALLELIZATION',
+  granularity: 'GSD_GRANULARITY',
+  brave_search: 'GSD_BRAVE_SEARCH',
+  research: 'GSD_RESEARCH',
+  plan_checker: 'GSD_PLAN_CHECKER',
+  verifier: 'GSD_VERIFIER',
+  nyquist_validation: 'GSD_NYQUIST_VALIDATION',
+};
+
 function loadConfig(cwd) {
   const defaults = {
     model_profile: 'balanced',
@@ -213,7 +227,127 @@ function loadConfig(cwd) {
   }
 
   result._sources = sources;
+
+  // Layer 3: Environment variable overrides (highest priority)
+  // Applied AFTER normalization so env vars always win and don't get re-normalized.
+  // Env var values are self-parsed here (string->boolean/number), so normalization
+  // blocks above only need to handle config-file values.
+  for (const [key, envName] of Object.entries(ENV_KEY_MAP)) {
+    const envVal = process.env[envName];
+    if (envVal !== undefined) {
+      if (envVal === 'true') result[key] = true;
+      else if (envVal === 'false') result[key] = false;
+      else if (/^\d+$/.test(envVal)) result[key] = parseInt(envVal, 10);
+      else result[key] = envVal;
+      sources[key] = `env:${envName}`;
+    }
+  }
+  result._sources = sources;
+
   return result;
+}
+
+/**
+ * Resolve a config key showing its value, source layer, and full tier chain.
+ * Used by `gsd-tools.cjs config-resolve <key>` for config debugging.
+ */
+function cmdConfigResolve(cwd, key, raw) {
+  // Define valid keys (same as keyMap inside loadConfig)
+  const validKeys = new Set([
+    'model_profile', 'commit_docs', 'search_gitignored',
+    'branching_strategy', 'phase_branch_template', 'milestone_branch_template',
+    'research', 'plan_checker', 'verifier', 'nyquist_validation',
+    'parallelization', 'brave_search', 'granularity',
+  ]);
+
+  if (!validKeys.has(key)) {
+    error('Unknown config key: ' + key);
+  }
+
+  const config = loadConfig(cwd);
+
+  // Hardcoded defaults (same as inside loadConfig)
+  const defaults = {
+    model_profile: 'balanced',
+    commit_docs: true,
+    search_gitignored: false,
+    branching_strategy: 'none',
+    phase_branch_template: 'gsd/phase-{phase}-{slug}',
+    milestone_branch_template: 'gsd/{milestone}-{slug}',
+    research: true,
+    plan_checker: true,
+    verifier: true,
+    nyquist_validation: true,
+    parallelization: true,
+    brave_search: false,
+  };
+
+  // Key mapping for nested section lookups
+  const keyMap = {
+    model_profile: null,
+    commit_docs: { section: 'planning', field: 'commit_docs' },
+    search_gitignored: { section: 'planning', field: 'search_gitignored' },
+    branching_strategy: { section: 'git', field: 'branching_strategy' },
+    phase_branch_template: { section: 'git', field: 'phase_branch_template' },
+    milestone_branch_template: { section: 'git', field: 'milestone_branch_template' },
+    research: { section: 'workflow', field: 'research' },
+    plan_checker: { section: 'workflow', field: 'plan_check' },
+    verifier: { section: 'workflow', field: 'verifier' },
+    nyquist_validation: { section: 'workflow', field: 'nyquist_validation' },
+    parallelization: null,
+    brave_search: null,
+    granularity: null,
+  };
+
+  // Helper to read a key from parsed config
+  function getFromParsed(parsed, k) {
+    const nested = keyMap[k];
+    if (parsed[k] !== undefined) return parsed[k];
+    if (nested && parsed[nested.section] && parsed[nested.section][nested.field] !== undefined) {
+      return parsed[nested.section][nested.field];
+    }
+    return null;
+  }
+
+  // Read raw config files for layer info
+  const globalPath = path.join(cwd, '.planning', 'config.json');
+  const planningRoot = _resolvePlanningRootSoft(cwd);
+  const projectPath = (planningRoot !== '.planning')
+    ? path.join(cwd, planningRoot, 'config.json')
+    : null;
+
+  let globalVal = null;
+  let projectVal = null;
+
+  try {
+    const globalConfig = JSON.parse(fs.readFileSync(globalPath, 'utf-8'));
+    globalVal = getFromParsed(globalConfig, key);
+  } catch {}
+
+  if (projectPath) {
+    try {
+      const projectConfig = JSON.parse(fs.readFileSync(projectPath, 'utf-8'));
+      projectVal = getFromParsed(projectConfig, key);
+    } catch {}
+  }
+
+  // Check env var
+  const envName = ENV_KEY_MAP[key];
+  const envVal = envName ? (process.env[envName] !== undefined ? process.env[envName] : null) : null;
+
+  const layers = {
+    default: defaults[key] !== undefined ? defaults[key] : null,
+    global: globalVal,
+    project: projectVal,
+    env: envVal,
+  };
+
+  output({
+    key,
+    value: config[key],
+    source: config._sources[key],
+    layers,
+  }, raw);
 }
 
 // ─── Git utilities ────────────────────────────────────────────────────────────
@@ -673,10 +807,12 @@ function clearPlanningRootCache() {
 
 module.exports = {
   MODEL_PROFILES,
+  ENV_KEY_MAP,
   output,
   error,
   safeReadFile,
   loadConfig,
+  cmdConfigResolve,
   isGitIgnored,
   execGit,
   escapeRegex,
