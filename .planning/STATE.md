@@ -15,7 +15,7 @@ progress:
 
 ## Current Phase
 
-**Phase 4: Team Visibility and Hardening** — In Progress (1/3 plans)
+**Phase 4: Team Visibility and Hardening** — In Progress (2/3 plans)
 
 ## Phase Summary
 
@@ -24,7 +24,7 @@ progress:
 | 1 | Identity and Path Resolution Core | Complete (3/3 plans) |
 | 2 | Module Path Migration | Complete (5/5 plans) |
 | 3 | Project Lifecycle Commands | Complete (5/5 plans) |
-| 4 | Team Visibility and Hardening | In Progress (1/3 plans) |
+| 4 | Team Visibility and Hardening | In Progress (2/3 plans) |
 
 ## Key Decisions
 
@@ -68,6 +68,9 @@ progress:
 | ENV_KEY_MAP covers 9 keys; branching templates and search_gitignored excluded | 04-01 | Env-only override makes no practical sense for path templates |
 | Env var loop placed AFTER parallelization normalization and model_overrides merge | 04-01 | Env vars always win over file-based values; post-normalization ensures correct types |
 | cmdConfigResolve duplicates defaults/keyMap locally | 04-01 | loadConfig scopes them as function-local variables; no clean way to share |
+| scanAllUsers reads .active JSON directly instead of readActiveContext | 04-02 | Simpler for cross-user reads; avoids requiring cwd+user signature |
+| cmdTeamStatus lazy-requires context.cjs | 04-02 | Avoids circular dependency with commands.cjs |
+| Relative time uses simple helper (min/hrs/days/weeks ago) | 04-02 | No external dependency needed for approximate recency |
 
 ## Session Log
 
@@ -94,6 +97,7 @@ progress:
 | 2026-04-07 | Plan 03-05 executed | Integration tests: 6 commands x 3 resolution methods + LIFE-05 auto-select fix — 10 min, 1 task, 4 files. Phase 3 complete |
 | 2026-04-07 | Phase 4 context | Context gathered, research completed, 3 plans created |
 | 2026-04-07 | Plan 04-01 executed | ENV_KEY_MAP + 4-tier loadConfig + cmdConfigResolve + config-resolve dispatcher — 5 min, 2 tasks, 3 files |
+| 2026-04-07 | Plan 04-02 executed | scanAllUsers + cmdTeamStatus + workflow/command files + TDD (11 tests) — 6 min, 3 tasks, 8 files |
 
 ---
 *State initialized: 2026-03-17*
