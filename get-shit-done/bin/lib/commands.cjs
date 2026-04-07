@@ -242,6 +242,37 @@ function cmdCommit(cwd, message, files, raw, amend) {
     execGit(cwd, ['add', file]);
   }
 
+  // Auto-detect user/project for planning commit attribution (TEAM-06)
+  if (message && !amend) {
+    try {
+      const { tryGetPlanningContext } = require('./core.cjs');
+      const ctx = tryGetPlanningContext(cwd);
+      if (ctx && ctx.active_user && ctx.active_project) {
+        // Check if this is a planning commit by examining staged files
+        const stagedResult = execGit(cwd, ['diff', '--cached', '--name-only']);
+        const stagedFiles = stagedResult.exitCode === 0 ? stagedResult.stdout.trim() : '';
+        const isPlanningCommit = stagedFiles.split('\n').some(f => f.includes('.planning/'));
+
+        if (isPlanningCommit) {
+          // Only add prefix for planning commits with scope format
+          const scopeMatch = message.match(/^(\w+)\(([^)]+)\):\s*/);
+          if (scopeMatch) {
+            const prefix = `${ctx.active_user}/${ctx.active_project}/`;
+            const existingScope = scopeMatch[2];
+            if (!existingScope.startsWith(prefix)) {
+              message = message.replace(
+                scopeMatch[0],
+                `${scopeMatch[1]}(${prefix}${existingScope}): `
+              );
+            }
+          }
+        }
+      }
+    } catch {
+      // If tryGetPlanningContext throws (e.g., legacy detection), fall back to no attribution
+    }
+  }
+
   // Commit
   const commitArgs = amend ? ['commit', '--amend', '--no-edit'] : ['commit', '-m', message];
   const commitResult = execGit(cwd, commitArgs);

@@ -1186,3 +1186,169 @@ describe('websearch command', () => {
     assert.strictEqual(output.error, 'Network timeout');
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// cmdCommit attribution tests (TEAM-06)
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('cmdCommit attribution', () => {
+  const { createTempMultiUserProject } = require('./helpers.cjs');
+  const { clearPlanningRootCache } = require('../get-shit-done/bin/lib/core.cjs');
+  const { execSync } = require('child_process');
+  let tmpDir, userSlug, projectName;
+  let origGsdUser, origGsdProject;
+
+  beforeEach(() => {
+    origGsdUser = process.env.GSD_USER;
+    origGsdProject = process.env.GSD_PROJECT;
+    const result = createTempMultiUserProject({
+      userName: 'Dan Halem',
+      userEmail: 'dan@test.com',
+      userSlug: 'dan',
+      projectName: 'frontend',
+    });
+    tmpDir = result.tmpDir;
+    userSlug = result.userSlug;
+    projectName = result.projectName;
+    // Set env vars for test control
+    process.env.GSD_USER = userSlug;
+    process.env.GSD_PROJECT = projectName;
+  });
+
+  afterEach(() => {
+    if (origGsdUser !== undefined) process.env.GSD_USER = origGsdUser;
+    else delete process.env.GSD_USER;
+    if (origGsdProject !== undefined) process.env.GSD_PROJECT = origGsdProject;
+    else delete process.env.GSD_PROJECT;
+    clearPlanningRootCache();
+    cleanup(tmpDir);
+  });
+
+  test('planning commit gets user/project prefix in scope', () => {
+    // Create a new file in .planning/
+    const planningFile = path.join(tmpDir, '.planning', 'users', userSlug, projectName, 'STATE.md');
+    fs.writeFileSync(planningFile, '# State\n');
+
+    const result = runGsdTools(
+      `commit "docs(phase-03): complete execution" --files .planning/users/${userSlug}/${projectName}/STATE.md`,
+      tmpDir
+    );
+    assert.ok(result.success, `Command failed: ${result.error}`);
+
+    const output = JSON.parse(result.output);
+    assert.strictEqual(output.committed, true, 'should commit');
+
+    // Verify the commit message has the user/project prefix
+    const gitLog = execSync('git log --oneline -1', { cwd: tmpDir, encoding: 'utf-8' }).trim();
+    assert.ok(
+      gitLog.includes('docs(dan/frontend/phase-03): complete execution'),
+      `Expected user/project prefix in commit message, got: ${gitLog}`
+    );
+  });
+
+  test('code commit does NOT get user/project prefix', () => {
+    // Create a file outside .planning/
+    fs.writeFileSync(path.join(tmpDir, 'src-file.js'), '// code\n');
+
+    const result = runGsdTools(
+      'commit "feat(auth): add login" --files src-file.js',
+      tmpDir
+    );
+    assert.ok(result.success, `Command failed: ${result.error}`);
+
+    const output = JSON.parse(result.output);
+    assert.strictEqual(output.committed, true, 'should commit');
+
+    const gitLog = execSync('git log --oneline -1', { cwd: tmpDir, encoding: 'utf-8' }).trim();
+    assert.ok(
+      gitLog.includes('feat(auth): add login'),
+      `Code commit should keep original message, got: ${gitLog}`
+    );
+    assert.ok(
+      !gitLog.includes('dan/frontend/'),
+      `Code commit should NOT have user/project prefix, got: ${gitLog}`
+    );
+  });
+
+  test('commit without scope format is unchanged', () => {
+    fs.writeFileSync(path.join(tmpDir, '.planning', 'users', userSlug, projectName, 'test.md'), '# Test\n');
+
+    const result = runGsdTools(
+      `commit "fix something" --files .planning/users/${userSlug}/${projectName}/test.md`,
+      tmpDir
+    );
+    assert.ok(result.success, `Command failed: ${result.error}`);
+
+    const output = JSON.parse(result.output);
+    assert.strictEqual(output.committed, true, 'should commit');
+
+    const gitLog = execSync('git log --oneline -1', { cwd: tmpDir, encoding: 'utf-8' }).trim();
+    assert.ok(
+      gitLog.includes('fix something'),
+      `Message without scope should be unchanged, got: ${gitLog}`
+    );
+    assert.ok(
+      !gitLog.includes('dan/frontend/'),
+      `Message without scope should NOT get prefix, got: ${gitLog}`
+    );
+  });
+
+  test('already-prefixed message is NOT double-prefixed', () => {
+    fs.writeFileSync(path.join(tmpDir, '.planning', 'users', userSlug, projectName, 'already.md'), '# Already\n');
+
+    const result = runGsdTools(
+      `commit "docs(dan/frontend/phase-03): msg" --files .planning/users/${userSlug}/${projectName}/already.md`,
+      tmpDir
+    );
+    assert.ok(result.success, `Command failed: ${result.error}`);
+
+    const output = JSON.parse(result.output);
+    assert.strictEqual(output.committed, true, 'should commit');
+
+    const gitLog = execSync('git log --oneline -1', { cwd: tmpDir, encoding: 'utf-8' }).trim();
+    assert.ok(
+      gitLog.includes('docs(dan/frontend/phase-03): msg'),
+      `Already-prefixed message should remain the same, got: ${gitLog}`
+    );
+    // Verify no double prefix like dan/frontend/dan/frontend/
+    assert.ok(
+      !gitLog.includes('dan/frontend/dan/frontend/'),
+      `Should NOT double-prefix, got: ${gitLog}`
+    );
+  });
+
+  test('no active context leaves message unchanged', () => {
+    delete process.env.GSD_USER;
+    delete process.env.GSD_PROJECT;
+    clearPlanningRootCache();
+
+    // Create a temp project without active context
+    const noCtxDir = fs.mkdtempSync(path.join(require('os').tmpdir(), 'gsd-test-'));
+    fs.mkdirSync(path.join(noCtxDir, '.planning', 'users'), { recursive: true });
+    execSync('git init', { cwd: noCtxDir, stdio: 'pipe' });
+    execSync('git config user.email "nobody@test.com"', { cwd: noCtxDir, stdio: 'pipe' });
+    execSync('git config user.name "Nobody"', { cwd: noCtxDir, stdio: 'pipe' });
+    fs.writeFileSync(path.join(noCtxDir, '.gitkeep'), '');
+    execSync('git add -A && git commit -m "init"', { cwd: noCtxDir, stdio: 'pipe' });
+
+    // Create a file in .planning/
+    fs.writeFileSync(path.join(noCtxDir, '.planning', 'test.md'), '# Test\n');
+
+    const result = runGsdTools(
+      'commit "docs(phase-01): something" --files .planning/test.md',
+      noCtxDir
+    );
+    assert.ok(result.success, `Command failed: ${result.error}`);
+
+    const output = JSON.parse(result.output);
+    assert.strictEqual(output.committed, true, 'should commit');
+
+    const gitLog = execSync('git log --oneline -1', { cwd: noCtxDir, encoding: 'utf-8' }).trim();
+    assert.ok(
+      gitLog.includes('docs(phase-01): something'),
+      `No-context commit should be unchanged, got: ${gitLog}`
+    );
+
+    cleanup(noCtxDir);
+  });
+});
