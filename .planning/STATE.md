@@ -3,19 +3,19 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-04-07T18:00:40.127Z"
+last_updated: "2026-04-07T18:14:03.000Z"
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 16
-  completed_plans: 9
+  completed_plans: 10
 ---
 
 # Project State: GSD Multi-User Monorepo Support
 
 ## Current Phase
 
-**Phase 3: Project Lifecycle Commands** — In Progress (1/5 plans)
+**Phase 3: Project Lifecycle Commands** — In Progress (2/5 plans)
 
 ## Phase Summary
 
@@ -23,7 +23,7 @@ progress:
 |-------|------|--------|
 | 1 | Identity and Path Resolution Core | Complete (3/3 plans) |
 | 2 | Module Path Migration | Complete (5/5 plans) |
-| 3 | Project Lifecycle Commands | In Progress (1/5 plans) |
+| 3 | Project Lifecycle Commands | In Progress (2/5 plans) |
 | 4 | Team Visibility and Hardening | Not Started |
 
 ## Key Decisions
@@ -53,6 +53,10 @@ progress:
 | getPlanningRoot checks null and hard-errors for commands requiring active project | 03-01 | Preserves hard-error boundary for downstream commands |
 | loadConfig reads global + per-project with _sources tracking | 03-01 | Two-file merge with source tracking prepares Phase 4 config resolve |
 | scanProjects is internal; listProjects is exported with rich metadata | 03-01 | Clean separation: dir scanning vs. metadata enrichment |
+| switch/archive/restore are top-level dispatcher commands, not init sub-commands | 03-02 | Direct user actions, not workflow bootstrap |
+| project-setup is an init sub-command for new-project bootstrap | 03-02 | Bootstraps context for workflow, consistent with init pattern |
+| Fuzzy matching uses simple includes() substring | 03-02 | Adequate for project slugs, no need for Levenshtein |
+| Archive auto-selects remaining project when exactly one exists | 03-02 | Consistent with LIFE-05 single-project auto-select behavior |
 
 ## Session Log
 
@@ -73,6 +77,7 @@ progress:
 | 2026-03-31 | Plan 02-05 executed | 83 markdown files migrated + audit gate activated — 5 min, 3 tasks, 85 files. Phase 2 complete |
 | 2026-04-07 | Phase 3 context | Context gathered, 7 critic blind spots resolved, research completed |
 | 2026-04-07 | Plan 03-01 executed | listProjects redesign + resolveContext auto-select + loadConfig two-file merge — 9 min, 2 tasks, 4 files |
+| 2026-04-07 | Plan 03-02 executed | switch/archive/restore/project-setup CLI commands — 5 min, 2 tasks, 4 files |
 
 ---
 *State initialized: 2026-03-17*
