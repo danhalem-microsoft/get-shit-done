@@ -621,6 +621,16 @@ async function main() {
       break;
     }
 
+    case 'config-resolve': {
+      const key = args[1];
+      if (!key) {
+        error('Usage: gsd-tools.cjs config-resolve <key>');
+      }
+      const { cmdConfigResolve } = require('./lib/core.cjs');
+      cmdConfigResolve(cwd, key, raw);
+      break;
+    }
+
     case 'history-digest': {
       commands.cmdHistoryDigest(cwd, raw);
       break;
