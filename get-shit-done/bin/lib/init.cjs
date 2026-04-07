@@ -944,6 +944,7 @@ function cmdInitProjectSetup(cwd, raw) {
     projects,
     global_config,
     planning_exists,
+    bootstrap_path: toPosixPath(path.join('.planning', 'users', user)),
   }, raw);
 }
 

@@ -54,7 +54,7 @@ SETUP=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" init project-setup)
 if [[ "$SETUP" == @file:* ]]; then SETUP=$(cat "${SETUP#@file:}"); fi
 ```
 
-Parse JSON for: `user`, `projects` (array), `global_config` (object), `planning_exists` (bool).
+Parse JSON for: `user`, `projects` (array), `global_config` (object), `planning_exists` (bool), `bootstrap_path` (string — user directory path e.g. `.planning/users/<user>`).
 
 **If `has_git` is false:** Initialize git:
 ```bash
@@ -107,7 +107,8 @@ Store response as `SCOPE_PATH` (null/empty if skipped).
 
 ```bash
 USER_SLUG="${user}"  # from project-setup response
-mkdir -p ".planning/users/${USER_SLUG}/${SLUG}"
+BOOTSTRAP_PATH="${bootstrap_path}"  # from project-setup response (e.g. .planning/users/<user>)
+mkdir -p "${BOOTSTRAP_PATH}/${SLUG}"
 ```
 
 **Seed config from global defaults:** If `global_config` is non-empty, write it to the new project's config.json:
@@ -123,7 +124,7 @@ Write `${planning_root}/config.json` with contents of `global_config`. If `SCOPE
 node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" switch "${SLUG}"
 ```
 
-The new project is now the active context. `planning_root` = `.planning/users/${USER_SLUG}/${SLUG}`.
+The new project is now the active context. `planning_root` = `${BOOTSTRAP_PATH}/${SLUG}`.
 
 ### Step 1.5: Normal init (now has active project)
 
@@ -1525,7 +1526,7 @@ Exit skill and invoke SlashCommand("/gsd:discuss-phase 1 --auto")
 - [ ] Project name asked FIRST (before any context gathering)
 - [ ] Name slugified and confirmed with user
 - [ ] Duplicate names blocked with clear error directing to /gsd:switch
-- [ ] ${planning_root}/ directory created under `.planning/users/<user>/<project>/`
+- [ ] ${planning_root}/ directory created under `${BOOTSTRAP_PATH}/<project>/`
 - [ ] Active context set to new project via /gsd:switch
 - [ ] config.json seeded from global config defaults
 - [ ] Scope path asked and stored in config.json (if provided)

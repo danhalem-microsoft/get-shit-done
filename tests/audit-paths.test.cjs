@@ -95,6 +95,7 @@ describe('PATH-13: Grep audit gate', () => {
     const allowlist = [
       'audit-paths.test.cjs', // this test itself
       'team-status.md',       // user-facing display text explaining .planning/users/ structure
+      'new-project.md',       // bootstrap_path documentation comments explaining resolved value (not operational paths)
     ];
 
     const violations = grepOutput.split('\n').filter(line => {
