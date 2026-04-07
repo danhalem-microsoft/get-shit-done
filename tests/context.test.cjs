@@ -12,7 +12,7 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 const { createTempMultiUserProject, createTempProject, cleanup } = require('./helpers.cjs');
-const { readActiveContext, writeActiveContext, resolveContext } = require('../get-shit-done/bin/lib/context.cjs');
+const { readActiveContext, writeActiveContext, resolveContext, listProjects } = require('../get-shit-done/bin/lib/context.cjs');
 const { clearPlanningRootCache } = require('../get-shit-done/bin/lib/core.cjs');
 
 // ─── readActiveContext ──────────────────────────────────────────────────────
@@ -225,6 +225,285 @@ describe('resolveContext', () => {
       assert.ok(
         err.stderr.includes('not found'),
         `Expected "not found" in stderr, got: ${err.stderr}`
+      );
+    }
+  });
+});
+
+// ─── listProjects ─────────────────────────────────────────────────────────────
+
+describe('listProjects', () => {
+  let tmpDir;
+
+  afterEach(() => {
+    if (tmpDir) {
+      cleanup(tmpDir);
+      tmpDir = null;
+    }
+  });
+
+  test('returns structured array with project metadata', () => {
+    const result = createTempMultiUserProject({ withActive: true });
+    tmpDir = result.tmpDir;
+
+    // Add STATE.md with frontmatter to the project
+    const projectDir = path.join(tmpDir, '.planning', 'users', 'test-user', 'test-project');
+    fs.writeFileSync(path.join(projectDir, 'STATE.md'), [
+      '---',
+      'status: active',
+      'progress:',
+      '  completed_phases: 2',
+      '  total_phases: 5',
+      '---',
+      '',
+      '# Project State',
+      '',
+      '## Current Phase',
+      '',
+      '**Phase 3: API Layer** — In Progress',
+    ].join('\n'));
+
+    fs.writeFileSync(path.join(projectDir, 'PROJECT.md'), [
+      '# Project: Test Project',
+      '',
+      '**Core Value:** Build the best API layer for widgets',
+      '',
+      'More content here',
+    ].join('\n'));
+
+    const projects = listProjects(tmpDir, 'test-user');
+    assert.ok(Array.isArray(projects), 'should return an array');
+    assert.strictEqual(projects.length, 1);
+
+    const proj = projects[0];
+    assert.strictEqual(proj.name, 'test-project');
+    assert.ok(proj.last_activity, 'should have last_activity');
+    assert.strictEqual(proj.progress, '2/5');
+    assert.strictEqual(proj.description, 'Build the best API layer for widgets');
+  });
+
+  test('returns empty array when user directory does not exist', () => {
+    const result = createTempMultiUserProject({ withActive: false });
+    tmpDir = result.tmpDir;
+    const projects = listProjects(tmpDir, 'nonexistent-user');
+    assert.ok(Array.isArray(projects));
+    assert.strictEqual(projects.length, 0);
+  });
+
+  test('filters out _archived directory', () => {
+    const result = createTempMultiUserProject({ withActive: true });
+    tmpDir = result.tmpDir;
+    const userDir = path.join(tmpDir, '.planning', 'users', 'test-user');
+    fs.mkdirSync(path.join(userDir, '_archived', 'old-project'), { recursive: true });
+    const projects = listProjects(tmpDir, 'test-user');
+    const names = projects.map(p => p.name);
+    assert.ok(!names.includes('_archived'), '_archived should be filtered out');
+  });
+
+  test('handles missing STATE.md and PROJECT.md gracefully', () => {
+    const result = createTempMultiUserProject({ withActive: false });
+    tmpDir = result.tmpDir;
+    const userDir = path.join(tmpDir, '.planning', 'users', 'test-user');
+    fs.mkdirSync(path.join(userDir, 'bare-project'), { recursive: true });
+    const projects = listProjects(tmpDir, 'test-user');
+    const bare = projects.find(p => p.name === 'bare-project');
+    assert.ok(bare, 'bare-project should be listed');
+    assert.strictEqual(bare.current_phase, null);
+    assert.strictEqual(bare.description, null);
+    assert.strictEqual(bare.progress, '0/0');
+  });
+
+  test('lists multiple projects with metadata', () => {
+    const result = createTempMultiUserProject({ withActive: false });
+    tmpDir = result.tmpDir;
+    const userDir = path.join(tmpDir, '.planning', 'users', 'test-user');
+    fs.mkdirSync(path.join(userDir, 'project-a'), { recursive: true });
+    fs.mkdirSync(path.join(userDir, 'project-b'), { recursive: true });
+    const projects = listProjects(tmpDir, 'test-user');
+    assert.strictEqual(projects.length, 3); // test-project + project-a + project-b
+  });
+
+  test('filters out dotfiles', () => {
+    const result = createTempMultiUserProject({ withActive: true });
+    tmpDir = result.tmpDir;
+    const userDir = path.join(tmpDir, '.planning', 'users', 'test-user');
+    // .active is a file not a dir, but let's ensure dotfile dirs are filtered
+    fs.mkdirSync(path.join(userDir, '.hidden-dir'), { recursive: true });
+    const projects = listProjects(tmpDir, 'test-user');
+    const names = projects.map(p => p.name);
+    assert.ok(!names.includes('.hidden-dir'), 'dotfile dirs should be filtered');
+    assert.ok(!names.includes('.active'), '.active should not appear');
+  });
+});
+
+// ─── resolveContext (auto-select and null return) ─────────────────────────────
+
+describe('resolveContext auto-select', () => {
+  let tmpDir;
+
+  afterEach(() => {
+    if (tmpDir) {
+      cleanup(tmpDir);
+      tmpDir = null;
+    }
+    clearPlanningRootCache();
+  });
+
+  function runResolveContext(dir, env = {}) {
+    const contextPath = require.resolve('../get-shit-done/bin/lib/context.cjs').replace(/\\/g, '/');
+    const d = dir.replace(/\\/g, '/');
+    const script = `const { resolveContext } = require('${contextPath}'); const r = resolveContext('${d}'); process.stdout.write(JSON.stringify(r));`;
+
+    const cleanEnv = { ...process.env };
+    delete cleanEnv.CI;
+    delete cleanEnv.GITHUB_ACTIONS;
+    delete cleanEnv.GITLAB_CI;
+    delete cleanEnv.JENKINS_URL;
+    delete cleanEnv.CIRCLECI;
+    delete cleanEnv.TRAVIS;
+    delete cleanEnv.GSD_USER;
+    delete cleanEnv.GSD_PROJECT;
+    Object.assign(cleanEnv, env);
+
+    return execSync(`node -e "${script.replace(/"/g, '\\"')}"`, {
+      encoding: 'utf-8',
+      stdio: ['pipe', 'pipe', 'pipe'],
+      env: cleanEnv,
+    });
+  }
+
+  test('auto-selects single project without .active file (subprocess)', () => {
+    const result = createTempMultiUserProject({ withActive: false });
+    tmpDir = result.tmpDir;
+
+    const output = runResolveContext(tmpDir, { GSD_USER: 'test-user' });
+    const ctx = JSON.parse(output.trim());
+    assert.strictEqual(ctx.project, 'test-project');
+    assert.strictEqual(ctx.planning_root, '.planning/users/test-user/test-project');
+  });
+
+  test('returns null project for zero projects (subprocess)', () => {
+    const os = require('os');
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gsd-test-'));
+    const userDir = path.join(tmpDir, '.planning', 'users', 'test-user');
+    fs.mkdirSync(userDir, { recursive: true });
+    execSync('git init', { cwd: tmpDir, stdio: 'pipe' });
+    execSync('git config user.email "test@test.com"', { cwd: tmpDir, stdio: 'pipe' });
+    execSync('git config user.name "Test User"', { cwd: tmpDir, stdio: 'pipe' });
+    fs.writeFileSync(path.join(tmpDir, '.planning', 'user-map.json'), JSON.stringify({ _schema: 1, 'Test User': 'test-user' }, null, 2) + '\n');
+
+    const output = runResolveContext(tmpDir, { GSD_USER: 'test-user' });
+    const ctx = JSON.parse(output.trim());
+    assert.strictEqual(ctx.user, 'test-user');
+    assert.strictEqual(ctx.project, null);
+    assert.strictEqual(ctx.planning_root, null);
+  });
+
+  test('returns null project for multiple projects without .active (subprocess)', () => {
+    const result = createTempMultiUserProject({ withActive: false });
+    tmpDir = result.tmpDir;
+    fs.mkdirSync(
+      path.join(tmpDir, '.planning', 'users', 'test-user', 'second-project'),
+      { recursive: true }
+    );
+
+    const output = runResolveContext(tmpDir, { GSD_USER: 'test-user' });
+    const ctx = JSON.parse(output.trim());
+    assert.strictEqual(ctx.user, 'test-user');
+    assert.strictEqual(ctx.project, null);
+    assert.strictEqual(ctx.planning_root, null);
+  });
+
+  test('still reads .active when multiple projects exist (subprocess)', () => {
+    const result = createTempMultiUserProject({ withActive: true });
+    tmpDir = result.tmpDir;
+    fs.mkdirSync(
+      path.join(tmpDir, '.planning', 'users', 'test-user', 'second-project'),
+      { recursive: true }
+    );
+
+    const output = runResolveContext(tmpDir, { GSD_USER: 'test-user' });
+    const ctx = JSON.parse(output.trim());
+    assert.strictEqual(ctx.project, 'test-project');
+    assert.strictEqual(ctx.planning_root, '.planning/users/test-user/test-project');
+  });
+
+  test('GSD_PROJECT still overrides auto-select (subprocess)', () => {
+    const result = createTempMultiUserProject({ withActive: false });
+    tmpDir = result.tmpDir;
+    fs.mkdirSync(
+      path.join(tmpDir, '.planning', 'users', 'test-user', 'other-project'),
+      { recursive: true }
+    );
+
+    const output = runResolveContext(tmpDir, { GSD_USER: 'test-user', GSD_PROJECT: 'other-project' });
+    const ctx = JSON.parse(output.trim());
+    assert.strictEqual(ctx.project, 'other-project');
+  });
+
+  test('auto-select ignores _archived directory (subprocess)', () => {
+    const result = createTempMultiUserProject({ withActive: false });
+    tmpDir = result.tmpDir;
+    fs.mkdirSync(
+      path.join(tmpDir, '.planning', 'users', 'test-user', '_archived', 'old-project'),
+      { recursive: true }
+    );
+
+    const output = runResolveContext(tmpDir, { GSD_USER: 'test-user' });
+    const ctx = JSON.parse(output.trim());
+    assert.strictEqual(ctx.project, 'test-project');
+  });
+});
+
+// ─── getPlanningRoot with null resolveContext ─────────────────────────────────
+
+describe('getPlanningRoot with null resolveContext', () => {
+  let tmpDir;
+
+  afterEach(() => {
+    if (tmpDir) {
+      cleanup(tmpDir);
+      tmpDir = null;
+    }
+    clearPlanningRootCache();
+  });
+
+  test('hard-errors when resolveContext returns null project (subprocess)', () => {
+    const os = require('os');
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gsd-test-'));
+    const userDir = path.join(tmpDir, '.planning', 'users', 'test-user');
+    fs.mkdirSync(userDir, { recursive: true });
+    execSync('git init', { cwd: tmpDir, stdio: 'pipe' });
+    execSync('git config user.email "test@test.com"', { cwd: tmpDir, stdio: 'pipe' });
+    execSync('git config user.name "Test User"', { cwd: tmpDir, stdio: 'pipe' });
+    fs.writeFileSync(path.join(tmpDir, '.planning', 'user-map.json'), JSON.stringify({ _schema: 1, 'Test User': 'test-user' }, null, 2) + '\n');
+
+    const corePath = require.resolve('../get-shit-done/bin/lib/core.cjs').replace(/\\/g, '/');
+    const dir = tmpDir.replace(/\\/g, '/');
+    const script = `const { getPlanningRoot } = require('${corePath}'); getPlanningRoot('${dir}');`;
+
+    const cleanEnv = { ...process.env };
+    delete cleanEnv.CI;
+    delete cleanEnv.GITHUB_ACTIONS;
+    delete cleanEnv.GITLAB_CI;
+    delete cleanEnv.JENKINS_URL;
+    delete cleanEnv.CIRCLECI;
+    delete cleanEnv.TRAVIS;
+    delete cleanEnv.GSD_USER;
+    delete cleanEnv.GSD_PROJECT;
+    cleanEnv.GSD_USER = 'test-user';
+
+    try {
+      execSync(`node -e "${script.replace(/"/g, '\\"')}"`, {
+        encoding: 'utf-8',
+        stdio: ['pipe', 'pipe', 'pipe'],
+        env: cleanEnv,
+      });
+      assert.fail('Should have thrown');
+    } catch (err) {
+      assert.ok(
+        err.stderr.includes('No active project'),
+        `Expected "No active project" in stderr, got: ${err.stderr}`
       );
     }
   });
