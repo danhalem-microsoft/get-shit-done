@@ -249,6 +249,19 @@ function cmdInitNewProject(cwd, raw) {
 
     // File paths
     project_path: planningRoot ? `${planningRoot}/PROJECT.md` : null,
+    config_path: planningRoot ? `${planningRoot}/config.json` : null,
+
+    // Project identity (from active context)
+    project_name: ctx.active_project || null,
+    scope_path: (() => {
+      // Read scope_path directly from per-project config (not in loadConfig keyMap)
+      if (!planningRoot) return null;
+      try {
+        const projectConfigPath = path.join(cwd, planningRoot, 'config.json');
+        const parsed = JSON.parse(fs.readFileSync(projectConfigPath, 'utf-8'));
+        return parsed.scope_path || null;
+      } catch { return null; }
+    })(),
   };
 
   output(result, raw);

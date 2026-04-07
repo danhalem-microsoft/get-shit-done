@@ -827,6 +827,45 @@ describe('cmdInitNewProject', () => {
     const output = JSON.parse(result.output);
     assert.strictEqual(output.planning_exists, true);
   });
+
+  test('returns project_name from active context', () => {
+    const result = runGsdTools('init new-project', tmpDir);
+    assert.ok(result.success, `Command failed: ${result.error}`);
+
+    const output = JSON.parse(result.output);
+    assert.strictEqual(typeof output.project_name, 'string');
+    assert.ok(output.project_name.length > 0, 'project_name should be non-empty');
+    assert.strictEqual(output.active_project, output.project_name);
+  });
+
+  test('returns config_path field', () => {
+    const result = runGsdTools('init new-project', tmpDir);
+    assert.ok(result.success, `Command failed: ${result.error}`);
+
+    const output = JSON.parse(result.output);
+    assert.ok(output.config_path, 'config_path should be set');
+    assert.ok(output.config_path.endsWith('/config.json'), 'config_path should end with config.json');
+  });
+
+  test('returns scope_path null when not configured', () => {
+    const result = runGsdTools('init new-project', tmpDir);
+    assert.ok(result.success, `Command failed: ${result.error}`);
+
+    const output = JSON.parse(result.output);
+    assert.strictEqual(output.scope_path, null);
+  });
+
+  test('returns scope_path when configured in project config', () => {
+    // Write a config with scope_path
+    const configPath = path.join(projectDir, 'config.json');
+    fs.writeFileSync(configPath, JSON.stringify({ scope_path: 'packages/frontend' }));
+
+    const result = runGsdTools('init new-project', tmpDir);
+    assert.ok(result.success, `Command failed: ${result.error}`);
+
+    const output = JSON.parse(result.output);
+    assert.strictEqual(output.scope_path, 'packages/frontend');
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
