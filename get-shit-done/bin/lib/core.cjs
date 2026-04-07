@@ -644,6 +644,20 @@ function tryGetPlanningContext(cwd) {
         project = active.project;
       }
     }
+
+    // LIFE-05: auto-select when exactly one project exists and no .active resolved
+    if (!project) {
+      const userDir = path.join(cwd, '.planning', 'users', user);
+      try {
+        const entries = fs.readdirSync(userDir, { withFileTypes: true });
+        const projects = entries
+          .filter(e => e.isDirectory() && e.name !== '_archived' && !e.name.startsWith('.'))
+          .map(e => e.name);
+        if (projects.length === 1) {
+          project = projects[0];
+        }
+      } catch {}
+    }
   }
 
   if (project) {

@@ -1156,9 +1156,27 @@ describe('getPlanningRoot', () => {
     assert.strictEqual(output.trim(), '.planning/users/test-user/test-project');
   });
 
-  test('tryGetPlanningContext: returns null fields when no .active', () => {
+  test('tryGetPlanningContext: auto-selects single project without .active', () => {
     const result = createTempMultiUserProject({ withActive: false });
     tmpDir = result.tmpDir;
+
+    const corePath = require.resolve('../get-shit-done/bin/lib/core.cjs').replace(/\\/g, '/');
+    const dir = tmpDir.replace(/\\/g, '/');
+    const script = `const core = require('${corePath}'); const r = core.tryGetPlanningContext('${dir}'); process.stdout.write(JSON.stringify(r));`;
+
+    const output = runSubprocess(script, { GSD_USER: 'test-user' });
+    const parsed = JSON.parse(output.trim());
+    assert.strictEqual(parsed.active_user, 'test-user');
+    assert.strictEqual(parsed.active_project, 'test-project', 'LIFE-05: single project auto-selects');
+    assert.strictEqual(parsed.planning_root, '.planning/users/test-user/test-project');
+  });
+
+  test('tryGetPlanningContext: returns null fields when zero projects', () => {
+    const result = createTempMultiUserProject({ withActive: false });
+    tmpDir = result.tmpDir;
+
+    // Remove the project dir to create zero-project scenario
+    fs.rmSync(path.join(tmpDir, '.planning', 'users', 'test-user', 'test-project'), { recursive: true });
 
     const corePath = require.resolve('../get-shit-done/bin/lib/core.cjs').replace(/\\/g, '/');
     const dir = tmpDir.replace(/\\/g, '/');

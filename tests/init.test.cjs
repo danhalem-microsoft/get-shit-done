@@ -937,8 +937,10 @@ describe('null planning_root handling', () => {
     clearPlanningRootCache();
   });
 
-  test('init commands return null/false paths when no active project', () => {
-    const { tmpDir } = createTempMultiUserProject({ withActive: false });
+  test('init commands return null/false paths when zero projects exist', () => {
+    const { tmpDir, userSlug } = createTempMultiUserProject({ withActive: false });
+    // Remove the project directory so zero projects remain
+    fs.rmSync(path.join(tmpDir, '.planning', 'users', userSlug, 'test-project'), { recursive: true });
     try {
       const result = runGsdTools('init new-milestone', tmpDir);
       assert.ok(result.success, `Command failed: ${result.error}`);
@@ -1003,8 +1005,10 @@ describe('init context fields', () => {
     }
   });
 
-  test('cmdInitNewProject includes context fields (null when no project)', () => {
-    const { tmpDir } = createTempMultiUserProject({ withActive: false });
+  test('cmdInitNewProject includes context fields (null when zero projects)', () => {
+    const { tmpDir, userSlug } = createTempMultiUserProject({ withActive: false });
+    // Remove the project directory so zero projects remain
+    fs.rmSync(path.join(tmpDir, '.planning', 'users', userSlug, 'test-project'), { recursive: true });
     try {
       const result = runGsdTools('init new-project', tmpDir);
       assert.ok(result.success, `Command failed: ${result.error}`);
