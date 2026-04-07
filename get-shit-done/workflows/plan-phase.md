@@ -25,6 +25,25 @@ Parse JSON for: `researcher_model`, `planner_model`, `checker_model`, `research_
 
 **If `planning_exists` is false:** Error — run `/gsd:new-project` first.
 
+<decision_logging>
+**Initialize decision logging (silent failure — never breaks workflow):**
+
+```bash
+LOG_INIT=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" log-decision-init --workflow plan-phase --phase "$PHASE" 2>/dev/null) || true
+LOG_FILE=$(echo "$LOG_INIT" | node -e "const d=require('fs').readFileSync('/dev/stdin','utf8');try{console.log(JSON.parse(d).log_file)}catch{}" 2>/dev/null) || true
+```
+
+After each user response during planning decisions, log the decision:
+
+```bash
+if [ -n "$LOG_FILE" ]; then
+  node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" log-decision --log-file "$LOG_FILE" --question "$QUESTION" --response "$RESPONSE" 2>/dev/null || true
+fi
+```
+
+All logging calls use `2>/dev/null || true` — logging NEVER breaks the workflow.
+</decision_logging>
+
 ## 2. Parse and Normalize Arguments
 
 Extract from $ARGUMENTS: phase number (integer or decimal like `2.1`), flags (`--research`, `--skip-research`, `--gaps`, `--skip-verify`, `--prd <filepath>`).

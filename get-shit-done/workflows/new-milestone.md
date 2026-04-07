@@ -91,6 +91,25 @@ RESEARCHERS=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" researcher sc
 
 Parse `RESEARCHERS` JSON for: `count`, `researchers` (array of `{name, output_file, description, file_path}` objects).
 
+<decision_logging>
+**Initialize decision logging (silent failure — never breaks workflow):**
+
+```bash
+LOG_INIT=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" log-decision-init --workflow new-milestone --phase "setup" 2>/dev/null) || true
+LOG_FILE=$(echo "$LOG_INIT" | node -e "const d=require('fs').readFileSync('/dev/stdin','utf8');try{console.log(JSON.parse(d).log_file)}catch{}" 2>/dev/null) || true
+```
+
+After each user response during milestone context gathering, log the decision:
+
+```bash
+if [ -n "$LOG_FILE" ]; then
+  node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" log-decision --log-file "$LOG_FILE" --question "$QUESTION" --response "$RESPONSE" 2>/dev/null || true
+fi
+```
+
+All logging calls use `2>/dev/null || true` — logging NEVER breaks the workflow.
+</decision_logging>
+
 ## 8. Research Decision
 
 AskUserQuestion: "Research the domain ecosystem for new features before defining requirements?"

@@ -143,6 +143,25 @@ Parse `RESEARCHERS` JSON for: `count`, `researchers` (array of `{name, output_fi
 
 **If `project_exists` is true:** Error — project already initialized. Use `/gsd:progress`.
 
+<decision_logging>
+**Initialize decision logging (silent failure — never breaks workflow):**
+
+```bash
+LOG_INIT=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" log-decision-init --workflow new-project --phase "setup" 2>/dev/null) || true
+LOG_FILE=$(echo "$LOG_INIT" | node -e "const d=require('fs').readFileSync('/dev/stdin','utf8');try{console.log(JSON.parse(d).log_file)}catch{}" 2>/dev/null) || true
+```
+
+After each user response during context gathering, log the decision:
+
+```bash
+if [ -n "$LOG_FILE" ]; then
+  node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" log-decision --log-file "$LOG_FILE" --question "$QUESTION" --response "$RESPONSE" 2>/dev/null || true
+fi
+```
+
+All logging calls use `2>/dev/null || true` — logging NEVER breaks the workflow.
+</decision_logging>
+
 ## 2. Brownfield Offer
 
 **If auto mode:** Skip to Step 4 (assume greenfield, synthesize PROJECT.md from provided document).

@@ -16,7 +16,54 @@ INIT=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" init progress)
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 ```
 
-Extract from init JSON: `project_exists`, `roadmap_exists`, `state_exists`, `phases`, `current_phase`, `next_phase`, `milestone_version`, `completed_count`, `phase_count`, `paused_at`, `state_path`, `roadmap_path`, `project_path`, `config_path`.
+Extract from init JSON: `active_user`, `active_project`, `planning_root`, `project_exists`, `roadmap_exists`, `state_exists`, `phases`, `current_phase`, `next_phase`, `milestone_version`, `completed_count`, `phase_count`, `paused_at`, `state_path`, `roadmap_path`, `project_path`, `config_path`.
+
+**If `active_project` is null (no active project):**
+
+Call switch in listing mode to get available projects:
+
+```bash
+PROJECT_LIST=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" switch 2>/dev/null) || true
+```
+
+Parse `projects` array from `PROJECT_LIST` JSON (if available).
+
+**If projects exist:**
+
+Display:
+```
+No active project. Your projects:
+
+1. ${name} — Phase ${current_phase} of ${phase_count} (${completed_phases}/${phase_count} complete) — Last active: ${last_activity}
+   ${description}
+2. ${name} — ...
+```
+
+Prompt:
+```
+Use /gsd:switch <name> to select a project, or /gsd:new-project to create one.
+```
+
+Exit workflow — do NOT proceed to phase/roadmap display.
+
+**If no projects exist:**
+
+```
+No projects found.
+
+Run /gsd:new-project to start a new project.
+```
+
+Exit workflow.
+
+**If `active_project` is set — display context header:**
+
+Display at the TOP of all output:
+```
+User: ${active_user} | Project: ${active_project} | Phase ${current_phase} of ${phase_count}
+```
+
+Then proceed with existing progress display.
 
 If `project_exists` is false (no `${planning_root}/` directory):
 

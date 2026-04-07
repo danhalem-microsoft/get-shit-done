@@ -130,6 +130,25 @@ Use /gsd:progress to see available phases.
 Exit workflow.
 
 **If `phase_found` is true:** Continue to check_existing.
+
+<decision_logging>
+**Initialize decision logging (silent failure — never breaks workflow):**
+
+```bash
+LOG_INIT=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" log-decision-init --workflow discuss-phase --phase "$PHASE" 2>/dev/null) || true
+LOG_FILE=$(echo "$LOG_INIT" | node -e "const d=require('fs').readFileSync('/dev/stdin','utf8');try{console.log(JSON.parse(d).log_file)}catch{}" 2>/dev/null) || true
+```
+
+After each user response in the discussion flow (discuss_areas step), log the decision:
+
+```bash
+if [ -n "$LOG_FILE" ]; then
+  node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" log-decision --log-file "$LOG_FILE" --question "$QUESTION" --response "$RESPONSE" 2>/dev/null || true
+fi
+```
+
+All logging calls use `2>/dev/null || true` — logging NEVER breaks the workflow.
+</decision_logging>
 </step>
 
 <step name="check_existing">
