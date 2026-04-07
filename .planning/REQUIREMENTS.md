@@ -35,8 +35,8 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Project Lifecycle
 
-- [ ] **LIFE-01**: `/gsd:new-project` creates planning artifacts under `.planning/users/<user>/<project>/` and sets the new project as active
-- [ ] **LIFE-02**: `/gsd:new-project` prompts for a project name when in multi-user mode
+- [x] **LIFE-01**: `/gsd:new-project` creates planning artifacts under `.planning/users/<user>/<project>/` and sets the new project as active
+- [x] **LIFE-02**: `/gsd:new-project` prompts for a project name when in multi-user mode
 - [x] **LIFE-03**: `/gsd:switch <project>` sets the active project context for the current user
 - [x] **LIFE-04**: `/gsd:switch` without arguments lists the current user's projects with status summary and lets user choose
 - [x] **LIFE-05**: If a user has only one project, it is auto-selected without requiring `/gsd:switch`
@@ -109,8 +109,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PATH-11 | Phase 2 | Complete |
 | PATH-12 | Phase 2 | Complete |
 | PATH-13 | Phase 2 | Complete |
-| LIFE-01 | Phase 3 | Pending |
-| LIFE-02 | Phase 3 | Pending |
+| LIFE-01 | Phase 3 | Complete |
+| LIFE-02 | Phase 3 | Complete |
 | LIFE-03 | Phase 3 | Complete |
 | LIFE-04 | Phase 3 | Complete |
 | LIFE-05 | Phase 3 | Complete |

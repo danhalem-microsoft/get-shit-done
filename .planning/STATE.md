@@ -3,19 +3,19 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-04-07T18:14:03.000Z"
+last_updated: "2026-04-07T18:37:51.149Z"
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 16
-  completed_plans: 10
+  completed_plans: 11
 ---
 
 # Project State: GSD Multi-User Monorepo Support
 
 ## Current Phase
 
-**Phase 3: Project Lifecycle Commands** — In Progress (2/5 plans)
+**Phase 3: Project Lifecycle Commands** — In Progress (3/5 plans)
 
 ## Phase Summary
 
@@ -23,7 +23,7 @@ progress:
 |-------|------|--------|
 | 1 | Identity and Path Resolution Core | Complete (3/3 plans) |
 | 2 | Module Path Migration | Complete (5/5 plans) |
-| 3 | Project Lifecycle Commands | In Progress (2/5 plans) |
+| 3 | Project Lifecycle Commands | In Progress (3/5 plans) |
 | 4 | Team Visibility and Hardening | Not Started |
 
 ## Key Decisions
@@ -57,6 +57,9 @@ progress:
 | project-setup is an init sub-command for new-project bootstrap | 03-02 | Bootstraps context for workflow, consistent with init pattern |
 | Fuzzy matching uses simple includes() substring | 03-02 | Adequate for project slugs, no need for Levenshtein |
 | Archive auto-selects remaining project when exactly one exists | 03-02 | Consistent with LIFE-05 single-project auto-select behavior |
+| Two-step bootstrap: project-setup pre-init -> dir creation -> switch -> normal init | 03-03 | Solves chicken-and-egg where init needs active project that doesn't exist yet |
+| Project name asked first before any context gathering | 03-03 | Name needed to create directory structure; all other questions come after |
+| Global config.json seeded into per-project config on creation | 03-03 | New projects inherit defaults; scope_path added if user provides it |
 
 ## Session Log
 
@@ -78,6 +81,7 @@ progress:
 | 2026-04-07 | Phase 3 context | Context gathered, 7 critic blind spots resolved, research completed |
 | 2026-04-07 | Plan 03-01 executed | listProjects redesign + resolveContext auto-select + loadConfig two-file merge — 9 min, 2 tasks, 4 files |
 | 2026-04-07 | Plan 03-02 executed | switch/archive/restore/project-setup CLI commands — 5 min, 2 tasks, 4 files |
+| 2026-04-07 | Plan 03-03 executed | new-project workflow rewrite with two-step bootstrap + enhanced init output — 8 min, 3 tasks, 4 files |
 
 ---
 *State initialized: 2026-03-17*
