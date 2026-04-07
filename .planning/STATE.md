@@ -3,19 +3,19 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-03-31T22:30:33.111Z"
+last_updated: "2026-04-07T18:00:40.127Z"
 progress:
   total_phases: 4
   completed_phases: 0
-  total_plans: 10
-  completed_plans: 8
+  total_plans: 16
+  completed_plans: 9
 ---
 
 # Project State: GSD Multi-User Monorepo Support
 
 ## Current Phase
 
-**Phase 2: Module Path Migration** — Complete (5/5 plans)
+**Phase 3: Project Lifecycle Commands** — In Progress (1/5 plans)
 
 ## Phase Summary
 
@@ -23,7 +23,7 @@ progress:
 |-------|------|--------|
 | 1 | Identity and Path Resolution Core | Complete (3/3 plans) |
 | 2 | Module Path Migration | Complete (5/5 plans) |
-| 3 | Project Lifecycle Commands | Not Started |
+| 3 | Project Lifecycle Commands | In Progress (1/5 plans) |
 | 4 | Team Visibility and Hardening | Not Started |
 
 ## Key Decisions
@@ -49,6 +49,10 @@ progress:
 | getUnprocessedDecisionLogs takes cwd parameter with auto-resolve | 02-04 | Consistent cwd-first API; falls back to .planning/decisions when no planning root |
 | commands.cjs and gsd-tools.cjs added to audit allowlist | 02-05 | Legitimate container-dir refs and CLI help text — not user-qualified paths |
 | Source audit excludes tests/ dir; test files get dedicated audit with expanded allowlist | 02-05 | All test files legitimately construct .planning/users/ paths for multi-user test setup |
+| resolveContext returns null for 0/N projects instead of hard-erroring | 03-01 | Workflow layer handles user prompting, not core resolution |
+| getPlanningRoot checks null and hard-errors for commands requiring active project | 03-01 | Preserves hard-error boundary for downstream commands |
+| loadConfig reads global + per-project with _sources tracking | 03-01 | Two-file merge with source tracking prepares Phase 4 config resolve |
+| scanProjects is internal; listProjects is exported with rich metadata | 03-01 | Clean separation: dir scanning vs. metadata enrichment |
 
 ## Session Log
 
@@ -67,6 +71,8 @@ progress:
 | 2026-03-31 | Plan 02-03 executed | verify/milestone/commands/taste/template migration — 14 min, 3 tasks, 8 files |
 | 2026-03-31 | Plan 02-04 executed | init.cjs (12 functions) + gsd-tools.cjs dispatcher migration — 9 min, 3 tasks, 4 files |
 | 2026-03-31 | Plan 02-05 executed | 83 markdown files migrated + audit gate activated — 5 min, 3 tasks, 85 files. Phase 2 complete |
+| 2026-04-07 | Phase 3 context | Context gathered, 7 critic blind spots resolved, research completed |
+| 2026-04-07 | Plan 03-01 executed | listProjects redesign + resolveContext auto-select + loadConfig two-file merge — 9 min, 2 tasks, 4 files |
 
 ---
 *State initialized: 2026-03-17*

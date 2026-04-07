@@ -38,9 +38,9 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **LIFE-01**: `/gsd:new-project` creates planning artifacts under `.planning/users/<user>/<project>/` and sets the new project as active
 - [ ] **LIFE-02**: `/gsd:new-project` prompts for a project name when in multi-user mode
 - [ ] **LIFE-03**: `/gsd:switch <project>` sets the active project context for the current user
-- [ ] **LIFE-04**: `/gsd:switch` without arguments lists the current user's projects with status summary and lets user choose
-- [ ] **LIFE-05**: If a user has only one project, it is auto-selected without requiring `/gsd:switch`
-- [ ] **LIFE-06**: Per-project config at `.planning/users/<user>/<project>/config.json` overrides global defaults at `.planning/config.json`
+- [x] **LIFE-04**: `/gsd:switch` without arguments lists the current user's projects with status summary and lets user choose
+- [x] **LIFE-05**: If a user has only one project, it is auto-selected without requiring `/gsd:switch`
+- [x] **LIFE-06**: Per-project config at `.planning/users/<user>/<project>/config.json` overrides global defaults at `.planning/config.json`
 - [ ] **LIFE-07**: `/gsd:progress` shows project context (active user/project) and lists available projects if no active project is set
 - [ ] **LIFE-08**: All existing GSD commands (plan-phase, execute-phase, verify-work, discuss-phase, debug, etc.) operate transparently on the active project context
 - [ ] **LIFE-09**: Completed projects can be archived to `.planning/users/<user>/_archived/<project>/` and excluded from default project listings. Archived projects can be restored via `/gsd:restore-project`.
@@ -112,9 +112,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | LIFE-01 | Phase 3 | Pending |
 | LIFE-02 | Phase 3 | Pending |
 | LIFE-03 | Phase 3 | Pending |
-| LIFE-04 | Phase 3 | Pending |
-| LIFE-05 | Phase 3 | Pending |
-| LIFE-06 | Phase 3 | Pending |
+| LIFE-04 | Phase 3 | Complete |
+| LIFE-05 | Phase 3 | Complete |
+| LIFE-06 | Phase 3 | Complete |
 | LIFE-07 | Phase 3 | Pending |
 | LIFE-08 | Phase 3 | Pending |
 | LIFE-09 | Phase 3 | Pending |
