@@ -5,7 +5,7 @@ Display the complete GSD command reference. Output ONLY the reference content. D
 <reference>
 # GSD Command Reference
 
-**GSD** (Get Shit Done) creates hierarchical project plans optimized for solo agentic development with Claude Code.
+**GSD** (Get Shit Done) creates hierarchical project plans optimized for agentic development with Claude Code. Supports multi-user monorepos — each user gets independent planning artifacts under `.planning/users/<username>/`.
 
 ## Quick Start
 
@@ -199,8 +199,50 @@ Check project status and intelligently route to next action.
 - Lists key decisions and open issues
 - Offers to execute next plan or create it if missing
 - Detects 100% milestone completion
+- Shows active user/project context header
 
 Usage: `/gsd:progress`
+
+### Project Management (Multi-User)
+
+**`/gsd:switch [project]`**
+Switch active project context for the current user.
+
+- With args: switches to named project (exact or fuzzy match)
+- Without args: lists all projects with status and lets you pick
+- Single project auto-selects without requiring explicit switch
+
+Usage: `/gsd:switch frontend`
+Usage: `/gsd:switch` (list and pick)
+
+**`/gsd:team-status`**
+See what other users are working on across the monorepo.
+
+- Scans `.planning/users/*/` directories
+- Reads STATE.md frontmatter for each user (read-only)
+- Displays summary table: User, Project, Phase, Progress, Last Active
+- Never modifies other users' files
+
+Usage: `/gsd:team-status`
+
+**`/gsd:archive-project`**
+Archive a completed project.
+
+- Moves project directory to `_archived/`
+- Clears `.active` if archived project was active
+- Auto-selects remaining project if only one left
+- Archived projects excluded from listings
+
+Usage: `/gsd:archive-project`
+
+**`/gsd:restore-project`**
+Restore an archived project.
+
+- Moves project from `_archived/` back to active directory
+- Sets restored project as active
+- Errors on duplicate names
+
+Usage: `/gsd:restore-project`
 
 ### Session Management
 
@@ -351,40 +393,47 @@ Usage: `/gsd:join-discord`
 
 ## Files & Structure
 
+**Multi-user layout** (each user gets their own planning universe):
+
 ```
-${planning_root}/
-├── PROJECT.md            # Project vision
-├── ROADMAP.md            # Current phase breakdown
-├── STATE.md              # Project memory & context
-├── RETROSPECTIVE.md      # Living retrospective (updated per milestone)
-├── config.json           # Workflow mode & gates
-├── todos/                # Captured ideas and tasks
-│   ├── pending/          # Todos waiting to be worked on
-│   └── done/             # Completed todos
-├── debug/                # Active debug sessions
-│   └── resolved/         # Archived resolved issues
-├── milestones/
-│   ├── v1.0-ROADMAP.md       # Archived roadmap snapshot
-│   ├── v1.0-REQUIREMENTS.md  # Archived requirements
-│   └── v1.0-phases/          # Archived phase dirs (via /gsd:cleanup or --archive-phases)
-│       ├── 01-foundation/
-│       └── 02-core-features/
-├── codebase/             # Codebase map (brownfield projects)
-│   ├── STACK.md          # Languages, frameworks, dependencies
-│   ├── ARCHITECTURE.md   # Patterns, layers, data flow
-│   ├── STRUCTURE.md      # Directory layout, key files
-│   ├── CONVENTIONS.md    # Coding standards, naming
-│   ├── TESTING.md        # Test setup, patterns
-│   ├── INTEGRATIONS.md   # External services, APIs
-│   └── CONCERNS.md       # Tech debt, known issues
-└── phases/
-    ├── 01-foundation/
-    │   ├── 01-01-PLAN.md
-    │   └── 01-01-SUMMARY.md
-    └── 02-core-features/
-        ├── 02-01-PLAN.md
-        └── 02-01-SUMMARY.md
+.planning/
+├── config.json               # Shared global defaults
+├── user-map.json             # Git identity → directory mapping
+├── users/
+│   ├── dan/
+│   │   ├── .active           # Current project selection (gitignored)
+│   │   ├── frontend/         # ← ${planning_root} when this project is active
+│   │   │   ├── PROJECT.md
+│   │   │   ├── ROADMAP.md
+│   │   │   ├── REQUIREMENTS.md
+│   │   │   ├── STATE.md
+│   │   │   ├── config.json   # Per-project config overrides
+│   │   │   ├── phases/
+│   │   │   │   ├── 01-foundation/
+│   │   │   │   │   ├── 01-01-PLAN.md
+│   │   │   │   │   └── 01-01-SUMMARY.md
+│   │   │   │   └── 02-features/
+│   │   │   └── ...
+│   │   └── auth-service/     # Another project
+│   │       └── ...
+│   └── alice/
+│       ├── .active
+│       └── frontend/
+│           └── ...
+├── milestones/               # Archived milestone data
+│   ├── v1.0-ROADMAP.md
+│   ├── v1.0-REQUIREMENTS.md
+│   └── v1.0-phases/
+└── codebase/                 # Codebase map (brownfield)
+    ├── STACK.md
+    └── ARCHITECTURE.md
 ```
+
+**Config precedence (4-tier):**
+1. Environment variables (`GSD_MODEL_PROFILE`, etc.)
+2. Per-project config (`${planning_root}/config.json`)
+3. Global config (`.planning/config.json`)
+4. Hardcoded defaults
 
 ## Workflow Modes
 

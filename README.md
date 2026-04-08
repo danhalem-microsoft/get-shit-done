@@ -54,6 +54,7 @@ node bin/install.js --global
 | **Adaptive Synthesizer** | Synthesizer that adapts output format to researcher findings |
 | **Mistake Registry** | Structured mistake capture, storage, and critic-integrated area routing |
 | **Taste Library** | Decision preference extraction, storage, and consultation during planning |
+| **Multi-User Monorepo** | Multiple users run independent GSD projects in the same repo without conflicts |
 
 ### Fork Installation
 
@@ -77,6 +78,10 @@ Or use `/gsd:update` which handles the update process.
 
 | Command | What it does |
 |---------|-------------|
+| `/gsd:switch [project]` | Switch active project (or list projects with no args) |
+| `/gsd:team-status` | See what other users are working on across the monorepo |
+| `/gsd:archive-project` | Archive a completed project |
+| `/gsd:restore-project` | Restore an archived project |
 | `/gsd:add-taste` | Create a taste preference entry |
 | `/gsd:extract-taste` | Extract taste patterns from decision logs |
 | `/gsd:add-mistake` | Record a mistake for critic reference |
@@ -567,6 +572,15 @@ You're never locked in. The system adapts.
 | `/gsd:quick [--full] [--discuss]` | Execute ad-hoc task with GSD guarantees (`--full` adds plan-checking and verification, `--discuss` gathers context first) |
 | `/gsd:health [--repair]` | Validate `.planning/` directory integrity, auto-repair with `--repair` |
 
+### Project Management (Multi-User)
+
+| Command | What it does |
+|---------|--------------|
+| `/gsd:switch [project]` | Switch active project context (or list projects) |
+| `/gsd:team-status` | Show all users' active projects, phases, and last activity |
+| `/gsd:archive-project` | Archive a completed project to `_archived/` |
+| `/gsd:restore-project` | Restore an archived project |
+
 <sup>¹ Contributed by reddit user OracleGreyBeard</sup>
 
 ---
@@ -640,7 +654,88 @@ At milestone completion, GSD offers squash merge (recommended) or merge with his
 
 ---
 
-## Security
+## Multi-User Monorepo Support
+
+> **Fork feature.** Multiple users run independent GSD projects in the same monorepo without conflicting on planning artifacts, state, or git history.
+
+### How It Works
+
+Each user gets their own planning universe under `.planning/users/<username>/`:
+
+```
+.planning/
+  config.json                    # Shared defaults
+  user-map.json                  # Git identity → directory mapping
+  users/
+    dan/
+      .active                    # Current project (gitignored)
+      frontend/
+        PROJECT.md, ROADMAP.md, STATE.md, phases/, ...
+      auth-service/
+        PROJECT.md, ROADMAP.md, ...
+    alice/
+      .active
+      frontend/
+        PROJECT.md, ROADMAP.md, ...
+```
+
+- **Identity** — Automatically resolved from `git config user.name`
+- **Isolation** — Each user's planning files are completely independent
+- **Transparency** — All existing GSD commands work on the active project context
+- **Team visibility** — `/gsd:team-status` shows what everyone is working on
+
+### Project Lifecycle
+
+```bash
+/gsd:new-project              # Creates project under .planning/users/<you>/<project>/
+/gsd:switch frontend          # Switch to a different project
+/gsd:switch                   # List all your projects and pick one
+/gsd:team-status              # See all users' active projects, phases, progress
+/gsd:archive-project          # Archive a completed project
+/gsd:restore-project          # Restore an archived project
+```
+
+### Config Layering (4-Tier Precedence)
+
+Config values resolve through 4 layers — highest priority wins:
+
+```
+1. Environment variables     GSD_MODEL_PROFILE=budget
+2. Per-project config        .planning/users/dan/frontend/config.json
+3. Shared global config      .planning/config.json
+4. Hardcoded defaults        (built into gsd-tools.cjs)
+```
+
+Debug config resolution with:
+```bash
+gsd-tools.cjs config-resolve model_profile
+# Shows: value, source layer, all layers checked
+```
+
+### Environment Variables
+
+| Variable | What it does |
+|----------|-------------|
+| `GSD_USER` | Override active user identity (for CI/scripting) |
+| `GSD_PROJECT` | Override active project (for CI/scripting) |
+| `GSD_MODEL_PROFILE` | Override model profile |
+| `GSD_PARALLELIZATION` | Override parallelization setting |
+| `GSD_COMMIT_DOCS` | Override commit_docs setting |
+
+### Migration from Single-User
+
+If you have an existing flat `.planning/` directory, any GSD command will detect it and offer to migrate:
+
+```
+⚠ Legacy .planning/ structure detected.
+Options:
+  1. Auto-migrate — move files to .planning/users/<you>/<project>/
+  2. Manual instructions — step-by-step guide
+```
+
+The migration is safe (copy-then-delete) and preserves all your planning history.
+
+---
 
 ### Protecting Sensitive Files
 

@@ -235,6 +235,15 @@ enabled, or after `/gsd:audit-milestone` surfaces Nyquist compliance gaps.
 | `/gsd:set-profile <profile>` | Quick profile switch | Change cost/quality tradeoff |
 | `/gsd:reapply-patches` | Restore local modifications after update | After `/gsd:update` if you had local edits |
 
+### Project Management (Multi-User)
+
+| Command | Purpose | When to Use |
+|---------|---------|-------------|
+| `/gsd:switch [project]` | Switch active project (or list all with no args) | Working on multiple projects |
+| `/gsd:team-status` | See all users' active projects, phases, progress | Check teammate activity |
+| `/gsd:archive-project` | Archive a completed project to `_archived/` | Project finished, reduce clutter |
+| `/gsd:restore-project` | Restore an archived project | Revisit completed work |
+
 ---
 
 ## Configuration Reference
@@ -332,6 +341,113 @@ Disable these to speed up phases in familiar domains or when conserving tokens.
 - **quality** -- Opus for all decision-making agents, Sonnet for read-only verification. Use when quota is available and the work is critical.
 - **balanced** -- Opus only for planning (where architecture decisions happen), Sonnet for everything else. The default for good reason.
 - **budget** -- Sonnet for anything that writes code, Haiku for research and verification. Use for high-volume work or less critical phases.
+
+---
+
+## Multi-User Monorepo Support
+
+> **Fork feature.** Multiple users run independent GSD projects in the same repo without conflicts.
+
+### Directory Structure
+
+Each user gets their own planning universe:
+
+```
+.planning/
+  config.json                    # Shared global defaults
+  user-map.json                  # Git identity → directory mapping
+  users/
+    dan/
+      .active                    # Current project (gitignored)
+      frontend/                  # ← ${planning_root} when active
+        PROJECT.md, ROADMAP.md, STATE.md, config.json, phases/
+      auth-service/
+        PROJECT.md, ROADMAP.md, ...
+    alice/
+      .active
+      frontend/
+        PROJECT.md, ROADMAP.md, ...
+```
+
+### Identity Resolution
+
+GSD identifies you automatically from `git config user.name`:
+
+1. **Resolve** — reads `user.name`, falls back to email local-part, then OS username
+2. **Sanitize** — converts to filesystem-safe slug (lowercase, hyphens)
+3. **Lock** — stored in `.planning/user-map.json` on first use
+4. **Override** — use `GSD_USER` env var for CI/scripting
+
+### Config Layering (4-Tier Precedence)
+
+Config values resolve through 4 layers — highest priority wins:
+
+| Priority | Source | Example |
+|----------|--------|---------|
+| 1 (highest) | Environment variables | `GSD_MODEL_PROFILE=budget` |
+| 2 | Per-project config | `.planning/users/dan/frontend/config.json` |
+| 3 | Shared global config | `.planning/config.json` |
+| 4 (lowest) | Hardcoded defaults | Built into gsd-tools.cjs |
+
+**Debug with:** `gsd-tools.cjs config-resolve <key>` — shows resolved value, source layer, and all layers checked.
+
+**Supported env vars:** `GSD_USER`, `GSD_PROJECT`, `GSD_MODEL_PROFILE`, `GSD_PARALLELIZATION`, `GSD_COMMIT_DOCS`, `GSD_RESEARCH`, `GSD_PLAN_CHECK`, `GSD_VERIFIER`, `GSD_BRANCHING_STRATEGY`, `GSD_SEARCH_GITIGNORED`
+
+### Team Visibility
+
+```bash
+/gsd:team-status
+```
+
+Displays a summary table of all users' activity:
+
+```
+| User  | Project   | Phase          | Progress | Last Active |
+|-------|-----------|----------------|----------|-------------|
+| dan   | frontend  | 3/4 Lifecycle  | 75%      | 2 hours ago |
+| alice | auth-svc  | 1/3 Foundation | 33%      | yesterday   |
+```
+
+- Reads only STATE.md YAML frontmatter (fast, lightweight)
+- Never modifies other users' files
+- Shows "(no active project)" when `.active` is missing (e.g., after fresh clone)
+
+### Commit Attribution
+
+Planning artifact commits automatically include user/project context:
+
+```
+docs(dan/frontend/phase-03): complete phase execution
+feat(03-01): redesign listProjects          # ← code commits stay clean
+```
+
+Only commits for planning files (STATE.md, ROADMAP.md, VERIFICATION.md, etc.) get the attribution prefix.
+
+### Migration from Single-User
+
+If you have an existing flat `.planning/PROJECT.md` structure, any GSD command will detect it and offer migration:
+
+- **Auto-migrate** — moves files to `.planning/users/<you>/<project>/`, commits the change
+- **Manual instructions** — step-by-step guide if you prefer to do it yourself
+- Uses `--project-name <slug>` flag if PROJECT.md is missing or unreadable
+
+### Multi-User Workflows
+
+**Setting up a multi-user project:**
+
+```bash
+/gsd:new-project                # Creates under .planning/users/<you>/<project>/
+/gsd:switch                     # List your projects
+/gsd:switch auth-service        # Switch to another project
+/gsd:team-status                # See what teammates are doing
+```
+
+**Project lifecycle:**
+
+```bash
+/gsd:archive-project            # Archive completed project
+/gsd:restore-project            # Bring back an archived project
+```
 
 ---
 
@@ -455,6 +571,18 @@ Since v1.17, the installer backs up locally modified files to `gsd-local-patches
 
 A known workaround exists for a Claude Code classification bug. GSD's orchestrators (execute-phase, quick) spot-check actual output before reporting failure. If you see a failure message but commits were made, check `git log` -- the work may have succeeded.
 
+### Multi-User: "No active project" Error
+
+Run `/gsd:switch` to see available projects and select one. If you have only one project, it auto-selects. If you have zero projects, run `/gsd:new-project` first.
+
+### Multi-User: Team-Status Shows No Data for Teammates
+
+`.active` files are gitignored — they only exist on machines where users have run GSD. After a fresh clone, team-status shows "(no active project)" for other users until they run GSD locally. This is by design (git identity is local).
+
+### Multi-User: Legacy .planning/ Structure Detected
+
+If you see a legacy detection message, run the migration flow offered by the command. Auto-migrate moves your files to `.planning/users/<you>/<project>/` safely. If PROJECT.md is missing, use `gsd-tools.cjs migrate --project-name <slug>` to specify the project name manually.
+
 ---
 
 ## Recovery Quick Reference
@@ -479,24 +607,34 @@ For reference, here is what GSD creates in your project:
 
 ```
 .planning/
-  PROJECT.md              # Project vision and context (always loaded)
-  REQUIREMENTS.md         # Scoped v1/v2 requirements with IDs
-  ROADMAP.md              # Phase breakdown with status tracking
-  STATE.md                # Decisions, blockers, session memory
-  config.json             # Workflow configuration
-  MILESTONES.md           # Completed milestone archive
-  research/               # Domain research from /gsd:new-project
-  todos/
-    pending/              # Captured ideas awaiting work
-    done/                 # Completed todos
-  debug/                  # Active debug sessions
-    resolved/             # Archived debug sessions
-  codebase/               # Brownfield codebase mapping (from /gsd:map-codebase)
-  phases/
-    XX-phase-name/
-      XX-YY-PLAN.md       # Atomic execution plans
-      XX-YY-SUMMARY.md    # Execution outcomes and decisions
-      CONTEXT.md          # Your implementation preferences
-      RESEARCH.md         # Ecosystem research findings
-      VERIFICATION.md     # Post-execution verification results
+  config.json              # Shared global defaults
+  user-map.json            # Git identity → directory mapping
+  MILESTONES.md            # Completed milestone archive
+  RETROSPECTIVE.md         # Living retrospective (updated per milestone)
+  users/
+    <username>/
+      .active              # Current project selection (gitignored)
+      <project>/           # ← ${planning_root}
+        PROJECT.md         # Project vision and context
+        REQUIREMENTS.md    # Scoped v1/v2 requirements with IDs
+        ROADMAP.md         # Phase breakdown with status tracking
+        STATE.md           # Decisions, blockers, session memory
+        config.json        # Per-project config overrides
+        research/          # Domain research from /gsd:new-project
+        todos/
+          pending/         # Captured ideas awaiting work
+          done/            # Completed todos
+        debug/             # Active debug sessions
+          resolved/        # Archived debug sessions
+        phases/
+          XX-phase-name/
+            XX-YY-PLAN.md      # Atomic execution plans
+            XX-YY-SUMMARY.md   # Execution outcomes and decisions
+            CONTEXT.md         # Your implementation preferences
+            RESEARCH.md        # Ecosystem research findings
+            VERIFICATION.md    # Post-execution verification results
+  codebase/                # Brownfield codebase mapping (from /gsd:map-codebase)
+    STACK.md, ARCHITECTURE.md, CONVENTIONS.md, etc.
+  milestones/              # Archived milestone data
+    v1.0-ROADMAP.md, v1.0-REQUIREMENTS.md, v1.0-phases/
 ```

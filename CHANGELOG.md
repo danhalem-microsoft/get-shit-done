@@ -6,6 +6,52 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [6.0.0] - 2026-04-08 — Multi-User Monorepo Support (v1.0 Milestone)
+
+### BREAKING CHANGES
+
+- **Multi-user directory structure**: Planning artifacts now live under `.planning/users/<username>/<project>/` instead of flat `.planning/`. Existing single-user structures are detected and a migration flow is offered on any GSD command.
+- **`getPlanningRoot()` replaces hardcoded paths**: All modules resolve paths through the central `getPlanningRoot()` function. Zero hardcoded `.planning/` references remain in operational code.
+
+### Added
+
+- **Multi-User Support**: Multiple users can run independent GSD projects in the same monorepo without conflicting on planning artifacts, state, or git history
+- **Identity Resolution**: Automatic user identity from `git config user.name` with fallback chain (email → OS username), locked in `.planning/user-map.json`
+- **Active Project Context**: Per-user `.active` file (gitignored) tracks current project; overridable via `GSD_USER`/`GSD_PROJECT` env vars
+- **`/gsd:switch [project]`**: Switch active project (exact + fuzzy match) or list all projects with status summary
+- **`/gsd:team-status`**: Cross-user visibility — scans all user directories, reads STATE.md frontmatter, displays summary table (User, Project, Phase, Progress, Last Active)
+- **`/gsd:archive-project`**: Archive completed projects to `_archived/`, excluded from listings
+- **`/gsd:restore-project`**: Restore archived projects back to active directory
+- **4-Tier Config Precedence**: defaults < `.planning/config.json` (global) < per-project `config.json` < `GSD_*` environment variables
+- **`config-resolve` Command**: Debug config layering — shows resolved value, source layer, and full chain
+- **9 GSD_* Environment Variables**: `GSD_MODEL_PROFILE`, `GSD_PARALLELIZATION`, `GSD_COMMIT_DOCS`, `GSD_RESEARCH`, `GSD_PLAN_CHECK`, `GSD_VERIFIER`, `GSD_BRANCHING_STRATEGY`, `GSD_SEARCH_GITIGNORED`, `GSD_MODEL_OVERRIDES`
+- **Commit Attribution**: Planning artifact commits auto-prefixed with `user/project/` scope (e.g., `docs(dan/frontend/phase-03):`)
+- **Legacy Migration Flow**: Detects old flat `.planning/PROJECT.md` structure and offers auto-migrate (copy-then-delete) or manual instructions; replaces hard error
+- **Single-Project Auto-Select**: If user has exactly one project, it's auto-selected without requiring `/gsd:switch`
+- **Per-Project Config**: Each project gets its own `config.json` seeded from global defaults at creation time
+- **CI/CD Detection**: `CI=true` or `GITHUB_ACTIONS=true` environments refuse to auto-create user directories
+- **Decision Logging Integration**: Wired into `discuss-phase`, `new-project`, `new-milestone`, and `plan-phase` workflows
+- **PATH-13 Audit Gate**: Grep audit confirms zero unresolved raw `.planning/` path references in operational code
+
+### Changed
+
+- **`loadConfig()`**: Rebuilt with global + per-project merge and `_sources` tracking for config resolve
+- **`resolveContext()`**: Returns null for 0/N projects instead of hard-erroring; auto-selects single project
+- **`listProjects()`**: Redesigned to return structured array with metadata (name, phase, progress, last_activity, description)
+- **`tryGetPlanningContext()`**: Now handles legacy detection and returns `legacy_detected` flag
+- **All 8 core modules**: Migrated from hardcoded `.planning/` to `getPlanningRoot()`
+- **83 workflow/agent files**: Updated to use resolved paths from init output
+- **`/gsd:new-project`**: Two-step bootstrap pattern (project name first, then init after directory exists)
+- **`/gsd:progress`**: Shows user/project context header; handles no-active-project gracefully
+- **`cmdCommit()`**: Auto-detects active context and adds user/project attribution to planning commits
+
+### Stats
+
+- **36 requirements** delivered across 4 phases (16 plans)
+- **694 tests** passing (0 failures)
+- **7,074 LOC** core modules + **14,234 LOC** tests
+- **22 days** from roadmap creation to milestone completion
+
 ## [5.0.0] - 2026-03-13
 
 ### BREAKING CHANGES
