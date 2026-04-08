@@ -31,6 +31,20 @@
 
 See `.planning/milestones/v1.0-ROADMAP.md` for full phase details.
 
+### Phase 1: update this repo from upstream, preserving ALL of our patches
+
+**Goal:** Synchronize fork with upstream (714 commits), resolving 250 conflict markers across 61 files while preserving all 102 local patches across 6+ feature areas (multi-user, fork infrastructure, taste/critics, dynamic researcher, code search, completion gates, adaptive synthesizer)
+**Requirements**: MERGE-01, MERGE-02, MERGE-03, MERGE-04, MERGE-05, MERGE-06, MERGE-07, MERGE-08, MERGE-09, MERGE-10, MERGE-11
+**Depends on:** Phase 0
+**Plans:** 5 plans
+
+Plans:
+- [ ] 01-01-PLAN.md — Pre-merge setup + core.cjs path resolution foundation
+- [ ] 01-02-PLAN.md — Resolve init.cjs, state.cjs, phase.cjs (54 conflict markers)
+- [ ] 01-03-PLAN.md — Resolve remaining core libs + infrastructure + modify/delete conflicts
+- [ ] 01-04-PLAN.md — Resolve all workflow/template/agent markdown files (37 files)
+- [ ] 01-05-PLAN.md — Resolve test files + full validation gate + merge commit + fast-forward main
+
 ---
 *Roadmap created: 2026-03-17*
 *v1.0 shipped: 2026-04-08*
