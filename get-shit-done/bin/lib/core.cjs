@@ -327,6 +327,41 @@ function loadConfig(cwd) {
   const globalPath = path.join(cwd, '.planning', 'config.json');
   const globalConfig = safeReadJson(globalPath) || {};
 
+  // Layer 1b: ~/.gsd/defaults.json fallback for pre-project contexts (#1683)
+  // Only used when .planning/ doesn't exist at all (not even an empty directory).
+  // If .planning/ exists, the project is initialized — just maybe missing config.json.
+  if (!fs.existsSync(path.join(cwd, '.planning'))) {
+    try {
+      const home = process.env.GSD_HOME || os.homedir();
+      const globalDefaultsPath = path.join(home, '.gsd', 'defaults.json');
+      const raw = fs.readFileSync(globalDefaultsPath, 'utf-8');
+      const globalDefaults = JSON.parse(raw);
+      return {
+        ...defaults,
+        model_profile: globalDefaults.model_profile ?? defaults.model_profile,
+        commit_docs: globalDefaults.commit_docs ?? defaults.commit_docs,
+        research: globalDefaults.research ?? defaults.research,
+        plan_checker: globalDefaults.plan_checker ?? defaults.plan_checker,
+        verifier: globalDefaults.verifier ?? defaults.verifier,
+        nyquist_validation: globalDefaults.nyquist_validation ?? defaults.nyquist_validation,
+        parallelization: globalDefaults.parallelization ?? defaults.parallelization,
+        text_mode: globalDefaults.text_mode ?? defaults.text_mode,
+        resolve_model_ids: globalDefaults.resolve_model_ids ?? defaults.resolve_model_ids,
+        context_window: globalDefaults.context_window ?? defaults.context_window,
+        subagent_timeout: globalDefaults.subagent_timeout ?? defaults.subagent_timeout,
+        model_overrides: globalDefaults.model_overrides || null,
+        agent_skills: globalDefaults.agent_skills || {},
+        response_language: globalDefaults.response_language || null,
+        tdd_mode: globalDefaults.tdd_mode ?? false,
+        claude_md_path: globalDefaults.claude_md_path || null,
+        scope_path: globalDefaults.scope_path || null,
+        manager: globalDefaults.manager || {},
+      };
+    } catch {
+      return defaults;
+    }
+  }
+
   // Layer 2: Per-project config (only when an active project exists)
   const planningRoot = _resolvePlanningRootSoft(cwd);
   // Guard: don't read per-project config when planningRoot is '.planning' (same as global)
