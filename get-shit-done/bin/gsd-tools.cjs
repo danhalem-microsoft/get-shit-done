@@ -447,7 +447,6 @@ function parseMultiwordArg(args, flag) {
   }
   return tokens.length > 0 ? tokens.join(' ') : null;
 }
-}
 
 // ─── CLI Router ───────────────────────────────────────────────────────────────
 

@@ -88,7 +88,6 @@ function validateKnownConfigKeyPath(keyPath) {
   if (suggested) {
     error(`Unknown config key: ${keyPath}. Did you mean ${suggested}?`);
   }
-  }
 }
 
 /**

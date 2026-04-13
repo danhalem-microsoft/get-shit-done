@@ -1294,7 +1294,6 @@ function cmdCheckCommit(cwd, raw) {
 
   output({ allowed: true, reason: 'no_planning_files_staged' }, raw, 'allowed');
 }
-}
 
 module.exports = {
   cmdGenerateSlug,
