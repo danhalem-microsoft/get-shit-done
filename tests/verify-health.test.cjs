@@ -446,7 +446,7 @@ describe('validate health command', () => {
         '',
       ].join('\n')
     );
-    writeMinimalStateMd(tmpDir, '# Session State\n\nPhase 1 in progress.\n');
+    writeMinimalStateMd(tmpDir, planningRoot, '# Session State\n\nPhase 1 in progress.\n');
     writeValidConfigJson(tmpDir, planningRoot);
     // Only phase 1 dir exists; phase 2 dir does not (not started yet)
     fs.mkdirSync(path.join(tmpDir, planningRoot, 'phases', '01-setup'), { recursive: true });
@@ -478,7 +478,7 @@ describe('validate health command', () => {
         '',
       ].join('\n')
     );
-    writeMinimalStateMd(tmpDir, '# Session State\n\nPhase 1 done.\n');
+    writeMinimalStateMd(tmpDir, planningRoot, '# Session State\n\nPhase 1 done.\n');
     writeValidConfigJson(tmpDir, planningRoot);
     // No phase 1 directory — even though roadmap says it's complete
 
@@ -763,7 +763,7 @@ describe('validate health --repair command', () => {
   });
 
   test('phase mismatch warnings do not count as repairable issues', () => {
-    writeValidConfigJson(tmpDir, '.planning');
+    writeValidConfigJson(tmpDir, planningRoot);
     fs.writeFileSync(
       path.join(tmpDir, planningRoot, 'STATE.md'),
       '# Session State\n\nPhase 99 is the current phase.\n'
