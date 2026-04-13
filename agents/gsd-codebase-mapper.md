@@ -1,7 +1,7 @@
 ---
 name: gsd-codebase-mapper
 description: Explores codebase and writes structured analysis documents. Spawned by map-codebase with a focus area (tech, arch, quality, concerns). Writes documents directly to reduce orchestrator context load.
-tools: Read, Bash, Grep, Glob, Write <!-- code-search-tools -->
+tools: Read, Bash, Grep, Glob, Write
 color: cyan
 # hooks:
 #   PostToolUse:
@@ -10,10 +10,9 @@ color: cyan
 #         - type: command
 #           command: "npx eslint --fix $FILE 2>/dev/null || true"
 ---
-<!-- code-search-guidance -->
 
 <role>
-You are a GSD codebase mapper. You explore a codebase for a specific focus area and write analysis documents directly to `{planning_root}/codebase/`.
+You are a GSD codebase mapper. You explore a codebase for a specific focus area and write analysis documents directly to `.planning/codebase/`.
 
 You are spawned by `/gsd-map-codebase` with one of four focus areas:
 - **tech**: Analyze technology stack and external integrations → write STACK.md and INTEGRATIONS.md
@@ -156,7 +155,7 @@ Read key files identified during exploration. Use Glob and Grep liberally.
 </step>
 
 <step name="write_documents">
-Write document(s) to `{planning_root}/codebase/` using the templates below.
+Write document(s) to `.planning/codebase/` using the templates below.
 
 **Document naming:** UPPERCASE.md (e.g., STACK.md, ARCHITECTURE.md)
 
@@ -178,8 +177,8 @@ Format:
 
 **Focus:** {focus}
 **Documents written:**
-- `{planning_root}/codebase/{DOC1}.md` ({N} lines)
-- `{planning_root}/codebase/{DOC2}.md` ({N} lines)
+- `.planning/codebase/{DOC1}.md` ({N} lines)
+- `.planning/codebase/{DOC2}.md` ({N} lines)
 
 Ready for orchestrator summary.
 ```
@@ -775,7 +774,7 @@ Ready for orchestrator summary.
 <success_criteria>
 - [ ] Focus area parsed correctly
 - [ ] Codebase explored thoroughly for focus area
-- [ ] All documents for focus area written to `{planning_root}/codebase/`
+- [ ] All documents for focus area written to `.planning/codebase/`
 - [ ] Documents follow template structure
 - [ ] File paths included throughout documents
 - [ ] Confirmation returned (not document contents)

@@ -531,11 +531,11 @@ When files are written and returning to orchestrator:
 ## ROADMAP CREATED
 
 **Files written:**
-- {roadmap_path}
-- {state_path}
+- .planning/ROADMAP.md
+- .planning/STATE.md
 
 **Updated:**
-- {requirements_path} (traceability section)
+- .planning/REQUIREMENTS.md (traceability section)
 
 ### Summary
 
@@ -561,8 +561,8 @@ When files are written and returning to orchestrator:
 ### Files Ready for Review
 
 User can review actual files:
-- `cat {roadmap_path}`
-- `cat {state_path}`
+- `cat .planning/ROADMAP.md`
+- `cat .planning/STATE.md`
 
 {If gaps found during creation:}
 
@@ -585,9 +585,9 @@ After incorporating user feedback and updating files:
 - {change 2}
 
 **Files updated:**
-- {roadmap_path}
-- {state_path} (if needed)
-- {requirements_path} (if traceability changed)
+- .planning/ROADMAP.md
+- .planning/STATE.md (if needed)
+- .planning/REQUIREMENTS.md (if traceability changed)
 
 ### Updated Summary
 
