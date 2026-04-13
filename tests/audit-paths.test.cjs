@@ -58,6 +58,10 @@ describe('PATH-13: Grep audit gate', () => {
       'profile-output.cjs',   // profile output paths
       'docs.cjs',       // documentation generation paths
       'schema-detect.cjs', // schema detection paths
+      'verify.cjs',     // health check error messages reference .planning/
+      'config.cjs',     // config-init creates .planning/config.json
+      'audit.cjs',      // audit scans .planning/ artifact categories
+      'phase.cjs',      // phase scanning references .planning/phases/
     ];
 
     const violations = grepOutput.split('\n').filter(line => {
