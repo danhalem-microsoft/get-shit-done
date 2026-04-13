@@ -511,6 +511,10 @@ function loadConfig(cwd) {
   result.manager = projectConfig.manager || globalConfig.manager || {};
   sources.manager = projectConfig.manager ? (projectPath || globalPath) : (globalConfig.manager ? globalPath : 'default');
 
+  // Handle 'features' section container (object merge, not in keyMap)
+  result.features = { ...globalConfig.features, ...projectConfig.features };
+  sources.features = projectConfig.features ? (projectPath || globalPath) : (globalConfig.features ? globalPath : 'default');
+
   // Ensure null-defaulted keys get null instead of undefined
   if (result.response_language === undefined) { result.response_language = null; sources.response_language = 'default'; }
   if (result.claude_md_path === undefined) { result.claude_md_path = null; sources.claude_md_path = 'default'; }
