@@ -260,11 +260,11 @@ describe('validate health command', () => {
   });
 
   test('accepts inherit model_profile as valid', () => {
-    writeMinimalProjectMd(tmpDir);
-    writeMinimalRoadmap(tmpDir, ['1']);
-    writeMinimalStateMd(tmpDir);
+    writeMinimalProjectMd(tmpDir, planningRoot);
+    writeMinimalRoadmap(tmpDir, planningRoot, ['1']);
+    writeMinimalStateMd(tmpDir, planningRoot);
     fs.writeFileSync(
-      path.join(tmpDir, '.planning', 'config.json'),
+      path.join(tmpDir, planningRoot, 'config.json'),
       JSON.stringify({
         model_profile: 'inherit',
         workflow: {
@@ -275,7 +275,7 @@ describe('validate health command', () => {
         },
       })
     );
-    fs.mkdirSync(path.join(tmpDir, '.planning', 'phases', '01-a'), { recursive: true });
+    fs.mkdirSync(path.join(tmpDir, planningRoot, 'phases', '01-a'), { recursive: true });
 
     const result = runGsdTools('validate health', tmpDir);
     assert.ok(result.success, `Command failed: ${result.error}`);
@@ -429,9 +429,9 @@ describe('validate health command', () => {
     // A ROADMAP with Phase 1 started (has disk dir) and Phase 2 listed but
     // unchecked (- [ ]) — phase 2 has no directory because it hasn't started.
     // W006 must NOT fire for phase 2.
-    writeMinimalProjectMd(tmpDir);
+    writeMinimalProjectMd(tmpDir, planningRoot);
     fs.writeFileSync(
-      path.join(tmpDir, '.planning', 'ROADMAP.md'),
+      path.join(tmpDir, planningRoot, 'ROADMAP.md'),
       [
         '# Roadmap',
         '',
@@ -447,9 +447,9 @@ describe('validate health command', () => {
       ].join('\n')
     );
     writeMinimalStateMd(tmpDir, '# Session State\n\nPhase 1 in progress.\n');
-    writeValidConfigJson(tmpDir);
+    writeValidConfigJson(tmpDir, planningRoot);
     // Only phase 1 dir exists; phase 2 dir does not (not started yet)
-    fs.mkdirSync(path.join(tmpDir, '.planning', 'phases', '01-setup'), { recursive: true });
+    fs.mkdirSync(path.join(tmpDir, planningRoot, 'phases', '01-setup'), { recursive: true });
 
     const result = runGsdTools('validate health', tmpDir);
     assert.ok(result.success, `Command failed: ${result.error}`);
@@ -466,9 +466,9 @@ describe('validate health command', () => {
   test('still emits W006 for a phase that was started (checked) but has no directory', () => {
     // Phase 1 is marked complete ([x]) in ROADMAP summary but has no directory
     // on disk — that IS a genuine inconsistency and should still trigger W006.
-    writeMinimalProjectMd(tmpDir);
+    writeMinimalProjectMd(tmpDir, planningRoot);
     fs.writeFileSync(
-      path.join(tmpDir, '.planning', 'ROADMAP.md'),
+      path.join(tmpDir, planningRoot, 'ROADMAP.md'),
       [
         '# Roadmap',
         '',
@@ -479,7 +479,7 @@ describe('validate health command', () => {
       ].join('\n')
     );
     writeMinimalStateMd(tmpDir, '# Session State\n\nPhase 1 done.\n');
-    writeValidConfigJson(tmpDir);
+    writeValidConfigJson(tmpDir, planningRoot);
     // No phase 1 directory — even though roadmap says it's complete
 
     const result = runGsdTools('validate health', tmpDir);
@@ -763,9 +763,9 @@ describe('validate health --repair command', () => {
   });
 
   test('phase mismatch warnings do not count as repairable issues', () => {
-    writeValidConfigJson(tmpDir);
+    writeValidConfigJson(tmpDir, '.planning');
     fs.writeFileSync(
-      path.join(tmpDir, '.planning', 'STATE.md'),
+      path.join(tmpDir, planningRoot, 'STATE.md'),
       '# Session State\n\nPhase 99 is the current phase.\n'
     );
 
@@ -794,10 +794,10 @@ describe('validate health — missing phasesDir', () => {
 
   test('completes without throwing and emits zero phase-directory warnings when phasesDir does not exist', () => {
     // Setup: valid PROJECT, ROADMAP, STATE, config but NO phases directory
-    writeMinimalProjectMd(tmpDir);
-    writeMinimalRoadmap(tmpDir, ['1', '2']);
-    writeMinimalStateMd(tmpDir);
-    writeValidConfigJson(tmpDir);
+    writeMinimalProjectMd(tmpDir, '.planning');
+    writeMinimalRoadmap(tmpDir, '.planning', ['1', '2']);
+    writeMinimalStateMd(tmpDir, '.planning');
+    writeValidConfigJson(tmpDir, '.planning');
 
     // Remove the phases directory if it exists
     const phasesDir = path.join(tmpDir, '.planning', 'phases');
