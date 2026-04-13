@@ -1246,7 +1246,7 @@ function cmdInitManager(cwd, raw) {
     recommended_actions: filteredActions,
     waiting_signal: waitingSignal,
     all_complete: completedCount === nonBacklogPhases.length && nonBacklogPhases.length > 0,
-    project_exists: (planningRootPath ? pathExistsInternal(cwd, `${planningRootPath}/PROJECT.md`) : false),
+    project_exists: (paths.planning ? pathExistsInternal(cwd, path.join(paths.planning, 'PROJECT.md')) : false),
     roadmap_exists: true,
     state_exists: true,
     manager_flags: managerFlags,
