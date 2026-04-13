@@ -10,7 +10,7 @@ const { resolveIdentity } = require('./identity.cjs');
 const { readActiveContext, writeActiveContext, listProjects } = require('./context.cjs');
 
 function getLatestCompletedMilestone(cwd) {
-  const milestonesPath = path.join(planningPaths(cwd).root, 'MILESTONES.md');
+  const milestonesPath = path.join(planningPaths(cwd).planning, 'MILESTONES.md');
   if (!fs.existsSync(milestonesPath)) return null;
 
   try {
@@ -442,6 +442,13 @@ function cmdInitNewProject(cwd, raw) {
 
     // File paths
     project_path: planningRootPath ? `${planningRootPath}/PROJECT.md` : null,
+    config_path: planningRootPath ? `${planningRootPath}/config.json` : null,
+
+    // Project identity
+    project_name: ctx.active_project || null,
+
+    // Scope
+    scope_path: config.scope_path || null,
   };
 
   output(withProjectRoot(cwd, result), raw);

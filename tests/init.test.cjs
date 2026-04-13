@@ -156,7 +156,7 @@ describe('init commands', () => {
   });
 
   test('init plan-phase detects has_reviews and reviews_path when REVIEWS.md exists', () => {
-    const phaseDir = path.join(tmpDir, '.planning', 'phases', '03-api');
+    const phaseDir = path.join(projectDir, 'phases', '03-api');
     fs.mkdirSync(phaseDir, { recursive: true });
     fs.writeFileSync(path.join(phaseDir, '03-REVIEWS.md'), '# Cross-AI Reviews');
 
@@ -165,7 +165,7 @@ describe('init commands', () => {
 
     const output = JSON.parse(result.output);
     assert.strictEqual(output.has_reviews, true);
-    assert.strictEqual(output.reviews_path, '.planning/phases/03-api/03-REVIEWS.md');
+    assert.strictEqual(output.reviews_path, `${planningRoot}/phases/03-api/03-REVIEWS.md`);
   });
 
   test('init plan-phase omits optional paths if files missing', () => {
@@ -726,8 +726,7 @@ describe('cmdInitPhaseOp fallback', () => {
 
   test('prefers current milestone roadmap entry over archived phase with same number', () => {
     const archiveDir = path.join(
-      tmpDir,
-      '.planning',
+      projectDir,
       'milestones',
       'v1.2-phases',
       '02-event-parser-and-queue-schema'
@@ -738,7 +737,7 @@ describe('cmdInitPhaseOp fallback', () => {
     fs.writeFileSync(path.join(archiveDir, '02-VERIFICATION.md'), '# Archived verification');
 
     fs.writeFileSync(
-      path.join(tmpDir, '.planning', 'ROADMAP.md'),
+      path.join(projectDir, 'ROADMAP.md'),
       `# Roadmap
 
 <details>
@@ -945,11 +944,11 @@ describe('cmdInitQuick', () => {
       `quick_id should match YYMMDD-xxx, got: "${output.quick_id}"`);
 
     // task_dir must use the new ID format
-    assert.ok(output.task_dir.startsWith('.planning/quick/'),
-      `task_dir should start with .planning/quick/, got: "${output.task_dir}"`);
+    assert.ok(output.task_dir.startsWith(`${planningRoot}/quick/`),
+      `task_dir should start with ${planningRoot}/quick/, got: "${output.task_dir}"`);
     assert.ok(output.task_dir.endsWith('-fix-login-bug'),
       `task_dir should end with -fix-login-bug, got: "${output.task_dir}"`);
-    assert.ok(/^\.planning\/quick\/\d{6}-[0-9a-z]{3}-fix-login-bug$/.test(output.task_dir),
+    assert.ok(new RegExp(`^${planningRoot.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/quick/\\d{6}-[0-9a-z]{3}-fix-login-bug$`).test(output.task_dir),
       `task_dir format wrong: "${output.task_dir}"`);
 
     // next_num must NOT be present
@@ -1351,11 +1350,11 @@ describe('cmdInitNewMilestone', () => {
 
   test('reports latest completed milestone and archive target for reset flow', () => {
     fs.writeFileSync(
-      path.join(tmpDir, '.planning', 'MILESTONES.md'),
+      path.join(projectDir, 'MILESTONES.md'),
       '# Milestones\n\n## v1.2 Search Refresh (Shipped: 2026-02-18)\n\n---\n'
     );
-    fs.mkdirSync(path.join(tmpDir, '.planning', 'phases', '06-refine-search'), { recursive: true });
-    fs.mkdirSync(path.join(tmpDir, '.planning', 'phases', '07-polish'), { recursive: true });
+    fs.mkdirSync(path.join(projectDir, 'phases', '06-refine-search'), { recursive: true });
+    fs.mkdirSync(path.join(projectDir, 'phases', '07-polish'), { recursive: true });
 
     const result = runGsdTools('init new-milestone', tmpDir);
     assert.ok(result.success, `Command failed: ${result.error}`);
@@ -1364,7 +1363,7 @@ describe('cmdInitNewMilestone', () => {
     assert.strictEqual(output.latest_completed_milestone, 'v1.2');
     assert.strictEqual(output.latest_completed_milestone_name, 'Search Refresh');
     assert.strictEqual(output.phase_dir_count, 2);
-    assert.strictEqual(output.phase_archive_path, '.planning/milestones/v1.2-phases');
+    assert.strictEqual(output.phase_archive_path, `${planningRoot}/milestones/v1.2-phases`);
   });
 
   test('reset flow metadata is null-safe when no milestones file exists', () => {

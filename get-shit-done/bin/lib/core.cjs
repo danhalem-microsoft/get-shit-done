@@ -362,17 +362,18 @@ function loadConfig(cwd) {
     brave_search: null,
     firecrawl: null,
     exa_search: null,
-    text_mode: null,
-    sub_repos: null,
+    text_mode: { section: 'workflow', field: 'text_mode' },
+    sub_repos: { section: 'planning', field: 'sub_repos' },
     resolve_model_ids: null,
     context_window: null,
     phase_naming: null,
     project_code: null,
-    subagent_timeout: null,
+    subagent_timeout: { section: 'workflow', field: 'subagent_timeout' },
     granularity: null,
     tdd_mode: { section: 'workflow', field: 'tdd_mode' },
     response_language: null,
     claude_md_path: null,
+    scope_path: null,
   };
 
   // Merge: per-project > global > defaults
@@ -479,6 +480,7 @@ function loadConfig(cwd) {
   if (result.response_language === undefined) { result.response_language = null; sources.response_language = 'default'; }
   if (result.claude_md_path === undefined) { result.claude_md_path = null; sources.claude_md_path = 'default'; }
   if (result.tdd_mode === undefined) { result.tdd_mode = false; sources.tdd_mode = 'default'; }
+  if (result.scope_path === undefined) { result.scope_path = null; sources.scope_path = 'default'; }
 
   result._sources = sources;
 
