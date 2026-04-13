@@ -76,69 +76,35 @@ function createTempDir(prefix = 'gsd-test-') {
 }
 
 /**
- * Create temp directory structure (legacy flat layout).
+ * Create temp directory with flat .planning/ layout.
  *
- * @deprecated Use createTempMultiUserProject() for new tests.
- * Creates .planning/users/ to prevent legacy structure detection error,
- * but does not create a full multi-user structure.
- * Callers should migrate to createTempMultiUserProject() and use the
- * returned { tmpDir, userSlug, projectName } to construct paths via
- * `.planning/users/${userSlug}/${projectName}/`.
+ * Creates a flat .planning/ structure (no users/ directory) suitable for
+ * upstream tests that write directly to .planning/phases/, .planning/ROADMAP.md,
+ * etc.  getPlanningRoot() will detect the absence of .planning/users/ and
+ * fall back to returning '.planning' as the planning root.
  */
 function createTempProject(prefix = 'gsd-test-') {
   const tmpDir = fs.mkdtempSync(path.join(require('os').tmpdir(), prefix));
-  const userSlug = 'test-user';
-  const projectName = 'test-project';
-  const userDir = path.join(tmpDir, '.planning', 'users', userSlug);
-  const projectDir = path.join(userDir, projectName);
-  fs.mkdirSync(path.join(projectDir, 'phases'), { recursive: true });
-  // user-map.json so getPlanningRoot can resolve the user
-  fs.writeFileSync(
-    path.join(tmpDir, '.planning', 'user-map.json'),
-    JSON.stringify({ _schema: 1, 'Test User': userSlug }, null, 2) + '\n',
-    'utf-8'
-  );
-  // .active so getPlanningRoot can resolve the active project
-  fs.writeFileSync(
-    path.join(userDir, '.active'),
-    JSON.stringify({ project: projectName, resolved_path: `.planning/users/${userSlug}/${projectName}` }, null, 2) + '\n',
-    'utf-8'
-  );
+  fs.mkdirSync(path.join(tmpDir, '.planning', 'phases'), { recursive: true });
   return tmpDir;
 }
 
 /**
- * Create temp directory with initialized git repo (legacy flat layout).
+ * Create temp directory with initialized git repo and flat .planning/ layout.
  *
- * @deprecated Use createTempMultiUserProject() for new tests.
- * Creates .planning/users/ to prevent legacy structure detection error.
- * Callers should migrate to createTempMultiUserProject().
+ * Creates a flat .planning/ structure (no users/ directory) suitable for
+ * upstream tests that write directly to .planning/phases/, .planning/ROADMAP.md,
+ * etc.  getPlanningRoot() will detect the absence of .planning/users/ and
+ * fall back to returning '.planning' as the planning root.
  */
 function createTempGitProject(prefix = 'gsd-test-') {
   const tmpDir = fs.mkdtempSync(path.join(require('os').tmpdir(), prefix));
-  const userSlug = 'test-user';
-  const projectName = 'test-project';
-  const userDir = path.join(tmpDir, '.planning', 'users', userSlug);
-  const projectDir = path.join(userDir, projectName);
-  fs.mkdirSync(path.join(projectDir, 'phases'), { recursive: true });
+  fs.mkdirSync(path.join(tmpDir, '.planning', 'phases'), { recursive: true });
 
   execSync('git init', { cwd: tmpDir, stdio: 'pipe' });
   execSync('git config user.email "test@test.com"', { cwd: tmpDir, stdio: 'pipe' });
   execSync('git config user.name "Test User"', { cwd: tmpDir, stdio: 'pipe' });
   execSync('git config commit.gpgsign false', { cwd: tmpDir, stdio: 'pipe' });
-
-  // user-map.json so getPlanningRoot can resolve the user
-  fs.writeFileSync(
-    path.join(tmpDir, '.planning', 'user-map.json'),
-    JSON.stringify({ _schema: 1, 'Test User': userSlug }, null, 2) + '\n',
-    'utf-8'
-  );
-  // .active so getPlanningRoot can resolve the active project
-  fs.writeFileSync(
-    path.join(userDir, '.active'),
-    JSON.stringify({ project: projectName, resolved_path: `.planning/users/${userSlug}/${projectName}` }, null, 2) + '\n',
-    'utf-8'
-  );
 
   // Create initial commit
   fs.writeFileSync(path.join(tmpDir, '.gitkeep'), '');

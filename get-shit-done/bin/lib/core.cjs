@@ -1608,6 +1608,17 @@ function getPlanningRoot(cwd) {
     error('GSD Error: Legacy .planning/ structure detected.\n\nRun: /gsd:migrate to auto-migrate your project to the multi-user structure.\nOr run: gsd-tools.cjs migrate --auto to migrate from the command line.\n\nThis will move your files to .planning/users/<your-user>/<project-name>/ and set up the active project context.');
   }
 
+  // 2b. Flat .planning/ fallback — when .planning/ exists but has no users/
+  // directory AND no PROJECT.md (which is caught above), treat .planning/ as
+  // the planning root directly.  This supports upstream flat-structure tests
+  // and simple single-user repos that haven't migrated to multi-user yet.
+  if (fs.existsSync(path.join(cwd, '.planning')) &&
+      !fs.existsSync(path.join(cwd, '.planning', 'users'))) {
+    const flat = '.planning';
+    _planningRootCache[cwd] = flat;
+    return flat;
+  }
+
   // 3. Delegate to context.cjs (lazy require)
   // CRITICAL: require('./context.cjs') is LAZY (inside function body).
   // Moving it to module scope causes circular dependency crash.
