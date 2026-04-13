@@ -1135,7 +1135,9 @@ describe('commit command', () => {
 
     const output = JSON.parse(result.output);
     assert.strictEqual(output.committed, false);
-    assert.strictEqual(output.reason, 'skipped_gitignored');
+    // When .planning/ is gitignored, loadConfig auto-detects and sets commit_docs=false,
+    // so the commit command sees commit_docs=false and skips with that reason.
+    assert.strictEqual(output.reason, 'skipped_commit_docs_false');
   });
 
   test('handles nothing to commit', () => {
