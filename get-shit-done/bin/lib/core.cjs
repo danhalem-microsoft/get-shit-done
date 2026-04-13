@@ -370,6 +370,9 @@ function loadConfig(cwd) {
     project_code: null,
     subagent_timeout: null,
     granularity: null,
+    tdd_mode: { section: 'workflow', field: 'tdd_mode' },
+    response_language: null,
+    claude_md_path: null,
   };
 
   // Merge: per-project > global > defaults
@@ -405,6 +408,51 @@ function loadConfig(cwd) {
     sources.parallelization = 'default';
   }
 
+  // commit_docs gitignore auto-detection (#1250):
+  // When not explicitly set in config and .planning/ is gitignored, default to false
+  if (sources.commit_docs === 'default') {
+    if (isGitIgnored(cwd, '.planning/')) {
+      result.commit_docs = false;
+    }
+  }
+
+  // sub_repos auto-sync: migrate legacy "multiRepo: true" boolean → sub_repos array
+  const mergedConfig = { ...globalConfig, ...projectConfig };
+  let configDirty = false;
+  const configToUpdate = projectPath ? projectConfig : globalConfig;
+  const configPathToUpdate = projectPath || globalPath;
+
+  if (mergedConfig.multiRepo === true && !result.sub_repos?.length) {
+    const detected = detectSubRepos(cwd);
+    if (detected.length > 0) {
+      result.sub_repos = detected;
+      result.commit_docs = false;
+      sources.sub_repos = 'auto-detected';
+      configToUpdate.sub_repos = detected;
+      if (!configToUpdate.planning) configToUpdate.planning = {};
+      configToUpdate.planning.commit_docs = false;
+      delete configToUpdate.multiRepo;
+      configDirty = true;
+    }
+  }
+  // Keep sub_repos in sync with actual filesystem
+  if (Array.isArray(result.sub_repos) && result.sub_repos.length > 0) {
+    const detected = detectSubRepos(cwd);
+    if (detected.length > 0) {
+      const sorted = [...result.sub_repos].sort();
+      if (JSON.stringify(sorted) !== JSON.stringify(detected)) {
+        result.sub_repos = detected;
+        configToUpdate.sub_repos = detected;
+        sources.sub_repos = 'auto-synced';
+        configDirty = true;
+      }
+    }
+  }
+  // Persist sub_repos changes (migration or sync)
+  if (configDirty) {
+    try { fs.writeFileSync(configPathToUpdate, JSON.stringify(configToUpdate, null, 2), 'utf-8'); } catch {}
+  }
+
   // Handle model_overrides (not in defaults, special merge)
   const projectOverrides = projectConfig.model_overrides;
   const globalOverrides = globalConfig.model_overrides;
@@ -418,6 +466,19 @@ function loadConfig(cwd) {
     result.model_overrides = null;
     sources.model_overrides = 'default';
   }
+
+  // Handle agent_skills (object merge, not in keyMap)
+  result.agent_skills = projectConfig.agent_skills || globalConfig.agent_skills || {};
+  sources.agent_skills = projectConfig.agent_skills ? (projectPath || globalPath) : (globalConfig.agent_skills ? globalPath : 'default');
+
+  // Handle manager (object merge, not in keyMap)
+  result.manager = projectConfig.manager || globalConfig.manager || {};
+  sources.manager = projectConfig.manager ? (projectPath || globalPath) : (globalConfig.manager ? globalPath : 'default');
+
+  // Ensure null-defaulted keys get null instead of undefined
+  if (result.response_language === undefined) { result.response_language = null; sources.response_language = 'default'; }
+  if (result.claude_md_path === undefined) { result.claude_md_path = null; sources.claude_md_path = 'default'; }
+  if (result.tdd_mode === undefined) { result.tdd_mode = false; sources.tdd_mode = 'default'; }
 
   result._sources = sources;
 
