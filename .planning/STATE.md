@@ -3,25 +3,25 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in_progress
-last_updated: "2026-04-13T17:45:10Z"
+last_updated: "2026-04-13T19:25:00Z"
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 20
-  completed_plans: 17
+  completed_plans: 19
 ---
 
 # Project State: GSD Multi-User Monorepo Support
 
 ## Current Phase
 
-**Phase 1: Update This Repo From Upstream** — Plan 02 complete (2/5 plans), Plan 03 next
+**Phase 1: Update This Repo From Upstream** — Plan 05 complete (5/5 plans), awaiting human verification checkpoint
 
 ## Current Position
 
 - **Phase:** 01-update-this-repo-from-upstream-preserving-all-of-our-patches
-- **Plan:** 02 complete, 03 next
-- **Branch:** upstream-sync (merge in progress, 57 files remaining)
+- **Plan:** 05 complete, awaiting human verification
+- **Branch:** upstream-sync (merge committed, main NOT fast-forwarded)
 
 ## Project Reference
 
@@ -90,6 +90,9 @@ See: .planning/PROJECT.md (updated 2026-04-08)
 | bootstrap_path added to cmdInitProjectSetup output | 04-03 | Resolves PATH-13 chicken-and-egg: workflow uses resolved path instead of raw .planning/ ref |
 | new-project.md remaining .planning/ refs allowlisted as documentation | 04-03 | 2 illustrative comments explaining bootstrap_path value, not operational paths |
 | planningPaths delegates to getPlanningRoot (not upstream planningDir) | 01-01 | Multi-user path resolution must be the single chokepoint; upstream planningPaths callers get correct paths via delegation |
+| Kept ours for all ${planning_root} workflow files | 01-04 | Multi-user path resolution is the core value of our fork; hardcoded .planning/ paths break multi-user |
+| Took upstream's update.md | 01-04 | Upstream has comprehensive multi-runtime detection (kilo/codex/opencode) we don't need to reimplement |
+| Merged config.json template (both sides) | 01-04 | Our critics.auto_spawn and upstream's security/cross-ai/plan-bounce fields are independently valuable |
 | init.cjs uses planningRootPath variable (from ctx.planning_root) for all path construction | 01-02 | Avoids shadowing upstream's planningRoot() function import; provides null-safe path resolution |
 | state.cjs taken from upstream with only getPlanningRoot added to imports | 01-02 | planningPaths already delegates correctly; upstream's atomic writes, locking, caching are purely additive |
 | phase.cjs replaces planningDir(cwd) with getPlanningRoot-based paths | 01-02 | planningDir uses GSD_PROJECT env var; getPlanningRoot uses our identity/context system |
@@ -124,6 +127,9 @@ See: .planning/PROJECT.md (updated 2026-04-08)
 | 2026-04-08 | Phase 1 context (new milestone) | Context gathered — 4 areas discussed: merge strategy, conflict resolution, patch preservation, validation. 3 critic blind spots resolved. |
 | 2026-04-13 | Plan 01-01 executed | Pre-merge setup + core.cjs resolved — 10 min, 2 tasks, 3 files |
 | 2026-04-13 | Plan 01-02 executed | init.cjs + state.cjs + phase.cjs resolved (54 conflict markers) — 10 min, 2 tasks, 3 files |
+| 2026-04-13 | Plan 01-03 executed | Remaining core libs + infra + modify/delete resolved (43 conflict markers) — 30 min, 2 tasks, 12 files |
+| 2026-04-13 | Plan 01-04 executed | All workflow/agent/template/infra markdown resolved (40 files) — 8 min, 2 tasks, 40 files |
+| 2026-04-13 | Plan 01-05 executed | Test files resolved (8 files, 26 conflict markers), merge committed, 3 syntax fixes, feature audit passed — 25 min, 2 tasks, 11 files |
 
 ## Accumulated Context
 
