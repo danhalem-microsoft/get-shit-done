@@ -17,13 +17,18 @@ const { clearPlanningRootCache } = require('../get-shit-done/bin/lib/core.cjs');
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
-function readConfig(tmpDir, planningRoot) {
+function readConfig(tmpDir, planningRoot = '.planning') {
   const configPath = path.join(tmpDir, planningRoot, 'config.json');
   return JSON.parse(fs.readFileSync(configPath, 'utf-8'));
 }
 
-function writeConfig(tmpDir, planningRoot, obj) {
-  const configPath = path.join(tmpDir, planningRoot, 'config.json');
+function writeConfig(tmpDir, planningRootOrObj = '.planning', obj) {
+  // Support upstream call pattern: writeConfig(tmpDir, { key: value })
+  if (typeof planningRootOrObj === 'object' && planningRootOrObj !== null) {
+    obj = planningRootOrObj;
+    planningRootOrObj = '.planning';
+  }
+  const configPath = path.join(tmpDir, planningRootOrObj, 'config.json');
   fs.writeFileSync(configPath, JSON.stringify(obj, null, 2), 'utf-8');
 }
 
@@ -283,7 +288,7 @@ describe('config-set command', () => {
     assert.match(result.error, /Unknown config key: workflow\.nyquist_validation_enabled/);
     assert.match(result.error, /workflow\.nyquist_validation/);
 
-    const config = readConfig(tmpDir);
+    const config = readConfig(tmpDir, planningRoot);
     assert.strictEqual(config.workflow.nyquist_validation_enabled, undefined);
     assert.strictEqual(config.workflow.nyquist_validation, true);
   });
