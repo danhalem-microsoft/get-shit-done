@@ -291,7 +291,7 @@ The output should answer: "What does the researcher need to investigate? What ch
 
 **After creation:**
 - File lives in phase directory: `{planning_root}/phases/XX-name/{phase_num}-CONTEXT.md`
-- `gsd-phase-researcher` uses decisions to focus investigation
-- `gsd-planner` uses decisions + research to create executable tasks
+- `gsd-phase-researcher` uses decisions to focus investigation AND reads canonical_refs to know WHAT docs to study
+- `gsd-planner` uses decisions + research to create executable tasks AND reads canonical_refs to verify alignment
 - Downstream agents should NOT need to ask the user again about captured decisions
 </guidelines>

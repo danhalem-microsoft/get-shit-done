@@ -2,20 +2,26 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: unknown
-last_updated: "2026-04-08T18:29:34.030Z"
+status: in_progress
+last_updated: "2026-04-13T17:45:10Z"
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 20
-  completed_plans: 16
+  completed_plans: 17
 ---
 
 # Project State: GSD Multi-User Monorepo Support
 
 ## Current Phase
 
-**Milestone v1.0 Complete** — All 4 phases shipped (2026-04-08)
+**Phase 1: Update This Repo From Upstream** — Plan 02 complete (2/5 plans), Plan 03 next
+
+## Current Position
+
+- **Phase:** 01-update-this-repo-from-upstream-preserving-all-of-our-patches
+- **Plan:** 02 complete, 03 next
+- **Branch:** upstream-sync (merge in progress, 57 files remaining)
 
 ## Project Reference
 
@@ -83,6 +89,10 @@ See: .planning/PROJECT.md (updated 2026-04-08)
 | cmdMigrate uses copy-then-delete pattern | 04-03 | Ensures no data loss during legacy structure migration |
 | bootstrap_path added to cmdInitProjectSetup output | 04-03 | Resolves PATH-13 chicken-and-egg: workflow uses resolved path instead of raw .planning/ ref |
 | new-project.md remaining .planning/ refs allowlisted as documentation | 04-03 | 2 illustrative comments explaining bootstrap_path value, not operational paths |
+| planningPaths delegates to getPlanningRoot (not upstream planningDir) | 01-01 | Multi-user path resolution must be the single chokepoint; upstream planningPaths callers get correct paths via delegation |
+| init.cjs uses planningRootPath variable (from ctx.planning_root) for all path construction | 01-02 | Avoids shadowing upstream's planningRoot() function import; provides null-safe path resolution |
+| state.cjs taken from upstream with only getPlanningRoot added to imports | 01-02 | planningPaths already delegates correctly; upstream's atomic writes, locking, caching are purely additive |
+| phase.cjs replaces planningDir(cwd) with getPlanningRoot-based paths | 01-02 | planningDir uses GSD_PROJECT env var; getPlanningRoot uses our identity/context system |
 
 ## Session Log
 
@@ -111,6 +121,15 @@ See: .planning/PROJECT.md (updated 2026-04-08)
 | 2026-04-07 | Plan 04-01 executed | ENV_KEY_MAP + 4-tier loadConfig + cmdConfigResolve + config-resolve dispatcher — 5 min, 2 tasks, 3 files |
 | 2026-04-07 | Plan 04-02 executed | scanAllUsers + cmdTeamStatus + workflow/command files + TDD (11 tests) — 6 min, 3 tasks, 8 files |
 | 2026-04-07 | Plan 04-03 executed | Commit attribution + legacy migration flow + PATH-13 fix — 7 min, 3 tasks, 10 files. Phase 4 complete |
+| 2026-04-08 | Phase 1 context (new milestone) | Context gathered — 4 areas discussed: merge strategy, conflict resolution, patch preservation, validation. 3 critic blind spots resolved. |
+| 2026-04-13 | Plan 01-01 executed | Pre-merge setup + core.cjs resolved — 10 min, 2 tasks, 3 files |
+| 2026-04-13 | Plan 01-02 executed | init.cjs + state.cjs + phase.cjs resolved (54 conflict markers) — 10 min, 2 tasks, 3 files |
+
+## Accumulated Context
+
+### Roadmap Evolution
+
+- Phase 1 added: update this repo from upstream, preserving ALL of our patches
 
 ---
 *State initialized: 2026-03-17*

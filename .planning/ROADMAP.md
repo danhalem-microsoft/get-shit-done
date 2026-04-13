@@ -39,8 +39,8 @@ See `.planning/milestones/v1.0-ROADMAP.md` for full phase details.
 **Plans:** 5 plans
 
 Plans:
-- [ ] 01-01-PLAN.md — Pre-merge setup + core.cjs path resolution foundation
-- [ ] 01-02-PLAN.md — Resolve init.cjs, state.cjs, phase.cjs (54 conflict markers)
+- [x] 01-01-PLAN.md — Pre-merge setup + core.cjs path resolution foundation
+- [x] 01-02-PLAN.md — Resolve init.cjs, state.cjs, phase.cjs (54 conflict markers)
 - [ ] 01-03-PLAN.md — Resolve remaining core libs + infrastructure + modify/delete conflicts
 - [ ] 01-04-PLAN.md — Resolve all workflow/template/agent markdown files (37 files)
 - [ ] 01-05-PLAN.md — Resolve test files + full validation gate + merge commit + fast-forward main

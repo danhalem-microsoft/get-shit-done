@@ -4,7 +4,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { normalizePhaseName, findPhaseInternal, generateSlugInternal, getPlanningRoot, toPosixPath, output, error } = require('./core.cjs');
+const { normalizePhaseName, findPhaseInternal, generateSlugInternal, normalizeMd, getPlanningRoot, toPosixPath, output, error } = require('./core.cjs');
 const { reconstructFrontmatter } = require('./frontmatter.cjs');
 
 function cmdTemplateSelect(cwd, planPath, raw) {
@@ -132,6 +132,10 @@ function cmdTemplateFill(cwd, templateType, options, raw) {
         ...fields,
       };
       const planningRoot = getPlanningRoot(cwd);
+      const planBase = path.join(cwd, planningRoot);
+      const projectRef = toPosixPath(path.relative(cwd, path.join(planBase, 'PROJECT.md')));
+      const roadmapRef = toPosixPath(path.relative(cwd, path.join(planBase, 'ROADMAP.md')));
+      const stateRef = toPosixPath(path.relative(cwd, path.join(planBase, 'STATE.md')));
       body = [
         `# Phase ${options.phase} Plan ${planNum}: [Title]`,
         '',
@@ -141,9 +145,9 @@ function cmdTemplateFill(cwd, templateType, options, raw) {
         '- **Output:** [Concrete deliverable]',
         '',
         '## Context',
-        `@${planningRoot}/PROJECT.md`,
-        `@${planningRoot}/ROADMAP.md`,
-        `@${planningRoot}/STATE.md`,
+        `@${projectRef}`,
+        `@${roadmapRef}`,
+        `@${stateRef}`,
         '',
         '## Tasks',
         '',
@@ -215,7 +219,7 @@ function cmdTemplateFill(cwd, templateType, options, raw) {
     return;
   }
 
-  fs.writeFileSync(outPath, fullContent, 'utf-8');
+  fs.writeFileSync(outPath, normalizeMd(fullContent), 'utf-8');
   const relPath = toPosixPath(path.relative(cwd, outPath));
   output({ created: true, path: relPath, template: templateType }, raw, relPath);
 }

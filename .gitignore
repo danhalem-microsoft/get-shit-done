@@ -8,6 +8,9 @@ commands.html
 # Local test installs
 .claude/
 
+# Cursor IDE — local agents/skills bundle (never commit)
+.cursor/
+
 # Build artifacts (committed to npm, not git)
 hooks/dist/
 
@@ -30,5 +33,36 @@ gaps.md
 improve.md
 philosophy.md
 
-# GSD runtime temp files
-.gsd-autopilot-active
+# Installed skills
+.github/agents/gsd-*
+.github/skills/gsd-*
+.github/get-shit-done/*
+.github/skills/get-shit-done
+.github/copilot-instructions.md
+.bg-shell/
+
+# ── GSD baseline (auto-generated) ──
+.gsd
+Thumbs.db
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+*.code-workspace
+.env
+.env.*
+!.env.example
+.next/
+dist/
+build/
+__pycache__/
+*.pyc
+.venv/
+venv/
+target/
+vendor/
+*.log
+.cache/
+tmp/
+.worktrees
