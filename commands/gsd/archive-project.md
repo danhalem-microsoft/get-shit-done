@@ -9,9 +9,9 @@ allowed-tools:
 ---
 <context>
 **Usage:**
-- `/gsd:archive-project my-api` — Archive project "my-api" to `_archived/`
+- `/gsd-archive-project my-api` — Archive project "my-api" to `_archived/`
 
-**Effect:** Moves the project directory from `.planning/users/<user>/<project>/` to `.planning/users/<user>/_archived/<project>/`. Archived projects are excluded from `/gsd:switch` listings. If the archived project was the active one, auto-selects another project (or clears active context).
+**Effect:** Moves the project directory from `.planning/users/<user>/<project>/` to `.planning/users/<user>/_archived/<project>/`. Archived projects are excluded from `/gsd-switch` listings. If the archived project was the active one, auto-selects another project (or clears active context).
 </context>
 
 <objective>

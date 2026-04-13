@@ -564,7 +564,7 @@ function cmdValidateHealth(cwd, options, raw) {
 
   // ─── Check 1: planning directory exists ──────────────────────────────────
   if (!fs.existsSync(planBase)) {
-    addIssue('error', 'E001', `${planningRoot}/ directory not found`, 'Run /gsd:new-project to initialize');
+    addIssue('error', 'E001', `${planningRoot}/ directory not found`, 'Run /gsd-new-project to initialize');
     output({
       status: 'broken',
       errors,

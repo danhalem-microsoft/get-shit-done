@@ -9,8 +9,8 @@ allowed-tools:
 ---
 <context>
 **Usage:**
-- `/gsd:switch my-api` — Switch to project "my-api" (exact or fuzzy match)
-- `/gsd:switch` — List all projects with status, pick from numbered list
+- `/gsd-switch my-api` — Switch to project "my-api" (exact or fuzzy match)
+- `/gsd-switch` — List all projects with status, pick from numbered list
 
 **Multi-user:** Switches the active project for the current user by updating `.planning/users/<user>/.active`.
 </context>

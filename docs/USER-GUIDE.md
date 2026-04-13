@@ -22,7 +22,7 @@ A detailed reference for workflows, troubleshooting, and configuration. For quic
 ```
   ┌──────────────────────────────────────────────────┐
   │                   NEW PROJECT                    │
-  │  /gsd:new-project                                │
+  │  /gsd-new-project                                │
   │  Questions -> Research -> Requirements -> Roadmap│
   └─────────────────────────┬────────────────────────┘
                             │
@@ -30,19 +30,19 @@ A detailed reference for workflows, troubleshooting, and configuration. For quic
              │      FOR EACH PHASE:       │
              │                            │
              │  ┌────────────────────┐    │
-             │  │ /gsd:discuss-phase │    │  <- Lock in preferences
+             │  │ /gsd-discuss-phase │    │  <- Lock in preferences
              │  └──────────┬─────────┘    │
              │             │              │
              │  ┌──────────▼─────────┐    │
-             │  │ /gsd:plan-phase    │    │  <- Research + Plan + Verify
+             │  │ /gsd-plan-phase    │    │  <- Research + Plan + Verify
              │  └──────────┬─────────┘    │
              │             │              │
              │  ┌──────────▼─────────┐    │
-             │  │ /gsd:execute-phase │    │  <- Parallel execution
+             │  │ /gsd-execute-phase │    │  <- Parallel execution
              │  └──────────┬─────────┘    │
              │             │              │
              │  ┌──────────▼─────────┐    │
-             │  │ /gsd:verify-work   │    │  <- Manual UAT
+             │  │ /gsd-verify-work   │    │  <- Manual UAT
              │  └──────────┬─────────┘    │
              │             │              │
              │     Next Phase?────────────┘
@@ -50,8 +50,8 @@ A detailed reference for workflows, troubleshooting, and configuration. For quic
              └─────────────┼──────────────┘
                             │
             ┌───────────────▼──────────────┐
-            │  /gsd:audit-milestone        │
-            │  /gsd:complete-milestone     │
+            │  /gsd-audit-milestone        │
+            │  /gsd-complete-milestone     │
             └───────────────┬──────────────┘
                             │
                    Another milestone?
@@ -59,14 +59,14 @@ A detailed reference for workflows, troubleshooting, and configuration. For quic
                       Yes         No -> Done!
                        │
                ┌───────▼──────────────┐
-               │  /gsd:new-milestone  │
+               │  /gsd-new-milestone  │
                └──────────────────────┘
 ```
 
 ### Planning Agent Coordination
 
 ```
-  /gsd:plan-phase N
+  /gsd-plan-phase N
          │
          ├── Phase Researcher (x4 parallel)
          │     ├── Stack researcher
@@ -112,16 +112,16 @@ lack automated verify commands will not be approved.
 
 **Output:** `{phase}-VALIDATION.md` -- the feedback contract for the phase.
 
-**Disable:** Set `workflow.nyquist_validation: false` in `/gsd:settings` for
+**Disable:** Set `workflow.nyquist_validation: false` in `/gsd-settings` for
 rapid prototyping phases where test infrastructure isn't the focus.
 
-### Retroactive Validation (`/gsd:validate-phase`)
+### Retroactive Validation (`/gsd-validate-phase`)
 
 For phases executed before Nyquist validation existed, or for existing codebases
 with only traditional test suites, retroactively audit and fill coverage gaps:
 
 ```
-  /gsd:validate-phase N
+  /gsd-validate-phase N
          |
          +-- Detect state (VALIDATION.md exists? SUMMARY.md exists?)
          |
@@ -144,12 +144,12 @@ VALIDATION.md. If a test reveals an implementation bug, it's flagged as an
 escalation for you to address.
 
 **When to use:** After executing phases that were planned before Nyquist was
-enabled, or after `/gsd:audit-milestone` surfaces Nyquist compliance gaps.
+enabled, or after `/gsd-audit-milestone` surfaces Nyquist compliance gaps.
 
 ### Execution Wave Coordination
 
 ```
-  /gsd:execute-phase N
+  /gsd-execute-phase N
          │
          ├── Analyze plan dependencies
          │
@@ -164,13 +164,13 @@ enabled, or after `/gsd:audit-milestone` surfaces Nyquist compliance gaps.
                └── Check codebase against phase goals
                      │
                      ├── PASS -> VERIFICATION.md (success)
-                     └── FAIL -> Issues logged for /gsd:verify-work
+                     └── FAIL -> Issues logged for /gsd-verify-work
 ```
 
 ### Brownfield Workflow (Existing Codebase)
 
 ```
-  /gsd:map-codebase
+  /gsd-map-codebase
          │
          ├── Stack Mapper     -> codebase/STACK.md
          ├── Arch Mapper      -> codebase/ARCHITECTURE.md
@@ -178,7 +178,7 @@ enabled, or after `/gsd:audit-milestone` surfaces Nyquist compliance gaps.
          └── Concern Mapper   -> codebase/CONCERNS.md
                 │
         ┌───────▼──────────┐
-        │ /gsd:new-project │  <- Questions focus on what you're ADDING
+        │ /gsd-new-project │  <- Questions focus on what you're ADDING
         └──────────────────┘
 ```
 
@@ -190,65 +190,65 @@ enabled, or after `/gsd:audit-milestone` surfaces Nyquist compliance gaps.
 
 | Command | Purpose | When to Use |
 |---------|---------|-------------|
-| `/gsd:new-project` | Full project init: questions, research, requirements, roadmap | Start of a new project |
-| `/gsd:new-project --auto @idea.md` | Automated init from document | Have a PRD or idea doc ready |
-| `/gsd:discuss-phase [N]` | Capture implementation decisions | Before planning, to shape how it gets built |
-| `/gsd:plan-phase [N]` | Research + plan + verify | Before executing a phase |
-| `/gsd:execute-phase <N>` | Execute all plans in parallel waves | After planning is complete |
-| `/gsd:verify-work [N]` | Manual UAT with auto-diagnosis | After execution completes |
-| `/gsd:audit-milestone` | Verify milestone met its definition of done | Before completing milestone |
-| `/gsd:complete-milestone` | Archive milestone, tag release | All phases verified |
-| `/gsd:new-milestone [name]` | Start next version cycle | After completing a milestone |
+| `/gsd-new-project` | Full project init: questions, research, requirements, roadmap | Start of a new project |
+| `/gsd-new-project --auto @idea.md` | Automated init from document | Have a PRD or idea doc ready |
+| `/gsd-discuss-phase [N]` | Capture implementation decisions | Before planning, to shape how it gets built |
+| `/gsd-plan-phase [N]` | Research + plan + verify | Before executing a phase |
+| `/gsd-execute-phase <N>` | Execute all plans in parallel waves | After planning is complete |
+| `/gsd-verify-work [N]` | Manual UAT with auto-diagnosis | After execution completes |
+| `/gsd-audit-milestone` | Verify milestone met its definition of done | Before completing milestone |
+| `/gsd-complete-milestone` | Archive milestone, tag release | All phases verified |
+| `/gsd-new-milestone [name]` | Start next version cycle | After completing a milestone |
 
 ### Navigation
 
 | Command | Purpose | When to Use |
 |---------|---------|-------------|
-| `/gsd:progress` | Show status and next steps | Anytime -- "where am I?" |
-| `/gsd:resume-work` | Restore full context from last session | Starting a new session |
-| `/gsd:pause-work` | Save context handoff | Stopping mid-phase |
-| `/gsd:help` | Show all commands | Quick reference |
-| `/gsd:update` | Update GSD with changelog preview | Check for new versions |
-| `/gsd:join-discord` | Open Discord community invite | Questions or community |
+| `/gsd-progress` | Show status and next steps | Anytime -- "where am I?" |
+| `/gsd-resume-work` | Restore full context from last session | Starting a new session |
+| `/gsd-pause-work` | Save context handoff | Stopping mid-phase |
+| `/gsd-help` | Show all commands | Quick reference |
+| `/gsd-update` | Update GSD with changelog preview | Check for new versions |
+| `/gsd-join-discord` | Open Discord community invite | Questions or community |
 
 ### Phase Management
 
 | Command | Purpose | When to Use |
 |---------|---------|-------------|
-| `/gsd:add-phase` | Append new phase to roadmap | Scope grows after initial planning |
-| `/gsd:insert-phase [N]` | Insert urgent work (decimal numbering) | Urgent fix mid-milestone |
-| `/gsd:remove-phase [N]` | Remove future phase and renumber | Descoping a feature |
-| `/gsd:list-phase-assumptions [N]` | Preview Claude's intended approach | Before planning, to validate direction |
-| `/gsd:plan-milestone-gaps` | Create phases for audit gaps | After audit finds missing items |
-| `/gsd:research-phase [N]` | Deep ecosystem research only | Complex or unfamiliar domain |
+| `/gsd-add-phase` | Append new phase to roadmap | Scope grows after initial planning |
+| `/gsd-insert-phase [N]` | Insert urgent work (decimal numbering) | Urgent fix mid-milestone |
+| `/gsd-remove-phase [N]` | Remove future phase and renumber | Descoping a feature |
+| `/gsd-list-phase-assumptions [N]` | Preview Claude's intended approach | Before planning, to validate direction |
+| `/gsd-plan-milestone-gaps` | Create phases for audit gaps | After audit finds missing items |
+| `/gsd-research-phase [N]` | Deep ecosystem research only | Complex or unfamiliar domain |
 
 ### Brownfield & Utilities
 
 | Command | Purpose | When to Use |
 |---------|---------|-------------|
-| `/gsd:map-codebase` | Analyze existing codebase | Before `/gsd:new-project` on existing code |
-| `/gsd:quick` | Ad-hoc task with GSD guarantees | Bug fixes, small features, config changes |
-| `/gsd:debug [desc]` | Systematic debugging with persistent state | When something breaks |
-| `/gsd:add-todo [desc]` | Capture an idea for later | Think of something during a session |
-| `/gsd:check-todos` | List pending todos | Review captured ideas |
-| `/gsd:settings` | Configure workflow toggles and model profile | Change model, toggle agents |
-| `/gsd:set-profile <profile>` | Quick profile switch | Change cost/quality tradeoff |
-| `/gsd:reapply-patches` | Restore local modifications after update | After `/gsd:update` if you had local edits |
+| `/gsd-map-codebase` | Analyze existing codebase | Before `/gsd-new-project` on existing code |
+| `/gsd-quick` | Ad-hoc task with GSD guarantees | Bug fixes, small features, config changes |
+| `/gsd-debug [desc]` | Systematic debugging with persistent state | When something breaks |
+| `/gsd-add-todo [desc]` | Capture an idea for later | Think of something during a session |
+| `/gsd-check-todos` | List pending todos | Review captured ideas |
+| `/gsd-settings` | Configure workflow toggles and model profile | Change model, toggle agents |
+| `/gsd-set-profile <profile>` | Quick profile switch | Change cost/quality tradeoff |
+| `/gsd-reapply-patches` | Restore local modifications after update | After `/gsd-update` if you had local edits |
 
 ### Project Management (Multi-User)
 
 | Command | Purpose | When to Use |
 |---------|---------|-------------|
-| `/gsd:switch [project]` | Switch active project (or list all with no args) | Working on multiple projects |
-| `/gsd:team-status` | See all users' active projects, phases, progress | Check teammate activity |
-| `/gsd:archive-project` | Archive a completed project to `_archived/` | Project finished, reduce clutter |
-| `/gsd:restore-project` | Restore an archived project | Revisit completed work |
+| `/gsd-switch [project]` | Switch active project (or list all with no args) | Working on multiple projects |
+| `/gsd-team-status` | See all users' active projects, phases, progress | Check teammate activity |
+| `/gsd-archive-project` | Archive a completed project to `_archived/` | Project finished, reduce clutter |
+| `/gsd-restore-project` | Restore an archived project | Revisit completed work |
 
 ---
 
 ## Configuration Reference
 
-GSD stores project settings in `.planning/config.json`. Configure during `/gsd:new-project` or update later with `/gsd:settings`.
+GSD stores project settings in `.planning/config.json`. Configure during `/gsd-new-project` or update later with `/gsd-settings`.
 
 ### Full config.json Schema
 
@@ -396,7 +396,7 @@ Config values resolve through 4 layers — highest priority wins:
 ### Team Visibility
 
 ```bash
-/gsd:team-status
+/gsd-team-status
 ```
 
 Displays a summary table of all users' activity:
@@ -436,17 +436,17 @@ If you have an existing flat `.planning/PROJECT.md` structure, any GSD command w
 **Setting up a multi-user project:**
 
 ```bash
-/gsd:new-project                # Creates under .planning/users/<you>/<project>/
-/gsd:switch                     # List your projects
-/gsd:switch auth-service        # Switch to another project
-/gsd:team-status                # See what teammates are doing
+/gsd-new-project                # Creates under .planning/users/<you>/<project>/
+/gsd-switch                     # List your projects
+/gsd-switch auth-service        # Switch to another project
+/gsd-team-status                # See what teammates are doing
 ```
 
 **Project lifecycle:**
 
 ```bash
-/gsd:archive-project            # Archive completed project
-/gsd:restore-project            # Bring back an archived project
+/gsd-archive-project            # Archive completed project
+/gsd-restore-project            # Bring back an archived project
 ```
 
 ---
@@ -457,56 +457,56 @@ If you have an existing flat `.planning/PROJECT.md` structure, any GSD command w
 
 ```bash
 claude --dangerously-skip-permissions
-/gsd:new-project            # Answer questions, configure, approve roadmap
+/gsd-new-project            # Answer questions, configure, approve roadmap
 /clear
-/gsd:discuss-phase 1        # Lock in your preferences
-/gsd:plan-phase 1           # Research + plan + verify
-/gsd:execute-phase 1        # Parallel execution
-/gsd:verify-work 1          # Manual UAT
+/gsd-discuss-phase 1        # Lock in your preferences
+/gsd-plan-phase 1           # Research + plan + verify
+/gsd-execute-phase 1        # Parallel execution
+/gsd-verify-work 1          # Manual UAT
 /clear
-/gsd:discuss-phase 2        # Repeat for each phase
+/gsd-discuss-phase 2        # Repeat for each phase
 ...
-/gsd:audit-milestone        # Check everything shipped
-/gsd:complete-milestone     # Archive, tag, done
+/gsd-audit-milestone        # Check everything shipped
+/gsd-complete-milestone     # Archive, tag, done
 ```
 
 ### New Project from Existing Document
 
 ```bash
-/gsd:new-project --auto @prd.md   # Auto-runs research/requirements/roadmap from your doc
+/gsd-new-project --auto @prd.md   # Auto-runs research/requirements/roadmap from your doc
 /clear
-/gsd:discuss-phase 1               # Normal flow from here
+/gsd-discuss-phase 1               # Normal flow from here
 ```
 
 ### Existing Codebase
 
 ```bash
-/gsd:map-codebase           # Analyze what exists (parallel agents)
-/gsd:new-project            # Questions focus on what you're ADDING
+/gsd-map-codebase           # Analyze what exists (parallel agents)
+/gsd-new-project            # Questions focus on what you're ADDING
 # (normal phase workflow from here)
 ```
 
 ### Quick Bug Fix
 
 ```bash
-/gsd:quick
+/gsd-quick
 > "Fix the login button not responding on mobile Safari"
 ```
 
 ### Resuming After a Break
 
 ```bash
-/gsd:progress               # See where you left off and what's next
+/gsd-progress               # See where you left off and what's next
 # or
-/gsd:resume-work            # Full context restoration from last session
+/gsd-resume-work            # Full context restoration from last session
 ```
 
 ### Preparing for Release
 
 ```bash
-/gsd:audit-milestone        # Check requirements coverage, detect stubs
-/gsd:plan-milestone-gaps    # If audit found gaps, create phases to close them
-/gsd:complete-milestone     # Archive, tag, done
+/gsd-audit-milestone        # Check requirements coverage, detect stubs
+/gsd-plan-milestone-gaps    # If audit found gaps, create phases to close them
+/gsd-complete-milestone     # Archive, tag, done
 ```
 
 ### Speed vs Quality Presets
@@ -520,11 +520,11 @@ claude --dangerously-skip-permissions
 ### Mid-Milestone Scope Changes
 
 ```bash
-/gsd:add-phase              # Append a new phase to the roadmap
+/gsd-add-phase              # Append a new phase to the roadmap
 # or
-/gsd:insert-phase 3         # Insert urgent work between phases 3 and 4
+/gsd-insert-phase 3         # Insert urgent work between phases 3 and 4
 # or
-/gsd:remove-phase 7         # Descope phase 7 and renumber
+/gsd-remove-phase 7         # Descope phase 7 and renumber
 ```
 
 ---
@@ -533,15 +533,15 @@ claude --dangerously-skip-permissions
 
 ### "Project already initialized"
 
-You ran `/gsd:new-project` but `.planning/PROJECT.md` already exists. This is a safety check. If you want to start over, delete the `.planning/` directory first.
+You ran `/gsd-new-project` but `.planning/PROJECT.md` already exists. This is a safety check. If you want to start over, delete the `.planning/` directory first.
 
 ### Context Degradation During Long Sessions
 
-Clear your context window between major commands: `/clear` in Claude Code. GSD is designed around fresh contexts -- every subagent gets a clean 200K window. If quality is dropping in the main session, clear and use `/gsd:resume-work` or `/gsd:progress` to restore state.
+Clear your context window between major commands: `/clear` in Claude Code. GSD is designed around fresh contexts -- every subagent gets a clean 200K window. If quality is dropping in the main session, clear and use `/gsd-resume-work` or `/gsd-progress` to restore state.
 
 ### Plans Seem Wrong or Misaligned
 
-Run `/gsd:discuss-phase [N]` before planning. Most plan quality issues come from Claude making assumptions that `CONTEXT.md` would have prevented. You can also run `/gsd:list-phase-assumptions [N]` to see what Claude intends to do before committing to a plan.
+Run `/gsd-discuss-phase [N]` before planning. Most plan quality issues come from Claude making assumptions that `CONTEXT.md` would have prevented. You can also run `/gsd-list-phase-assumptions [N]` to see what Claude intends to do before committing to a plan.
 
 ### Execution Fails or Produces Stubs
 
@@ -549,23 +549,23 @@ Check that the plan was not too ambitious. Plans should have 2-3 tasks maximum. 
 
 ### Lost Track of Where You Are
 
-Run `/gsd:progress`. It reads all state files and tells you exactly where you are and what to do next.
+Run `/gsd-progress`. It reads all state files and tells you exactly where you are and what to do next.
 
 ### Need to Change Something After Execution
 
-Do not re-run `/gsd:execute-phase`. Use `/gsd:quick` for targeted fixes, or `/gsd:verify-work` to systematically identify and fix issues through UAT.
+Do not re-run `/gsd-execute-phase`. Use `/gsd-quick` for targeted fixes, or `/gsd-verify-work` to systematically identify and fix issues through UAT.
 
 ### Model Costs Too High
 
-Switch to budget profile: `/gsd:set-profile budget`. Disable research and plan-check agents via `/gsd:settings` if the domain is familiar to you (or to Claude).
+Switch to budget profile: `/gsd-set-profile budget`. Disable research and plan-check agents via `/gsd-settings` if the domain is familiar to you (or to Claude).
 
 ### Working on a Sensitive/Private Project
 
-Set `commit_docs: false` during `/gsd:new-project` or via `/gsd:settings`. Add `.planning/` to your `.gitignore`. Planning artifacts stay local and never touch git.
+Set `commit_docs: false` during `/gsd-new-project` or via `/gsd-settings`. Add `.planning/` to your `.gitignore`. Planning artifacts stay local and never touch git.
 
 ### GSD Update Overwrote My Local Changes
 
-Since v1.17, the installer backs up locally modified files to `gsd-local-patches/`. Run `/gsd:reapply-patches` to merge your changes back.
+Since v1.17, the installer backs up locally modified files to `gsd-local-patches/`. Run `/gsd-reapply-patches` to merge your changes back.
 
 ### Subagent Appears to Fail but Work Was Done
 
@@ -573,7 +573,7 @@ A known workaround exists for a Claude Code classification bug. GSD's orchestrat
 
 ### Multi-User: "No active project" Error
 
-Run `/gsd:switch` to see available projects and select one. If you have only one project, it auto-selects. If you have zero projects, run `/gsd:new-project` first.
+Run `/gsd-switch` to see available projects and select one. If you have only one project, it auto-selects. If you have zero projects, run `/gsd-new-project` first.
 
 ### Multi-User: Team-Status Shows No Data for Teammates
 
@@ -589,15 +589,15 @@ If you see a legacy detection message, run the migration flow offered by the com
 
 | Problem | Solution |
 |---------|----------|
-| Lost context / new session | `/gsd:resume-work` or `/gsd:progress` |
+| Lost context / new session | `/gsd-resume-work` or `/gsd-progress` |
 | Phase went wrong | `git revert` the phase commits, then re-plan |
-| Need to change scope | `/gsd:add-phase`, `/gsd:insert-phase`, or `/gsd:remove-phase` |
-| Milestone audit found gaps | `/gsd:plan-milestone-gaps` |
-| Something broke | `/gsd:debug "description"` |
-| Quick targeted fix | `/gsd:quick` |
-| Plan doesn't match your vision | `/gsd:discuss-phase [N]` then re-plan |
-| Costs running high | `/gsd:set-profile budget` and `/gsd:settings` to toggle agents off |
-| Update broke local changes | `/gsd:reapply-patches` |
+| Need to change scope | `/gsd-add-phase`, `/gsd-insert-phase`, or `/gsd-remove-phase` |
+| Milestone audit found gaps | `/gsd-plan-milestone-gaps` |
+| Something broke | `/gsd-debug "description"` |
+| Quick targeted fix | `/gsd-quick` |
+| Plan doesn't match your vision | `/gsd-discuss-phase [N]` then re-plan |
+| Costs running high | `/gsd-set-profile budget` and `/gsd-settings` to toggle agents off |
+| Update broke local changes | `/gsd-reapply-patches` |
 
 ---
 
@@ -620,7 +620,7 @@ For reference, here is what GSD creates in your project:
         ROADMAP.md         # Phase breakdown with status tracking
         STATE.md           # Decisions, blockers, session memory
         config.json        # Per-project config overrides
-        research/          # Domain research from /gsd:new-project
+        research/          # Domain research from /gsd-new-project
         todos/
           pending/         # Captured ideas awaiting work
           done/            # Completed todos
@@ -633,7 +633,7 @@ For reference, here is what GSD creates in your project:
             CONTEXT.md         # Your implementation preferences
             RESEARCH.md        # Ecosystem research findings
             VERIFICATION.md    # Post-execution verification results
-  codebase/                # Brownfield codebase mapping (from /gsd:map-codebase)
+  codebase/                # Brownfield codebase mapping (from /gsd-map-codebase)
     STACK.md, ARCHITECTURE.md, CONVENTIONS.md, etc.
   milestones/              # Archived milestone data
     v1.0-ROADMAP.md, v1.0-REQUIREMENTS.md, v1.0-phases/
