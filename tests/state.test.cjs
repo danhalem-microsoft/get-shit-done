@@ -502,7 +502,7 @@ describe('STATE.md frontmatter sync', () => {
   test('preserves frontmatter status when body Status field is missing', () => {
     // Simulate: frontmatter has status: executing, but body lost Status: field
     fs.writeFileSync(
-      path.join(tmpDir, '.planning', 'STATE.md'),
+      path.join(tmpDir, planningRoot, 'STATE.md'),
       `---
 status: executing
 milestone: v1.0
@@ -518,7 +518,7 @@ milestone: v1.0
     // Any writeStateMd triggers syncStateFrontmatter — use state update on a field that exists
     runGsdTools('state update "Current Plan" "03-03"', tmpDir);
 
-    const content = fs.readFileSync(path.join(tmpDir, '.planning', 'STATE.md'), 'utf-8');
+    const content = fs.readFileSync(path.join(tmpDir, planningRoot, 'STATE.md'), 'utf-8');
     assert.ok(content.includes('status: executing'), 'should preserve existing status, not overwrite with unknown');
     assert.ok(!content.includes('status: unknown'), 'should not contain unknown status');
   });
@@ -998,7 +998,7 @@ describe('cmdStateAdvancePlan (state advance-plan)', () => {
 
   test('advances plan in compound "Plan: X of Y" format', () => {
     fs.writeFileSync(
-      path.join(tmpDir, '.planning', 'STATE.md'),
+      path.join(tmpDir, planningRoot, 'STATE.md'),
       `# Project State\n\nPlan: 2 of 5 in current phase\nStatus: In progress\nLast activity: 2025-01-01\n`
     );
 
@@ -1011,7 +1011,7 @@ describe('cmdStateAdvancePlan (state advance-plan)', () => {
     assert.strictEqual(output.current_plan, 3);
     assert.strictEqual(output.total_plans, 5);
 
-    const updated = fs.readFileSync(path.join(tmpDir, '.planning', 'STATE.md'), 'utf-8');
+    const updated = fs.readFileSync(path.join(tmpDir, planningRoot, 'STATE.md'), 'utf-8');
     assert.ok(updated.includes('Plan: 3 of 5 in current phase'),
       'should preserve compound format with updated plan number');
     assert.ok(updated.includes('Status: Ready to execute'),
@@ -1020,7 +1020,7 @@ describe('cmdStateAdvancePlan (state advance-plan)', () => {
 
   test('marks phase complete on last plan in compound format', () => {
     fs.writeFileSync(
-      path.join(tmpDir, '.planning', 'STATE.md'),
+      path.join(tmpDir, planningRoot, 'STATE.md'),
       `# Project State\n\nPlan: 3 of 3 in current phase\nStatus: In progress\nLast activity: 2025-01-01\n`
     );
 
@@ -1031,7 +1031,7 @@ describe('cmdStateAdvancePlan (state advance-plan)', () => {
     assert.strictEqual(output.advanced, false);
     assert.strictEqual(output.reason, 'last_plan');
 
-    const updated = fs.readFileSync(path.join(tmpDir, '.planning', 'STATE.md'), 'utf-8');
+    const updated = fs.readFileSync(path.join(tmpDir, planningRoot, 'STATE.md'), 'utf-8');
     assert.ok(updated.includes('Phase complete'), 'Status should contain Phase complete');
   });
 });
