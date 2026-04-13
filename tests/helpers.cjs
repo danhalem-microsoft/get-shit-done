@@ -87,8 +87,23 @@ function createTempDir(prefix = 'gsd-test-') {
  */
 function createTempProject(prefix = 'gsd-test-') {
   const tmpDir = fs.mkdtempSync(path.join(require('os').tmpdir(), prefix));
-  fs.mkdirSync(path.join(tmpDir, '.planning', 'phases'), { recursive: true });
-  fs.mkdirSync(path.join(tmpDir, '.planning', 'users'), { recursive: true });
+  const userSlug = 'test-user';
+  const projectName = 'test-project';
+  const userDir = path.join(tmpDir, '.planning', 'users', userSlug);
+  const projectDir = path.join(userDir, projectName);
+  fs.mkdirSync(path.join(projectDir, 'phases'), { recursive: true });
+  // user-map.json so getPlanningRoot can resolve the user
+  fs.writeFileSync(
+    path.join(tmpDir, '.planning', 'user-map.json'),
+    JSON.stringify({ _schema: 1, 'Test User': userSlug }, null, 2) + '\n',
+    'utf-8'
+  );
+  // .active so getPlanningRoot can resolve the active project
+  fs.writeFileSync(
+    path.join(userDir, '.active'),
+    JSON.stringify({ project: projectName, resolved_path: `.planning/users/${userSlug}/${projectName}` }, null, 2) + '\n',
+    'utf-8'
+  );
   return tmpDir;
 }
 
@@ -101,13 +116,29 @@ function createTempProject(prefix = 'gsd-test-') {
  */
 function createTempGitProject(prefix = 'gsd-test-') {
   const tmpDir = fs.mkdtempSync(path.join(require('os').tmpdir(), prefix));
-  fs.mkdirSync(path.join(tmpDir, '.planning', 'phases'), { recursive: true });
-  fs.mkdirSync(path.join(tmpDir, '.planning', 'users'), { recursive: true });
+  const userSlug = 'test-user';
+  const projectName = 'test-project';
+  const userDir = path.join(tmpDir, '.planning', 'users', userSlug);
+  const projectDir = path.join(userDir, projectName);
+  fs.mkdirSync(path.join(projectDir, 'phases'), { recursive: true });
 
   execSync('git init', { cwd: tmpDir, stdio: 'pipe' });
   execSync('git config user.email "test@test.com"', { cwd: tmpDir, stdio: 'pipe' });
-  execSync('git config user.name "Test"', { cwd: tmpDir, stdio: 'pipe' });
+  execSync('git config user.name "Test User"', { cwd: tmpDir, stdio: 'pipe' });
   execSync('git config commit.gpgsign false', { cwd: tmpDir, stdio: 'pipe' });
+
+  // user-map.json so getPlanningRoot can resolve the user
+  fs.writeFileSync(
+    path.join(tmpDir, '.planning', 'user-map.json'),
+    JSON.stringify({ _schema: 1, 'Test User': userSlug }, null, 2) + '\n',
+    'utf-8'
+  );
+  // .active so getPlanningRoot can resolve the active project
+  fs.writeFileSync(
+    path.join(userDir, '.active'),
+    JSON.stringify({ project: projectName, resolved_path: `.planning/users/${userSlug}/${projectName}` }, null, 2) + '\n',
+    'utf-8'
+  );
 
   // Create initial commit
   fs.writeFileSync(path.join(tmpDir, '.gitkeep'), '');
