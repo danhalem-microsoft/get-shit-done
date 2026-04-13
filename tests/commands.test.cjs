@@ -7,7 +7,7 @@ const assert = require('node:assert/strict');
 const { execSync } = require('node:child_process');
 const fs = require('fs');
 const path = require('path');
-const { runGsdTools, createTempProject, cleanup } = require('./helpers.cjs');
+const { runGsdTools, createTempProject, cleanup, createTempGitProject } = require('./helpers.cjs');
 
 describe('history-digest command', () => {
   let tmpDir;

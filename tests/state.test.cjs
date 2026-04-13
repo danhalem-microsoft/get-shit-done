@@ -6,7 +6,7 @@ const { test, describe, beforeEach, afterEach } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
-const { runGsdTools, createTempMultiUserProject, cleanup } = require('./helpers.cjs');
+const { runGsdTools, createTempMultiUserProject, cleanup, createTempProject } = require('./helpers.cjs');
 const { clearPlanningRootCache } = require('../get-shit-done/bin/lib/core.cjs');
 
 describe('state-snapshot command', () => {
