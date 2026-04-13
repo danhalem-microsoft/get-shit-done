@@ -2480,6 +2480,26 @@ if (process.env.GSD_TEST_MODE) {
     convertClaudeCommandToCodexSkill,
     GSD_CODEX_MARKER,
     CODEX_AGENT_SANDBOX,
+    // Additional exports used by tests
+    install,
+    uninstall,
+    getDirName,
+    getGlobalDir,
+    getConfigDirFromHome,
+    writeManifest,
+    configureOpencodePermissions,
+    convertClaudeToGeminiAgent,
+    convertClaudeToOpencodeFrontmatter,
+    convertClaudeToGeminiToml,
+    finishInstall,
+    reportLocalPatches,
+    expandTemplateMarkers,
+    copyFlattenedCommands,
+    copyWithPathReplacement,
+    stripSubTags,
+    convertToolName,
+    convertSlashCommandsToCodexSkillMentions,
+    convertClaudeToCodexMarkdown,
   };
 } else {
 
