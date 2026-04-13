@@ -431,15 +431,15 @@ describe('milestone complete command', () => {
 
   test('counts tasks from **Tasks:** N in summary body', () => {
     fs.writeFileSync(
-      path.join(tmpDir, '.planning', 'ROADMAP.md'),
+      path.join(tmpDir, planningRoot, 'ROADMAP.md'),
       `# Roadmap v1.0\n\n### Phase 1: Foundation\n**Goal:** Setup\n`
     );
     fs.writeFileSync(
-      path.join(tmpDir, '.planning', 'STATE.md'),
+      path.join(tmpDir, planningRoot, 'STATE.md'),
       `# State\n\n**Status:** In progress\n**Last Activity:** 2025-01-01\n**Last Activity Description:** Working\n`
     );
 
-    const p1 = path.join(tmpDir, '.planning', 'phases', '01-foundation');
+    const p1 = path.join(tmpDir, planningRoot, 'phases', '01-foundation');
     fs.mkdirSync(p1, { recursive: true });
     fs.writeFileSync(
       path.join(p1, '01-01-SUMMARY.md'),
@@ -455,15 +455,15 @@ describe('milestone complete command', () => {
 
   test('extracts one-liner from body when not in frontmatter', () => {
     fs.writeFileSync(
-      path.join(tmpDir, '.planning', 'ROADMAP.md'),
+      path.join(tmpDir, planningRoot, 'ROADMAP.md'),
       `# Roadmap v1.0\n\n### Phase 1: Foundation\n**Goal:** Setup\n`
     );
     fs.writeFileSync(
-      path.join(tmpDir, '.planning', 'STATE.md'),
+      path.join(tmpDir, planningRoot, 'STATE.md'),
       `# State\n\n**Status:** In progress\n**Last Activity:** 2025-01-01\n**Last Activity Description:** Working\n`
     );
 
-    const p1 = path.join(tmpDir, '.planning', 'phases', '01-foundation');
+    const p1 = path.join(tmpDir, planningRoot, 'phases', '01-foundation');
     fs.mkdirSync(p1, { recursive: true });
     // No one-liner in frontmatter, but present in body as bold line
     fs.writeFileSync(
@@ -483,18 +483,18 @@ describe('milestone complete command', () => {
 
   test('updates STATE.md with plain format fields', () => {
     fs.writeFileSync(
-      path.join(tmpDir, '.planning', 'ROADMAP.md'),
+      path.join(tmpDir, planningRoot, 'ROADMAP.md'),
       `# Roadmap v1.0\n`
     );
     fs.writeFileSync(
-      path.join(tmpDir, '.planning', 'STATE.md'),
+      path.join(tmpDir, planningRoot, 'STATE.md'),
       `# State\n\nStatus: In progress\nLast Activity: 2025-01-01\nLast Activity Description: Working\n`
     );
 
     const result = runGsdTools('milestone complete v1.0 --name Test', tmpDir);
     assert.ok(result.success, `Command failed: ${result.error}`);
 
-    const state = fs.readFileSync(path.join(tmpDir, '.planning', 'STATE.md'), 'utf-8');
+    const state = fs.readFileSync(path.join(tmpDir, planningRoot, 'STATE.md'), 'utf-8');
     assert.ok(state.includes('v1.0 milestone complete'), 'plain Status field should be updated');
   });
 
@@ -744,7 +744,7 @@ describe('requirements mark-complete command', () => {
   });
 
   test('returns already_complete for idempotent calls on completed requirements', () => {
-    writeRequirements(tmpDir, STANDARD_REQUIREMENTS);
+    writeRequirements(STANDARD_REQUIREMENTS);
 
     // TEST-03 is already [x] in the fixture
     const result = runGsdTools('requirements mark-complete TEST-03', tmpDir);
@@ -758,7 +758,7 @@ describe('requirements mark-complete command', () => {
   });
 
   test('mixed: updates pending, reports already-complete, and flags missing', () => {
-    writeRequirements(tmpDir, STANDARD_REQUIREMENTS);
+    writeRequirements(STANDARD_REQUIREMENTS);
 
     const result = runGsdTools('requirements mark-complete TEST-01,TEST-03,FAKE-99', tmpDir);
     assert.ok(result.success, `Command failed: ${result.error}`);

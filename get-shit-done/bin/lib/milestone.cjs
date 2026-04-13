@@ -96,8 +96,8 @@ function cmdMilestoneComplete(cwd, version, options, raw) {
   const roadmapPath = path.join(cwd, planningRoot, 'ROADMAP.md');
   const reqPath = path.join(cwd, planningRoot, 'REQUIREMENTS.md');
   const statePath = path.join(cwd, planningRoot, 'STATE.md');
-  const milestonesPath = path.join(cwd, '.planning', 'MILESTONES.md');
-  const archiveDir = path.join(cwd, '.planning', 'milestones');
+  const milestonesPath = path.join(cwd, planningRoot, 'MILESTONES.md');
+  const archiveDir = path.join(cwd, planningRoot, 'milestones');
   const phasesDir = path.join(cwd, planningRoot, 'phases');
   const today = new Date().toISOString().split('T')[0];
   const milestoneName = options.name || version;
