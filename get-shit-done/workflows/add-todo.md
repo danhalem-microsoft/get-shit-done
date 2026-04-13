@@ -20,7 +20,7 @@ Extract from init JSON: `commit_docs`, `date`, `timestamp`, `todo_count`, `todos
 
 Ensure directories exist:
 ```bash
-mkdir -p ${planning_root}/todos/pending ${planning_root}/todos/done
+mkdir -p .planning/todos/pending .planning/todos/completed
 ```
 
 Note existing areas from the todos array for consistency in infer_area step.
@@ -28,7 +28,7 @@ Note existing areas from the todos array for consistency in infer_area step.
 
 <step name="extract_content">
 **With arguments:** Use as the title/focus.
-- `/gsd:add-todo Add auth token refresh` → title = "Add auth token refresh"
+- `/gsd-add-todo Add auth token refresh` → title = "Add auth token refresh"
 
 **Without arguments:** Analyze recent conversation to extract:
 - The specific problem, idea, or task discussed
@@ -53,7 +53,7 @@ Infer area from file paths:
 | `src/db/*`, `database/*` | `database` |
 | `tests/*`, `__tests__/*` | `testing` |
 | `docs/*` | `docs` |
-| `${planning_root}/*` | `planning` |
+| `.planning/*` | `planning` |
 | `scripts/*`, `bin/*` | `tooling` |
 | No files or unclear | `general` |
 
@@ -63,13 +63,15 @@ Use existing area from step 2 if similar match exists.
 <step name="check_duplicates">
 ```bash
 # Search for key words from title in existing todos
-grep -l -i "[key words from title]" ${planning_root}/todos/pending/*.md 2>/dev/null
+grep -l -i "[key words from title]" .planning/todos/pending/*.md 2>/dev/null || true
 ```
 
 If potential duplicate found:
 1. Read the existing todo
 2. Compare scope
 
+
+**Text mode (`workflow.text_mode: true` in config or `--text` flag):** Set `TEXT_MODE=true` if `--text` is present in `$ARGUMENTS` OR `text_mode` from init JSON is `true`. When TEXT_MODE is active, replace every `AskUserQuestion` call with a plain-text numbered list and ask the user to type their choice number. This is required for non-Claude runtimes (OpenAI Codex, Gemini CLI, etc.) where `AskUserQuestion` is not available.
 If overlapping, use AskUserQuestion:
 - header: "Duplicate?"
 - question: "Similar todo exists: [title]. What would you like to do?"
@@ -87,7 +89,7 @@ Generate slug for the title:
 slug=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" generate-slug "$title" --raw)
 ```
 
-Write to `${planning_root}/todos/pending/${date}-${slug}.md`:
+Write to `.planning/todos/pending/${date}-${slug}.md`:
 
 ```markdown
 ---
@@ -109,7 +111,7 @@ files:
 </step>
 
 <step name="update_state">
-If `${planning_root}/STATE.md` exists:
+If `.planning/STATE.md` exists:
 
 1. Use `todo_count` from init context (or re-run `init todos` if count changed)
 2. Update "### Pending Todos" under "## Accumulated Context"
@@ -119,7 +121,7 @@ If `${planning_root}/STATE.md` exists:
 Commit the todo and any updated state:
 
 ```bash
-node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs: capture todo - [title]" --files ${planning_root}/todos/pending/[filename] ${planning_root}/STATE.md
+node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs: capture todo - [title]" --files .planning/todos/pending/[filename] .planning/STATE.md
 ```
 
 Tool respects `commit_docs` config and gitignore automatically.
@@ -129,7 +131,7 @@ Confirm: "Committed: docs: capture todo - [title]"
 
 <step name="confirm">
 ```
-Todo saved: ${planning_root}/todos/pending/[filename]
+Todo saved: .planning/todos/pending/[filename]
 
   [title]
   Area: [area]
@@ -141,7 +143,7 @@ Would you like to:
 
 1. Continue with current work
 2. Add another todo
-3. View all todos (/gsd:check-todos)
+3. View all todos (/gsd-check-todos)
 ```
 </step>
 

@@ -1,5 +1,5 @@
 <purpose>
-Validate `${planning_root}/` directory integrity and report actionable issues. Checks for missing files, invalid configurations, inconsistent state, and orphaned plans. Optionally repairs auto-fixable issues.
+Validate `.planning/` directory integrity and report actionable issues. Checks for missing files, invalid configurations, inconsistent state, and orphaned plans. Optionally repairs auto-fixable issues.
 </purpose>
 
 <required_reading>
@@ -124,7 +124,7 @@ Report final status.
 
 | Code | Severity | Description | Repairable |
 |------|----------|-------------|------------|
-| E001 | error | ${planning_root}/ directory not found | No |
+| E001 | error | .planning/ directory not found | No |
 | E002 | error | PROJECT.md not found | No |
 | E003 | error | ROADMAP.md not found | No |
 | E004 | error | STATE.md not found | Yes |

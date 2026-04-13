@@ -1,6 +1,6 @@
 ---
 name: gsd:new-project
-description: Create a new project in the multi-user structure with deep context gathering
+description: Initialize a new project with deep context gathering and PROJECT.md
 argument-hint: "[--auto]"
 allowed-tools:
   - Read
@@ -16,20 +16,18 @@ allowed-tools:
 <context>
 **Flags:**
 - `--auto` — Automatic mode. After config questions, runs research → requirements → roadmap without further interaction. Expects idea document via @ reference.
-
-**Multi-user:** Projects are created under `.planning/users/<user>/<project>/`. The workflow uses a two-step bootstrap: asks for project name first, creates directory structure, sets active context, then continues with normal project initialization.
 </context>
 
 <objective>
-Create a new project in the multi-user directory structure through unified flow: project naming → questioning → research (optional) → requirements → roadmap.
+Initialize a new project through unified flow: questioning → research (optional) → requirements → roadmap.
 
-**Creates (under `.planning/users/<user>/<project>/`):**
-- `PROJECT.md` — project context
-- `config.json` — workflow preferences (seeded from global defaults)
-- `research/` — domain research (optional)
-- `REQUIREMENTS.md` — scoped requirements
-- `ROADMAP.md` — phase structure
-- `STATE.md` — project memory
+**Creates:**
+- `.planning/PROJECT.md` — project context
+- `.planning/config.json` — workflow preferences
+- `.planning/research/` — domain research (optional)
+- `.planning/REQUIREMENTS.md` — scoped requirements
+- `.planning/ROADMAP.md` — phase structure
+- `.planning/STATE.md` — project memory
 
 **After this command:** Run `/gsd-plan-phase 1` to start execution.
 </objective>

@@ -11,15 +11,15 @@ Read all files referenced by the invoking prompt's execution_context before star
 <step name="parse_arguments">
 Parse the command arguments:
 - All arguments become the phase description
-- Example: `/gsd:add-phase Add authentication` → description = "Add authentication"
-- Example: `/gsd:add-phase Fix critical performance issues` → description = "Fix critical performance issues"
+- Example: `/gsd-add-phase Add authentication` → description = "Add authentication"
+- Example: `/gsd-add-phase Fix critical performance issues` → description = "Fix critical performance issues"
 
 If no arguments provided:
 
 ```
 ERROR: Phase description required
-Usage: /gsd:add-phase <description>
-Example: /gsd:add-phase Add authentication system
+Usage: /gsd-add-phase <description>
+Example: /gsd-add-phase Add authentication system
 ```
 
 Exit.
@@ -35,8 +35,8 @@ if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 
 Check `roadmap_exists` from init JSON. If false:
 ```
-ERROR: No roadmap found (${planning_root}/ROADMAP.md)
-Run /gsd:new-project to initialize.
+ERROR: No roadmap found (.planning/ROADMAP.md)
+Run /gsd-new-project to initialize.
 ```
 Exit.
 </step>
@@ -52,7 +52,7 @@ The CLI handles:
 - Finding the highest existing integer phase number
 - Calculating next phase number (max + 1)
 - Generating slug from description
-- Creating the phase directory (`${planning_root}/phases/{NN}-{slug}/`)
+- Creating the phase directory (`.planning/phases/{NN}-{slug}/`)
 - Inserting the phase entry into ROADMAP.md with Goal, Depends on, and Plans sections
 
 Extract from result: `phase_number`, `padded`, `name`, `slug`, `directory`.
@@ -61,7 +61,7 @@ Extract from result: `phase_number`, `padded`, `name`, `slug`, `directory`.
 <step name="update_project_state">
 Update STATE.md to reflect the new phase:
 
-1. Read `${planning_root}/STATE.md`
+1. Read `.planning/STATE.md`
 2. Under "## Accumulated Context" → "### Roadmap Evolution" add entry:
    ```
    - Phase {N} added: {description}
@@ -76,10 +76,10 @@ Present completion summary:
 ```
 Phase {N} added to current milestone:
 - Description: {description}
-- Directory: ${planning_root}/phases/{phase-num}-{slug}/
+- Directory: .planning/phases/{phase-num}-{slug}/
 - Status: Not planned yet
 
-Roadmap updated: ${planning_root}/ROADMAP.md
+Roadmap updated: .planning/ROADMAP.md
 
 ---
 
@@ -87,14 +87,14 @@ Roadmap updated: ${planning_root}/ROADMAP.md
 
 **Phase {N}: {description}**
 
-`/gsd:plan-phase {N}`
+`/clear` then:
 
-<sub>`/clear` first → fresh context window</sub>
+`/gsd-plan-phase {N}`
 
 ---
 
 **Also available:**
-- `/gsd:add-phase <description>` — add another phase
+- `/gsd-add-phase <description>` — add another phase
 - Review roadmap
 
 ---

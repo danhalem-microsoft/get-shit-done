@@ -1,5 +1,5 @@
 <purpose>
-Interactive configuration of GSD workflow agents (research, plan_check, verifier) and model profile selection via multi-question prompt. Updates ${planning_root}/config.json with user preferences. Optionally saves settings as global defaults (~/.gsd/defaults.json) for future projects.
+Interactive configuration of GSD workflow agents (research, plan_check, verifier) and model profile selection via multi-question prompt. Updates .planning/config.json with user preferences. Optionally saves settings as global defaults (~/.gsd/defaults.json) for future projects.
 </purpose>
 
 <required_reading>
@@ -17,12 +17,12 @@ INIT=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" state load)
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 ```
 
-Creates `${planning_root}/config.json` with defaults if missing and loads current config values.
+Creates `.planning/config.json` with defaults if missing and loads current config values.
 </step>
 
 <step name="read_current">
 ```bash
-cat ${planning_root}/config.json
+cat .planning/config.json
 ```
 
 Parse current values (default to `true` if not present):
@@ -30,13 +30,17 @@ Parse current values (default to `true` if not present):
 - `workflow.plan_check` — spawn plan checker during plan-phase
 - `workflow.verifier` — spawn verifier during execute-phase
 - `workflow.nyquist_validation` — validation architecture research during plan-phase (default: true if absent)
+- `workflow.ui_phase` — generate UI-SPEC.md design contracts for frontend phases (default: true if absent)
+- `workflow.ui_safety_gate` — prompt to run /gsd-ui-phase before planning frontend phases (default: true if absent)
+- `workflow.ai_integration_phase` — framework selection + eval strategy for AI phases (default: true if absent)
 - `model_profile` — which model each agent uses (default: `balanced`)
 - `git.branching_strategy` — branching approach (default: `"none"`)
-- `research.always_include` — researcher types to always include in recommendations (default: `[]`)
-- `research.max_researchers` — hard cap on researcher count (default: `12`)
+- `workflow.use_worktrees` — whether parallel executor agents run in worktree isolation (default: `true`)
 </step>
 
 <step name="present_settings">
+
+**Text mode (`workflow.text_mode: true` in config or `--text` flag):** Set `TEXT_MODE=true` if `--text` is present in `$ARGUMENTS` OR `text_mode` from init JSON is `true`. When TEXT_MODE is active, replace every `AskUserQuestion` call with a plain-text numbered list and ask the user to type their choice number. This is required for non-Claude runtimes (OpenAI Codex, Gemini CLI, etc.) where `AskUserQuestion` is not available.
 Use AskUserQuestion with current values pre-selected:
 
 ```
@@ -47,8 +51,9 @@ AskUserQuestion([
     multiSelect: false,
     options: [
       { label: "Quality", description: "Opus everywhere except verification (highest cost)" },
-      { label: "Balanced (Recommended)", description: "Opus for planning, Sonnet for execution/verification" },
-      { label: "Budget", description: "Sonnet for writing, Haiku for research/verification (lowest cost)" }
+      { label: "Balanced (Recommended)", description: "Opus for planning, Sonnet for research/execution/verification" },
+      { label: "Budget", description: "Sonnet for writing, Haiku for research/verification (lowest cost)" },
+      { label: "Inherit", description: "Use current session model for all agents (best for OpenRouter, local models, or runtime model switching)" }
     ]
   },
   {
@@ -96,6 +101,35 @@ AskUserQuestion([
       { label: "No", description: "Skip validation research. Good for rapid prototyping or no-test phases." }
     ]
   },
+  // Note: Nyquist validation depends on research output. If research is disabled,
+  // plan-phase automatically skips Nyquist steps (no RESEARCH.md to extract from).
+  {
+    question: "Enable UI Phase? (generates UI-SPEC.md design contracts for frontend phases)",
+    header: "UI Phase",
+    multiSelect: false,
+    options: [
+      { label: "Yes (Recommended)", description: "Generate UI design contracts before planning frontend phases. Locks spacing, typography, color, and copywriting." },
+      { label: "No", description: "Skip UI-SPEC generation. Good for backend-only projects or API phases." }
+    ]
+  },
+  {
+    question: "Enable UI Safety Gate? (prompts to run /gsd-ui-phase before planning frontend phases)",
+    header: "UI Gate",
+    multiSelect: false,
+    options: [
+      { label: "Yes (Recommended)", description: "plan-phase asks to run /gsd-ui-phase first when frontend indicators detected." },
+      { label: "No", description: "No prompt — plan-phase proceeds without UI-SPEC check." }
+    ]
+  },
+  {
+    question: "Enable AI Phase? (framework selection + eval strategy for AI phases)",
+    header: "AI Phase",
+    multiSelect: false,
+    options: [
+      { label: "Yes (Recommended)", description: "Run /gsd-ai-phase before planning AI system phases. Surfaces the right framework, researches its docs, and designs the evaluation strategy." },
+      { label: "No", description: "Skip AI design contract. Good for non-AI phases or when framework is already decided." }
+    ]
+  },
   {
     question: "Git branching strategy?",
     header: "Branching",
@@ -107,25 +141,39 @@ AskUserQuestion([
     ]
   },
   {
-    question: "Which researchers to always include in recommendations?",
-    header: "Always Run",
-    multiSelect: true,
+    question: "Enable context window warnings? (injects advisory messages when context is getting full)",
+    header: "Ctx Warnings",
+    multiSelect: false,
     options: [
-      { label: "Stack", description: "Technology stack guidance (core type)" },
-      { label: "Features", description: "Feature scoping and UX patterns (core type)" },
-      { label: "Architecture", description: "System architecture patterns (core type)" },
-      { label: "Pitfalls", description: "Common mistakes and gotchas (core type)" },
-      { label: "None", description: "Let AI decide each time" }
+      { label: "Yes (Recommended)", description: "Warn when context usage exceeds 65%. Helps avoid losing work." },
+      { label: "No", description: "Disable warnings. Allows Claude to reach auto-compact naturally. Good for long unattended runs." }
     ]
   },
   {
-    question: "Maximum number of researchers per project?",
-    header: "Max Count",
+    question: "Research best practices before asking questions? (web search during new-project and discuss-phase)",
+    header: "Research Qs",
     multiSelect: false,
     options: [
-      { label: "8 (Recommended)", description: "Good balance of coverage and cost" },
-      { label: "4", description: "Minimal — just core researchers" },
-      { label: "12", description: "Maximum — extensive research coverage" }
+      { label: "No (Recommended)", description: "Ask questions directly. Faster, uses fewer tokens." },
+      { label: "Yes", description: "Search web for best practices before each question group. More informed questions but uses more tokens." }
+    ]
+  },
+  {
+    question: "Skip discuss-phase in autonomous mode? (use ROADMAP phase goals as spec)",
+    header: "Skip Discuss",
+    multiSelect: false,
+    options: [
+      { label: "No (Recommended)", description: "Run smart discuss before each phase — surfaces gray areas and captures decisions." },
+      { label: "Yes", description: "Skip discuss in /gsd-autonomous — chain directly to plan. Best for backend/pipeline work where phase descriptions are the spec." }
+    ]
+  },
+  {
+    question: "Use git worktrees for parallel agent isolation?",
+    header: "Worktrees",
+    multiSelect: false,
+    options: [
+      { label: "Yes (Recommended)", description: "Each parallel executor runs in its own worktree branch — no conflicts between agents." },
+      { label: "No", description: "Disable worktree isolation. Agents run sequentially on the main working tree. Use if EnterWorktree creates branches from wrong base (known cross-platform issue)." }
     ]
   }
 ])
@@ -138,29 +186,34 @@ Merge new settings into existing config.json:
 ```json
 {
   ...existing_config,
-  "model_profile": "quality" | "balanced" | "budget",
+  "model_profile": "quality" | "balanced" | "budget" | "adaptive" | "inherit",
   "workflow": {
     "research": true/false,
     "plan_check": true/false,
     "verifier": true/false,
     "auto_advance": true/false,
-    "nyquist_validation": true/false
+    "nyquist_validation": true/false,
+    "ui_phase": true/false,
+    "ui_safety_gate": true/false,
+    "ai_integration_phase": true/false,
+    "text_mode": true/false,
+    "research_before_questions": true/false,
+    "discuss_mode": "discuss" | "assumptions",
+    "skip_discuss": true/false,
+    "use_worktrees": true/false
   },
   "git": {
-    "branching_strategy": "none" | "phase" | "milestone"
+    "branching_strategy": "none" | "phase" | "milestone",
+    "quick_branch_template": <string|null>
   },
-  "research": {
-    "always_include": [...selected researcher names, lowercased],
-    "max_researchers": selected_max_number
+  "hooks": {
+    "context_warnings": true/false,
+    "workflow_guard": true/false
   }
 }
 ```
 
-Map Always Run labels to config names: "Stack" → "stack", "Features" → "features", "Architecture" → "architecture", "Pitfalls" → "pitfalls". If "None" selected, always_include is `[]`.
-
-Map Max Count labels to numbers: "4" → 4, "8 (Recommended)" → 8, "12" → 12.
-
-Write updated config to `${planning_root}/config.json`.
+Write updated config to `.planning/config.json`.
 </step>
 
 <step name="save_as_defaults">
@@ -195,16 +248,17 @@ Write `~/.gsd/defaults.json` with:
   "commit_docs": <current>,
   "parallelization": <current>,
   "branching_strategy": <current>,
+  "quick_branch_template": <current>,
   "workflow": {
     "research": <current>,
     "plan_check": <current>,
     "verifier": <current>,
     "auto_advance": <current>,
-    "nyquist_validation": <current>
-  },
-  "research": {
-    "always_include": <current>,
-    "max_researchers": <current>
+    "nyquist_validation": <current>,
+    "ui_phase": <current>,
+    "ui_safety_gate": <current>,
+    "ai_integration_phase": <current>,
+    "skip_discuss": <current>
   }
 }
 ```
@@ -220,24 +274,27 @@ Display:
 
 | Setting              | Value |
 |----------------------|-------|
-| Model Profile        | {quality/balanced/budget} |
+| Model Profile        | {quality/balanced/budget/inherit} |
 | Plan Researcher      | {On/Off} |
 | Plan Checker         | {On/Off} |
 | Execution Verifier   | {On/Off} |
 | Auto-Advance         | {On/Off} |
 | Nyquist Validation   | {On/Off} |
+| UI Phase             | {On/Off} |
+| UI Safety Gate       | {On/Off} |
+| AI Integration Phase | {On/Off} |
 | Git Branching        | {None/Per Phase/Per Milestone} |
-| Always-Include       | {stack, features / None} |
-| Max Researchers      | {4/8/12} |
+| Skip Discuss         | {On/Off} |
+| Context Warnings     | {On/Off} |
 | Saved as Defaults    | {Yes/No} |
 
-These settings apply to future /gsd:plan-phase and /gsd:execute-phase runs.
+These settings apply to future /gsd-plan-phase and /gsd-execute-phase runs.
 
 Quick commands:
-- /gsd:set-profile <profile> — switch model profile
-- /gsd:plan-phase --research — force research
-- /gsd:plan-phase --skip-research — skip research
-- /gsd:plan-phase --skip-verify — skip plan check
+- /gsd-set-profile <profile> — switch model profile
+- /gsd-plan-phase --research — force research
+- /gsd-plan-phase --skip-research — skip research
+- /gsd-plan-phase --skip-verify — skip plan check
 ```
 </step>
 
@@ -245,8 +302,8 @@ Quick commands:
 
 <success_criteria>
 - [ ] Current config read
-- [ ] User presented with 9 settings (profile + 5 workflow toggles + git branching + always-include + max researchers)
-- [ ] Config updated with model_profile, workflow, git, and research sections
+- [ ] User presented with 14 settings (profile + 11 workflow toggles + git branching + ctx warnings)
+- [ ] Config updated with model_profile, workflow, and git sections
 - [ ] User offered to save as global defaults (~/.gsd/defaults.json)
 - [ ] Changes confirmed to user
 </success_criteria>

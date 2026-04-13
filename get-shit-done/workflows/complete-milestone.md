@@ -8,9 +8,9 @@ Mark a shipped version (v1.0, v1.1, v2.0) as complete. Creates historical record
 
 1. templates/milestone.md
 2. templates/milestone-archive.md
-3. `${planning_root}/ROADMAP.md`
-4. `${planning_root}/REQUIREMENTS.md`
-5. `${planning_root}/PROJECT.md`
+3. `.planning/ROADMAP.md`
+4. `.planning/REQUIREMENTS.md`
+5. `.planning/PROJECT.md`
 
 </required_reading>
 
@@ -18,12 +18,14 @@ Mark a shipped version (v1.0, v1.1, v2.0) as complete. Creates historical record
 
 When a milestone completes:
 
-1. Extract full milestone details to `${planning_root}/milestones/v[X.Y]-ROADMAP.md`
-2. Archive requirements to `${planning_root}/milestones/v[X.Y]-REQUIREMENTS.md`
-3. Update ROADMAP.md — replace milestone details with one-line summary
-4. Delete REQUIREMENTS.md (fresh one for next milestone)
+1. Extract full milestone details to `.planning/milestones/v[X.Y]-ROADMAP.md`
+2. Archive requirements to `.planning/milestones/v[X.Y]-REQUIREMENTS.md`
+3. Update ROADMAP.md — overwrite in place with milestone grouping (preserve Backlog section)
+4. Safety commit archive files + updated ROADMAP.md, then `git rm REQUIREMENTS.md` (fresh for next milestone)
 5. Perform full PROJECT.md evolution review
 6. Offer to create next milestone inline
+7. Archive UI artifacts (`*-UI-SPEC.md`, `*-UI-REVIEW.md`) alongside other phase documents
+8. Clean up `.planning/ui-reviews/` screenshot files (binary assets, never archived)
 
 **Context Efficiency:** Archives keep ROADMAP.md constant-size and REQUIREMENTS.md milestone-scoped.
 
@@ -34,6 +36,48 @@ When a milestone completes:
 </archival_behavior>
 
 <process>
+
+<step name="pre_close_artifact_audit">
+Before proceeding with milestone close, run the comprehensive open artifact audit:
+
+```bash
+node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" audit-open 2>/dev/null
+```
+
+If the output contains open items (any section with count > 0):
+
+Display the full audit report to the user.
+
+Then ask:
+```
+These items are open. Choose an action:
+[R] Resolve — stop and fix items, then re-run /gsd-complete-milestone
+[A] Acknowledge all — document as deferred and proceed with close
+[C] Cancel — exit without closing
+```
+
+If user chooses [A] (Acknowledge):
+1. Re-run `audit-open --json` to get structured data
+2. Write acknowledged items to STATE.md under `## Deferred Items` section:
+   ```markdown
+   ## Deferred Items
+
+   Items acknowledged and deferred at milestone close on {date}:
+
+   | Category | Item | Status |
+   |----------|------|--------|
+   | debug | {slug} | {status} |
+   | quick_task | {slug} | {status} |
+   ...
+   ```
+   Sanitize all slug and status values via `sanitizeForDisplay()` before writing. Never inject raw file content into STATE.md.
+3. Record in MILESTONES.md entry: `Known deferred items at close: {count} (see STATE.md Deferred Items)`
+4. Proceed with milestone close.
+
+If output shows all clear (no open items): print `All artifact types clear.` and proceed.
+
+SECURITY: Audit JSON output is structured data from gsd-tools.cjs — validated and sanitized at source. When writing to STATE.md, item slugs and descriptions are sanitized via `sanitizeForDisplay()` before inclusion. Never inject raw user-supplied content into STATE.md without sanitization.
+</step>
 
 <step name="verify_readiness">
 
@@ -80,7 +124,7 @@ Requirements: {N}/{M} v1 requirements checked off
 
 MUST present 3 options:
 1. **Proceed anyway** — mark milestone complete with known gaps
-2. **Run audit first** — `/gsd:audit-milestone` to assess gap severity
+2. **Run audit first** — `/gsd-audit-milestone` to assess gap severity
 3. **Abort** — return to development
 
 If user selects "Proceed anyway": note incomplete requirements in MILESTONES.md under `### Known Gaps` with REQ-IDs and descriptions.
@@ -88,7 +132,7 @@ If user selects "Proceed anyway": note incomplete requirements in MILESTONES.md 
 <config-check>
 
 ```bash
-cat ${planning_root}/config.json 2>/dev/null
+cat .planning/config.json 2>/dev/null || true
 ```
 
 </config-check>
@@ -127,7 +171,7 @@ Calculate milestone statistics:
 ```bash
 git log --oneline --grep="feat(" | head -20
 git diff --stat FIRST_COMMIT..LAST_COMMIT | tail -1
-find . -name "*.swift" -o -name "*.ts" -o -name "*.py" | xargs wc -l 2>/dev/null
+find . -name "*.swift" -o -name "*.ts" -o -name "*.py" | xargs wc -l 2>/dev/null || true
 git log --format="%ai" FIRST_COMMIT | tail -1
 git log --format="%ai" LAST_COMMIT | head -1
 ```
@@ -153,8 +197,9 @@ Extract one-liners from SUMMARY.md files using summary-extract:
 
 ```bash
 # For each phase in milestone, extract one-liner
-for summary in ${planning_root}/phases/*-*/*-SUMMARY.md; do
-  node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" summary-extract "$summary" --fields one_liner | jq -r '.one_liner'
+for summary in .planning/phases/*-*/*-SUMMARY.md; do
+  [ -e "$summary" ] || continue
+  node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" summary-extract "$summary" --fields one_liner --pick one_liner
 done
 ```
 
@@ -186,7 +231,7 @@ Full PROJECT.md evolution review at milestone completion.
 Read all phase summaries:
 
 ```bash
-cat ${planning_root}/phases/*-*/*-SUMMARY.md
+cat .planning/phases/*-*/*-SUMMARY.md
 ```
 
 **Full review checklist:**
@@ -318,57 +363,9 @@ Initial user testing showed demand for shape tools.
 
 </step>
 
-<step name="extract_taste_patterns">
-
-**Check for unprocessed decision logs and offer taste extraction:**
-
-```bash
-UNPROCESSED=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" unprocessed-logs ${planning_root}/decisions/ --raw)
-COUNT=$(echo "$UNPROCESSED" | jq -r '.count')
-```
-
-**If no unprocessed logs** (`COUNT === 0`):
-- Silent skip — no output
-- Proceed directly to reorganize_roadmap step
-
-**If unprocessed logs exist** (`COUNT > 0`):
-
-Present:
-
-```
-You have ${COUNT} unprocessed decision log(s). Extract taste patterns from decision logs?
-
-- [ ] Yes, extract now
-- [ ] No, skip
-```
-
-**If user selects "Yes, extract now":**
-- Invoke `/gsd:extract-taste` directly
-- Full interactive extraction flow runs (init -> load logs -> identify candidates -> preview -> confirm -> write)
-- User reviews each candidate taste entry before it's written
-- Rejected candidates are not written to `${planning_root}/taste/`
-- After extraction completes, show confirmation message:
-
-```
-Extraction complete. {N} new taste entries created. Proceeding to archive.
-```
-
-**If user selects "No, skip":**
-- Message: "Proceeding to archive without extraction."
-- Logs remain unprocessed for future extraction
-- Continue to reorganize_roadmap step
-
-**Step complete when:**
-- [ ] Unprocessed logs checked
-- [ ] Extraction offered if logs exist (or silent skip if none)
-- [ ] User choice respected (extract or skip)
-- [ ] Confirmation message shown if extraction ran
-
-</step>
-
 <step name="reorganize_roadmap">
 
-Update `${planning_root}/ROADMAP.md` — group completed milestone phases:
+Update `.planning/ROADMAP.md` — group completed milestone phases:
 
 ```markdown
 # Roadmap: [Project Name]
@@ -419,7 +416,7 @@ ARCHIVE=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" milestone complet
 ```
 
 The CLI handles:
-- Creating `${planning_root}/milestones/` directory
+- Creating `.planning/milestones/` directory
 - Archiving ROADMAP.md to `milestones/v[X.Y]-ROADMAP.md`
 - Archiving REQUIREMENTS.md to `milestones/v[X.Y]-REQUIREMENTS.md` with archive header
 - Moving audit file to milestones if it exists
@@ -428,35 +425,48 @@ The CLI handles:
 
 Extract from result: `version`, `date`, `phases`, `plans`, `tasks`, `accomplishments`, `archived`.
 
-Verify: `✅ Milestone archived to ${planning_root}/milestones/`
+Verify: `✅ Milestone archived to .planning/milestones/`
 
 **Phase archival (optional):** After archival completes, ask the user:
 
+
+**Text mode (`workflow.text_mode: true` in config or `--text` flag):** Set `TEXT_MODE=true` if `--text` is present in `$ARGUMENTS` OR `text_mode` from init JSON is `true`. When TEXT_MODE is active, replace every `AskUserQuestion` call with a plain-text numbered list and ask the user to type their choice number. This is required for non-Claude runtimes (OpenAI Codex, Gemini CLI, etc.) where `AskUserQuestion` is not available.
 AskUserQuestion(header="Archive Phases", question="Archive phase directories to milestones/?", options: "Yes — move to milestones/v[X.Y]-phases/" | "Skip — keep phases in place")
 
 If "Yes": move phase directories to the milestone archive:
 ```bash
-mkdir -p ${planning_root}/milestones/v[X.Y]-phases
-# For each phase directory in ${planning_root}/phases/:
-mv ${planning_root}/phases/{phase-dir} ${planning_root}/milestones/v[X.Y]-phases/
+mkdir -p .planning/milestones/v[X.Y]-phases
+# For each phase directory in .planning/phases/:
+mv .planning/phases/{phase-dir} .planning/milestones/v[X.Y]-phases/
 ```
-Verify: `✅ Phase directories archived to ${planning_root}/milestones/v[X.Y]-phases/`
+Verify: `✅ Phase directories archived to .planning/milestones/v[X.Y]-phases/`
 
-If "Skip": Phase directories remain in `${planning_root}/phases/` as raw execution history. Use `/gsd:cleanup` later to archive retroactively.
+If "Skip": Phase directories remain in `.planning/phases/` as raw execution history. Use `/gsd-cleanup` later to archive retroactively.
 
 After archival, the AI still handles:
-- Reorganizing ROADMAP.md with milestone grouping (requires judgment)
+- Reorganizing ROADMAP.md with milestone grouping (requires judgment) — overwrite in place after extracting Backlog section
 - Full PROJECT.md evolution review (requires understanding)
-- Deleting original ROADMAP.md and REQUIREMENTS.md
+- Safety commit of archive files + updated ROADMAP.md, then `git rm .planning/REQUIREMENTS.md`
 - These are NOT fully delegated because they require AI interpretation of content
 
 </step>
 
 <step name="reorganize_roadmap_and_delete_originals">
 
-After `milestone complete` has archived, reorganize ROADMAP.md with milestone groupings, then delete originals:
+After `milestone complete` has archived, reorganize ROADMAP.md with milestone groupings, then commit archives as a safety checkpoint before removing originals.
 
-**Reorganize ROADMAP.md** — group completed milestone phases:
+**Backlog preservation — do this FIRST before rewriting ROADMAP.md:**
+
+Extract the Backlog section from the current ROADMAP.md before making any changes:
+
+```bash
+# Extract lines under ## Backlog through end of file (or next ## section)
+BACKLOG_SECTION=$(awk '/^## Backlog/{found=1} found{print}' .planning/ROADMAP.md)
+```
+
+If `$BACKLOG_SECTION` is empty, there is no Backlog section — skip silently.
+
+**Reorganize ROADMAP.md** — overwrite in place (do NOT delete first) with milestone groupings:
 
 ```markdown
 # Roadmap: [Project Name]
@@ -477,11 +487,22 @@ After `milestone complete` has archived, reorganize ROADMAP.md with milestone gr
 </details>
 ```
 
-**Then delete originals:**
+**Re-append Backlog section after the rewrite** (only if `$BACKLOG_SECTION` was non-empty):
+
+Append the extracted Backlog content verbatim to the end of the newly written ROADMAP.md. This ensures 999.x backlog items are never silently dropped during milestone reorganization.
+
+**Safety commit — commit archive files BEFORE deleting any originals:**
 
 ```bash
-rm ${planning_root}/ROADMAP.md
-rm ${planning_root}/REQUIREMENTS.md
+node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "chore: archive v[X.Y] milestone files" --files .planning/milestones/v[X.Y]-ROADMAP.md .planning/milestones/v[X.Y]-REQUIREMENTS.md .planning/milestones/v[X.Y]-MILESTONE-AUDIT.md .planning/MILESTONES.md .planning/PROJECT.md .planning/STATE.md .planning/ROADMAP.md
+```
+
+This creates a durable checkpoint in git history. If anything fails after this point, the working tree can be reconstructed from git.
+
+**Remove REQUIREMENTS.md via git rm** (preserves history, stages deletion atomically):
+
+```bash
+git rm .planning/REQUIREMENTS.md
 ```
 
 </step>
@@ -492,7 +513,7 @@ rm ${planning_root}/REQUIREMENTS.md
 
 Check for existing retrospective:
 ```bash
-ls ${planning_root}/RETROSPECTIVE.md 2>/dev/null
+ls .planning/RETROSPECTIVE.md 2>/dev/null || true
 ```
 
 **If exists:** Read the file, append new milestone section before the "## Cross-Milestone Trends" section.
@@ -542,7 +563,7 @@ If the "## Cross-Milestone Trends" section exists, update the tables with new da
 
 **Commit:**
 ```bash
-node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs: update retrospective for v${VERSION}" --files ${planning_root}/RETROSPECTIVE.md
+node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs: update retrospective for v${VERSION}" --files .planning/RETROSPECTIVE.md
 ```
 
 </step>
@@ -556,7 +577,7 @@ Most STATE.md updates were handled by `milestone complete`, but verify and updat
 ```markdown
 ## Project Reference
 
-See: ${planning_root}/PROJECT.md (updated [today])
+See: .planning/PROJECT.md (updated [today])
 
 **Core value:** [Current core value from PROJECT.md]
 **Current focus:** [Next milestone or "Planning next milestone"]
@@ -581,6 +602,15 @@ if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 ```
 
 Extract `branching_strategy`, `phase_branch_template`, `milestone_branch_template`, and `commit_docs` from init JSON.
+
+Detect base branch:
+```bash
+BASE_BRANCH=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" config-get git.base_branch 2>/dev/null || echo "")
+if [ -z "$BASE_BRANCH" ] || [ "$BASE_BRANCH" = "null" ]; then
+  BASE_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's|^refs/remotes/origin/||')
+  BASE_BRANCH="${BASE_BRANCH:-main}"
+fi
+```
 
 **If "none":** Skip to git_tag.
 
@@ -620,14 +650,14 @@ AskUserQuestion with options: Squash merge (Recommended), Merge with history, De
 
 ```bash
 CURRENT_BRANCH=$(git branch --show-current)
-git checkout main
+git checkout ${BASE_BRANCH}
 
 if [ "$BRANCHING_STRATEGY" = "phase" ]; then
   for branch in $PHASE_BRANCHES; do
     git merge --squash "$branch"
-    # Strip ${planning_root}/ from staging if commit_docs is false
+    # Strip .planning/ from staging if commit_docs is false
     if [ "$COMMIT_DOCS" = "false" ]; then
-      git reset HEAD ${planning_root}/ 2>/dev/null || true
+      git reset HEAD .planning/ 2>/dev/null || true
     fi
     git commit -m "feat: $branch for v[X.Y]"
   done
@@ -635,9 +665,9 @@ fi
 
 if [ "$BRANCHING_STRATEGY" = "milestone" ]; then
   git merge --squash "$MILESTONE_BRANCH"
-  # Strip ${planning_root}/ from staging if commit_docs is false
+  # Strip .planning/ from staging if commit_docs is false
   if [ "$COMMIT_DOCS" = "false" ]; then
-    git reset HEAD ${planning_root}/ 2>/dev/null || true
+    git reset HEAD .planning/ 2>/dev/null || true
   fi
   git commit -m "feat: $MILESTONE_BRANCH for v[X.Y]"
 fi
@@ -649,14 +679,14 @@ git checkout "$CURRENT_BRANCH"
 
 ```bash
 CURRENT_BRANCH=$(git branch --show-current)
-git checkout main
+git checkout ${BASE_BRANCH}
 
 if [ "$BRANCHING_STRATEGY" = "phase" ]; then
   for branch in $PHASE_BRANCHES; do
     git merge --no-ff --no-commit "$branch"
-    # Strip ${planning_root}/ from staging if commit_docs is false
+    # Strip .planning/ from staging if commit_docs is false
     if [ "$COMMIT_DOCS" = "false" ]; then
-      git reset HEAD ${planning_root}/ 2>/dev/null || true
+      git reset HEAD .planning/ 2>/dev/null || true
     fi
     git commit -m "Merge branch '$branch' for v[X.Y]"
   done
@@ -664,9 +694,9 @@ fi
 
 if [ "$BRANCHING_STRATEGY" = "milestone" ]; then
   git merge --no-ff --no-commit "$MILESTONE_BRANCH"
-  # Strip ${planning_root}/ from staging if commit_docs is false
+  # Strip .planning/ from staging if commit_docs is false
   if [ "$COMMIT_DOCS" = "false" ]; then
-    git reset HEAD ${planning_root}/ 2>/dev/null || true
+    git reset HEAD .planning/ 2>/dev/null || true
   fi
   git commit -m "Merge branch '$MILESTONE_BRANCH' for v[X.Y]"
 fi
@@ -706,7 +736,7 @@ Key accomplishments:
 - [Item 2]
 - [Item 3]
 
-See ${planning_root}/MILESTONES.md for full details."
+See .planning/MILESTONES.md for full details."
 ```
 
 Confirm: "Tagged: v[X.Y]"
@@ -722,14 +752,13 @@ git push origin v[X.Y]
 
 <step name="git_commit_milestone">
 
-Commit milestone completion.
+Commit the REQUIREMENTS.md deletion (archive files and ROADMAP.md were already committed in the safety commit in `reorganize_roadmap_and_delete_originals`).
 
 ```bash
-node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "chore: complete v[X.Y] milestone" --files ${planning_root}/milestones/v[X.Y]-ROADMAP.md ${planning_root}/milestones/v[X.Y]-REQUIREMENTS.md ${planning_root}/milestones/v[X.Y]-MILESTONE-AUDIT.md ${planning_root}/MILESTONES.md ${planning_root}/PROJECT.md ${planning_root}/STATE.md
-```
+git commit -m "chore: remove REQUIREMENTS.md for v[X.Y] milestone"
 ```
 
-Confirm: "Committed: chore: complete v[X.Y] milestone"
+Confirm: "Committed: chore: remove REQUIREMENTS.md for v[X.Y] milestone"
 
 </step>
 
@@ -746,7 +775,7 @@ Archived:
 - milestones/v[X.Y]-ROADMAP.md
 - milestones/v[X.Y]-REQUIREMENTS.md
 
-Summary: ${planning_root}/MILESTONES.md
+Summary: .planning/MILESTONES.md
 Tag: v[X.Y]
 
 ---
@@ -755,9 +784,9 @@ Tag: v[X.Y]
 
 **Start Next Milestone** — questioning → research → requirements → roadmap
 
-`/gsd:new-milestone`
+`/clear` then:
 
-<sub>`/clear` first → fresh context window</sub>
+`/gsd-new-milestone`
 
 ---
 ```
@@ -791,14 +820,20 @@ Heuristic: "Is this deployed/usable/shipped?" If yes → milestone. If no → ke
 
 Milestone completion is successful when:
 
+- [ ] Pre-close artifact audit run and output shown to user
+- [ ] Deferred items recorded in STATE.md if user acknowledged
+- [ ] Known deferred items count noted in MILESTONES.md entry
+
 - [ ] MILESTONES.md entry created with stats and accomplishments
 - [ ] PROJECT.md full evolution review completed
 - [ ] All shipped requirements moved to Validated in PROJECT.md
 - [ ] Key Decisions updated with outcomes
-- [ ] ROADMAP.md reorganized with milestone grouping
+- [ ] ROADMAP.md Backlog section extracted before rewrite, re-appended after (skipped if absent)
+- [ ] ROADMAP.md reorganized with milestone grouping (overwritten in place, not deleted)
 - [ ] Roadmap archive created (milestones/v[X.Y]-ROADMAP.md)
 - [ ] Requirements archive created (milestones/v[X.Y]-REQUIREMENTS.md)
-- [ ] REQUIREMENTS.md deleted (fresh for next milestone)
+- [ ] Safety commit made (archive files + updated ROADMAP.md) BEFORE deleting REQUIREMENTS.md
+- [ ] REQUIREMENTS.md removed via `git rm` (fresh for next milestone, history preserved)
 - [ ] STATE.md updated with fresh project reference
 - [ ] Git tag created (v[X.Y])
 - [ ] Milestone commit made (includes archive files and deletion)
@@ -807,6 +842,6 @@ Milestone completion is successful when:
 - [ ] Known gaps recorded in MILESTONES.md if user proceeded with incomplete requirements
 - [ ] RETROSPECTIVE.md updated with milestone section
 - [ ] Cross-milestone trends updated
-- [ ] User knows next step (/gsd:new-milestone)
+- [ ] User knows next step (/gsd-new-milestone)
 
 </success_criteria>

@@ -6,6 +6,11 @@ Verify milestone achieved its definition of done by aggregating phase verificati
 Read all files referenced by the invoking prompt's execution_context before starting.
 </required_reading>
 
+<available_agent_types>
+Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
+- gsd-integration-checker — Checks cross-phase integration
+</available_agent_types>
+
 <process>
 
 ## 0. Initialize Milestone Context
@@ -13,6 +18,7 @@ Read all files referenced by the invoking prompt's execution_context before star
 ```bash
 INIT=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" init milestone-op)
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
+AGENT_SKILLS_CHECKER=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" agent-skills gsd-integration-checker 2>/dev/null)
 ```
 
 Extract from init JSON: `milestone_version`, `milestone_name`, `phase_count`, `completed_phases`, `commit_docs`.
@@ -73,56 +79,18 @@ Milestone Requirements:
 
 MUST map each integration finding to affected requirement IDs where applicable.
 
-Verify cross-phase wiring and E2E user flows.",
+Verify cross-phase wiring and E2E user flows.
+${AGENT_SKILLS_CHECKER}",
   subagent_type="gsd-integration-checker",
   model="{integration_checker_model}"
 )
 ```
-
-## 3.5 Spawn Strategy Critic (if auto_spawn enabled)
-
-Read config and check `workflow.critics.auto_spawn`:
-```bash
-AUTO_SPAWN=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" config-get workflow.critics.auto_spawn 2>/dev/null || echo "true")
-```
-
-If `AUTO_SPAWN` is `"false"`: skip with one-line notice "Strategy critic: skipped (auto_spawn disabled)".
-
-If `AUTO_SPAWN` is `"true"` or `true`:
-
-Resolve strategy critic model:
-```bash
-STRATEGY_MODEL=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" resolve-model gsd-critic-strategy --raw)
-```
-
-Spawn strategy-critic:
-```
-Task(
-  prompt="Review milestone v{milestone_version} strategy.
-
-  Read: ${planning_root}/ROADMAP.md, ${planning_root}/REQUIREMENTS.md, ${planning_root}/STATE.md
-  For each phase in scope: Read phase CONTEXT.md and SUMMARY.md
-  Only load VERIFICATION.md/CRITIQUE.md if a specific checklist item requires evidence.
-
-  Three focus lanes:
-  1. Scope creep: Requirements/work added beyond ROADMAP definitions
-  2. Stale assumptions: Early decisions contradicted by later learnings
-  3. Deferred enforcement: Anti-goals violated, deferred items undermining goals
-
-  Write CRITIQUE-strategy.md to the last phase's directory.",
-  subagent_type="gsd-critic-strategy",
-  model="{STRATEGY_MODEL}"
-)
-```
-
-Note: Strategy-critic is a milestone-boundary critic only — it is NOT in the default per-phase critique set (the 5 phase-level critics: plan, code, scope, verify, discuss). It fires here at milestone audit and can be invoked manually via `/gsd:critique --only=strategy`.
 
 ## 4. Collect Results
 
 Combine:
 - Phase-level gaps and tech debt (from step 2)
 - Integration checker's report (wiring gaps, broken flows)
-- Strategy-critic findings (if spawned): read CRITIQUE-strategy.md from last phase directory, display findings inline in audit output
 
 ## 5. Check Requirements Coverage (3-Source Cross-Reference)
 
@@ -143,8 +111,9 @@ For each phase's VERIFICATION.md, extract the expanded requirements table:
 
 For each phase's SUMMARY.md, extract `requirements-completed` from YAML frontmatter:
 ```bash
-for summary in ${planning_root}/phases/*-*/*-SUMMARY.md; do
-  node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" summary-extract "$summary" --fields requirements_completed | jq -r '.requirements_completed'
+for summary in .planning/phases/*-*/*-SUMMARY.md; do
+  [ -e "$summary" ] || continue
+  node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" summary-extract "$summary" --fields requirements_completed --pick requirements_completed
 done
 ```
 
@@ -172,7 +141,7 @@ For each REQ-ID, determine status using all three sources:
 Skip if `workflow.nyquist_validation` is explicitly `false` (absent = enabled).
 
 ```bash
-NYQUIST_CONFIG=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" config get workflow.nyquist_validation --raw 2>/dev/null)
+NYQUIST_CONFIG=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" config-get workflow.nyquist_validation --raw 2>/dev/null)
 ```
 
 If `false`: skip entirely.
@@ -189,23 +158,11 @@ Classify per phase:
 
 Add to audit YAML: `nyquist: { compliant_phases, partial_phases, missing_phases, overall }`
 
-Discovery only — never auto-calls `/gsd:validate-phase`.
-
-<completion_gate priority="before step 7">
-**MANDATORY CHECK — Do NOT proceed to Present Results without verifying:**
-- [ ] Integration checker was spawned (step 3) and results collected (step 4)
-- [ ] Strategy-critic spawn decision was made (step 3.5):
-  - If auto_spawn=true: strategy-critic was spawned via `Task()`, CRITIQUE-strategy.md read and findings included in audit output
-  - If auto_spawn=false: logged "Strategy critic: skipped (auto_spawn disabled)"
-- [ ] 3-source requirements cross-reference completed (step 5): VERIFICATION.md + SUMMARY.md + REQUIREMENTS.md traceability
-- [ ] FAIL gate enforced: any unsatisfied or orphaned requirement forces gaps_found status
-
-Failure to evaluate the strategy-critic spawn (step 3.5) is a workflow violation — the auto_spawn config MUST be read and the decision logged.
-</completion_gate>
+Discovery only — never auto-calls `/gsd-validate-phase`.
 
 ## 6. Aggregate into v{version}-MILESTONE-AUDIT.md
 
-Create `${planning_root}/v{version}-v{version}-MILESTONE-AUDIT.md` with:
+Create `.planning/v{version}-v{version}-MILESTONE-AUDIT.md` with:
 
 ```yaml
 ---
@@ -262,7 +219,7 @@ Output this markdown directly (not as a code block). Route based on status:
 ## ✓ Milestone {version} — Audit Passed
 
 **Score:** {N}/{M} requirements satisfied
-**Report:** ${planning_root}/v{version}-MILESTONE-AUDIT.md
+**Report:** .planning/v{version}-MILESTONE-AUDIT.md
 
 All requirements covered. Cross-phase integration verified. E2E flows complete.
 
@@ -272,9 +229,9 @@ All requirements covered. Cross-phase integration verified. E2E flows complete.
 
 **Complete milestone** — archive and tag
 
-/gsd:complete-milestone {version}
+/clear then:
 
-<sub>/clear first → fresh context window</sub>
+/gsd-complete-milestone {version}
 
 ───────────────────────────────────────────────────────────────
 
@@ -285,7 +242,7 @@ All requirements covered. Cross-phase integration verified. E2E flows complete.
 ## ⚠ Milestone {version} — Gaps Found
 
 **Score:** {N}/{M} requirements satisfied
-**Report:** ${planning_root}/v{version}-MILESTONE-AUDIT.md
+**Report:** .planning/v{version}-MILESTONE-AUDIT.md
 
 ### Unsatisfied Requirements
 
@@ -307,9 +264,9 @@ All requirements covered. Cross-phase integration verified. E2E flows complete.
 
 | Phase | VALIDATION.md | Compliant | Action |
 |-------|---------------|-----------|--------|
-| {phase} | exists/missing | true/false/partial | `/gsd:validate-phase {N}` |
+| {phase} | exists/missing | true/false/partial | `/gsd-validate-phase {N}` |
 
-Phases needing validation: run `/gsd:validate-phase {N}` for each flagged phase.
+Phases needing validation: run `/gsd-validate-phase {N}` for each flagged phase.
 
 ───────────────────────────────────────────────────────────────
 
@@ -317,15 +274,15 @@ Phases needing validation: run `/gsd:validate-phase {N}` for each flagged phase.
 
 **Plan gap closure** — create phases to complete milestone
 
-/gsd:plan-milestone-gaps
+/clear then:
 
-<sub>/clear first → fresh context window</sub>
+/gsd-plan-milestone-gaps
 
 ───────────────────────────────────────────────────────────────
 
 **Also available:**
-- cat ${planning_root}/v{version}-MILESTONE-AUDIT.md — see full report
-- /gsd:complete-milestone {version} — proceed anyway (accept tech debt)
+- cat .planning/v{version}-MILESTONE-AUDIT.md — see full report
+- /gsd-complete-milestone {version} — proceed anyway (accept tech debt)
 
 ───────────────────────────────────────────────────────────────
 
@@ -336,7 +293,7 @@ Phases needing validation: run `/gsd:validate-phase {N}` for each flagged phase.
 ## ⚡ Milestone {version} — Tech Debt Review
 
 **Score:** {N}/{M} requirements satisfied
-**Report:** ${planning_root}/v{version}-MILESTONE-AUDIT.md
+**Report:** .planning/v{version}-MILESTONE-AUDIT.md
 
 All requirements met. No critical blockers. Accumulated tech debt needs review.
 
@@ -355,13 +312,13 @@ All requirements met. No critical blockers. Accumulated tech debt needs review.
 
 **A. Complete milestone** — accept debt, track in backlog
 
-/gsd:complete-milestone {version}
+/gsd-complete-milestone {version}
 
 **B. Plan cleanup phase** — address debt before completing
 
-/gsd:plan-milestone-gaps
+/clear then:
 
-<sub>/clear first → fresh context window</sub>
+/gsd-plan-milestone-gaps
 
 ───────────────────────────────────────────────────────────────
 </offer_next>
@@ -375,8 +332,6 @@ All requirements met. No critical blockers. Accumulated tech debt needs review.
 - [ ] Orphaned requirements detected (in traceability but absent from all VERIFICATIONs)
 - [ ] Tech debt and deferred gaps aggregated
 - [ ] Integration checker spawned with milestone requirement IDs
-- [ ] Strategy-critic spawned at milestone boundary (when auto_spawn enabled)
-- [ ] Strategy-critic findings displayed inline in audit output
 - [ ] v{version}-MILESTONE-AUDIT.md created with structured requirement gap objects
 - [ ] FAIL gate enforced — any unsatisfied requirement forces gaps_found status
 - [ ] Nyquist compliance scanned for all milestone phases (if enabled)

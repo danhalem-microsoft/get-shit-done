@@ -2,7 +2,7 @@
 Use this workflow when:
 - Starting a new session on an existing project
 - User says "continue", "what's next", "where were we", "resume"
-- Any planning operation when ${planning_root}/ already exists
+- Any planning operation when .planning/ already exists
 - User returns after time away from project
 </trigger>
 
@@ -28,7 +28,7 @@ Parse JSON for: `state_exists`, `roadmap_exists`, `project_exists`, `planning_ex
 
 **If `state_exists` is true:** Proceed to load_state
 **If `state_exists` is false but `roadmap_exists` or `project_exists` is true:** Offer to reconstruct STATE.md
-**If `planning_exists` is false:** This is a new project - route to /gsd:new-project
+**If `planning_exists` is false:** This is a new project - route to /gsd-new-project
 </step>
 
 <step name="load_state">
@@ -36,8 +36,8 @@ Parse JSON for: `state_exists`, `roadmap_exists`, `project_exists`, `planning_ex
 Read and parse STATE.md, then PROJECT.md:
 
 ```bash
-cat ${planning_root}/STATE.md
-cat ${planning_root}/PROJECT.md
+cat .planning/STATE.md
+cat .planning/PROJECT.md
 ```
 
 **From STATE.md extract:**
@@ -63,14 +63,18 @@ cat ${planning_root}/PROJECT.md
 Look for incomplete work that needs attention:
 
 ```bash
+# Check for structured handoff (preferred — machine-readable)
+cat .planning/HANDOFF.json 2>/dev/null || true
+
 # Check for continue-here files (mid-plan resumption)
-ls ${planning_root}/phases/*/.continue-here*.md 2>/dev/null
+ls .planning/phases/*/.continue-here*.md 2>/dev/null || true
 
 # Check for plans without summaries (incomplete execution)
-for plan in ${planning_root}/phases/*/*-PLAN.md; do
+for plan in .planning/phases/*/*-PLAN.md; do
+  [ -e "$plan" ] || continue
   summary="${plan/PLAN/SUMMARY}"
   [ ! -f "$summary" ] && echo "Incomplete: $plan"
-done 2>/dev/null
+done 2>/dev/null || true
 
 # Check for interrupted agents (use has_interrupted_agent and interrupted_agent_id from init)
 if [ "$has_interrupted_agent" = "true" ]; then
@@ -78,7 +82,18 @@ if [ "$has_interrupted_agent" = "true" ]; then
 fi
 ```
 
-**If .continue-here file exists:**
+**If HANDOFF.json exists:**
+
+- This is the primary resumption source — structured data from `/gsd-pause-work`
+- Parse `status`, `phase`, `plan`, `task`, `total_tasks`, `next_action`
+- Check `blockers` and `human_actions_pending` — surface these immediately
+- Check `completed_tasks` for `in_progress` items — these need attention first
+- Validate `uncommitted_files` against `git status` — flag divergence
+- Use `context_notes` to restore mental model
+- Flag: "Found structured handoff — resuming from task {task}/{total_tasks}"
+- **After successful resumption, delete HANDOFF.json** (it's a one-shot artifact)
+
+**If .continue-here file exists (fallback):**
 
 - This is a mid-plan resumption point
 - Read the file for specific resumption context
@@ -125,7 +140,7 @@ Present complete project status to user:
     Resume with: Task tool (resume parameter with agent ID)
 
 [If pending todos exist:]
-📋 [N] pending todos — /gsd:check-todos to review
+📋 [N] pending todos — /gsd-check-todos to review
 
 [If blockers exist:]
 ⚠️  Carried concerns:
@@ -145,8 +160,12 @@ Based on project state, determine the most logical next action:
 → Primary: Resume interrupted agent (Task tool with resume parameter)
 → Option: Start fresh (abandon agent work)
 
+**If HANDOFF.json exists:**
+→ Primary: Resume from structured handoff (highest priority — specific task/blocker context)
+→ Option: Discard handoff and reassess from files
+
 **If .continue-here file exists:**
-→ Primary: Resume from checkpoint
+→ Fallback: Resume from checkpoint
 → Option: Start fresh on current plan
 
 **If incomplete plan (PLAN without SUMMARY):**
@@ -154,7 +173,7 @@ Based on project state, determine the most logical next action:
 → Option: Abandon and move on
 
 **If phase in progress, all plans complete:**
-→ Primary: Transition to next phase
+→ Primary: Advance to next phase (via internal transition workflow)
 → Option: Review completed work
 
 **If phase ready to plan:**
@@ -181,11 +200,11 @@ What would you like to do?
 [Primary action based on state - e.g.:]
 1. Resume interrupted agent [if interrupted agent found]
    OR
-1. Execute phase (/gsd:execute-phase {phase})
+1. Execute phase (/gsd-execute-phase {phase} ${GSD_WS})
    OR
-1. Discuss Phase 3 context (/gsd:discuss-phase 3) [if CONTEXT.md missing]
+1. Discuss Phase 3 context (/gsd-discuss-phase 3 ${GSD_WS}) [if CONTEXT.md missing]
    OR
-1. Plan Phase 3 (/gsd:plan-phase 3) [if CONTEXT.md exists or discuss option declined]
+1. Plan Phase 3 (/gsd-plan-phase 3 ${GSD_WS}) [if CONTEXT.md exists or discuss option declined]
 
 [Secondary options:]
 2. Review current phase status
@@ -197,7 +216,7 @@ What would you like to do?
 **Note:** When offering phase planning, check for CONTEXT.md existence first:
 
 ```bash
-ls ${planning_root}/phases/XX-name/*-CONTEXT.md 2>/dev/null
+ls .planning/phases/XX-name/*-CONTEXT.md 2>/dev/null || true
 ```
 
 If missing, suggest discuss-phase before plan. If exists, offer plan directly.
@@ -216,9 +235,9 @@ Based on user selection, route to appropriate workflow:
 
   **{phase}-{plan}: [Plan Name]** — [objective from PLAN.md]
 
-  `/gsd:execute-phase {phase}`
+  `/clear` then:
 
-  <sub>`/clear` first → fresh context window</sub>
+  `/gsd-execute-phase {phase} ${GSD_WS}`
 
   ---
   ```
@@ -230,20 +249,20 @@ Based on user selection, route to appropriate workflow:
 
   **Phase [N]: [Name]** — [Goal from ROADMAP.md]
 
-  `/gsd:plan-phase [phase-number]`
+  `/clear` then:
 
-  <sub>`/clear` first → fresh context window</sub>
+  `/gsd-plan-phase [phase-number] ${GSD_WS}`
 
   ---
 
   **Also available:**
-  - `/gsd:discuss-phase [N]` — gather context first
-  - `/gsd:research-phase [N]` — investigate unknowns
+  - `/gsd-discuss-phase [N] ${GSD_WS}` — gather context first
+  - `/gsd-research-phase [N] ${GSD_WS}` — investigate unknowns
 
   ---
   ```
-- **Transition** → ./transition.md
-- **Check todos** → Read ${planning_root}/todos/pending/, present summary
+- **Advance to next phase** → ./transition.md (internal workflow, invoked inline — NOT a user command)
+- **Check todos** → Read .planning/todos/pending/, present summary
 - **Review alignment** → Read PROJECT.md, compare to current state
 - **Something else** → Ask what they need
 </step>
@@ -274,7 +293,7 @@ If STATE.md is missing but other artifacts exist:
 1. Read PROJECT.md → Extract "What This Is" and Core Value
 2. Read ROADMAP.md → Determine phases, find current position
 3. Scan \*-SUMMARY.md files → Extract decisions, concerns
-4. Count pending todos in ${planning_root}/todos/pending/
+4. Count pending todos in .planning/todos/pending/
 5. Check for .continue-here files → Session continuity
 
 Reconstruct and write STATE.md, then proceed normally.
@@ -283,7 +302,7 @@ This handles cases where:
 
 - Project predates STATE.md introduction
 - File was accidentally deleted
-- Cloning repo without full ${planning_root}/ state
+- Cloning repo without full .planning/ state
   </reconstruction>
 
 <quick_resume>

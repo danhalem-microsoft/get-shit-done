@@ -6,12 +6,21 @@ Initialize a new project through unified flow: questioning, research (optional),
 Read all files referenced by the invoking prompt's execution_context before starting.
 </required_reading>
 
+<available_agent_types>
+Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
+- gsd-project-researcher — Researches project-level technical decisions
+- gsd-research-synthesizer — Synthesizes findings from parallel research agents
+- gsd-roadmapper — Creates phased execution roadmaps
+</available_agent_types>
+
 <auto_mode>
+
 ## Auto Mode Detection
 
 Check if `--auto` flag is present in $ARGUMENTS.
 
 **If auto mode:**
+
 - Skip brownfield mapping offer (assume greenfield)
 - Skip deep questioning (extract context from provided document)
 - Config: YOLO mode is implicit (skip that question), but ask granularity/git/agents FIRST (Step 2a)
@@ -23,7 +32,8 @@ Check if `--auto` flag is present in $ARGUMENTS.
 
 **Document requirement:**
 Auto mode requires an idea document — either:
-- File reference: `/gsd:new-project --auto @prd.md`
+
+- File reference: `/gsd-new-project --auto @prd.md`
 - Pasted/written text in the prompt
 
 If no document content provided, error:
@@ -32,136 +42,60 @@ If no document content provided, error:
 Error: --auto requires an idea document.
 
 Usage:
-  /gsd:new-project --auto @your-idea.md
-  /gsd:new-project --auto [paste or write your idea here]
+  /gsd-new-project --auto @your-idea.md
+  /gsd-new-project --auto [paste or write your idea here]
 
 The document should describe what you want to build.
 ```
+
 </auto_mode>
 
 <process>
 
-## 1. Setup (Two-Step Bootstrap)
+## 1. Setup
 
-**MANDATORY FIRST STEP — Execute pre-init bootstrap before ANY user interaction.**
-
-The new-project workflow uses a two-step bootstrap to solve the chicken-and-egg problem: `init new-project` needs an active project, but the project doesn't exist yet.
-
-### Step 1.0: Pre-init bootstrap (no active project needed)
-
-```bash
-SETUP=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" init project-setup)
-if [[ "$SETUP" == @file:* ]]; then SETUP=$(cat "${SETUP#@file:}"); fi
-```
-
-Parse JSON for: `user`, `projects` (array), `global_config` (object), `planning_exists` (bool), `bootstrap_path` (string — user directory path e.g. `.planning/users/<user>`).
-
-**If `has_git` is false:** Initialize git:
-```bash
-git init
-```
-
-### Step 1.1: Show existing projects and ask for project name
-
-**If `projects` array is non-empty:** Display existing projects with status summary before creating a new one:
-
-```
-You have ${projects.length} project(s):
-
-| Project | Phase | Progress |
-|---------|-------|----------|
-| ${project.name} | ${project.current_phase || 'Not started'} | ${project.progress || '-'} |
-| ... | ... | ... |
-
-Create a new project?
-```
-
-**Ask for project name — this is the FIRST question:**
-
-Ask inline (freeform): "What should this project be called?"
-
-Wait for response. This is the project's human-readable name (e.g., "My Auth Service", "E-Commerce Platform").
-
-### Step 1.2: Slugify, confirm, and check duplicates
-
-Slugify the name:
-```bash
-SLUG=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" generate-slug "${USER_INPUT}")
-```
-
-**Show slug and confirm:** "Project will be created as: `${SLUG}`. Proceed?"
-
-**Check for duplicates:** If `SLUG` exists in `projects` array (match against `project.name`):
-```
-Error: Project "${SLUG}" already exists. Use /gsd:switch ${SLUG} to work on it.
-```
-Stop execution.
-
-### Step 1.3: Ask scope
-
-Ask inline (freeform): "Which monorepo subdirectory or Bazel target is this project scoped to? (press Enter to skip)"
-
-Store response as `SCOPE_PATH` (null/empty if skipped).
-
-### Step 1.4: Create directory structure and set active context
-
-```bash
-USER_SLUG="${user}"  # from project-setup response
-BOOTSTRAP_PATH="${bootstrap_path}"  # from project-setup response (e.g. .planning/users/<user>)
-mkdir -p "${BOOTSTRAP_PATH}/${SLUG}"
-```
-
-**Seed config from global defaults:** If `global_config` is non-empty, write it to the new project's config.json:
-```bash
-# Write global_config as the new project's config.json
-# If SCOPE_PATH was provided, add scope_path field to the config
-```
-
-Write `${planning_root}/config.json` with contents of `global_config`. If `SCOPE_PATH` was provided, add `"scope_path": "${SCOPE_PATH}"` to the JSON.
-
-**Set active context:**
-```bash
-node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" switch "${SLUG}"
-```
-
-The new project is now the active context. `planning_root` = `${BOOTSTRAP_PATH}/${SLUG}`.
-
-### Step 1.5: Normal init (now has active project)
+**MANDATORY FIRST STEP — Execute these checks before ANY user interaction:**
 
 ```bash
 INIT=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" init new-project)
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
+AGENT_SKILLS_RESEARCHER=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" agent-skills gsd-project-researcher 2>/dev/null)
+AGENT_SKILLS_SYNTHESIZER=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" agent-skills gsd-synthesizer 2>/dev/null)
+AGENT_SKILLS_ROADMAPPER=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" agent-skills gsd-roadmapper 2>/dev/null)
 ```
 
-Parse JSON for: `researcher_model`, `synthesizer_model`, `roadmapper_model`, `commit_docs`, `project_exists`, `has_codebase_map`, `planning_exists`, `has_existing_code`, `has_package_file`, `is_brownfield`, `needs_codebase_map`, `has_git`, `project_path`, `project_name`, `scope_path`, `config_path`.
+Parse JSON for: `researcher_model`, `synthesizer_model`, `roadmapper_model`, `commit_docs`, `project_exists`, `has_codebase_map`, `planning_exists`, `has_existing_code`, `has_package_file`, `is_brownfield`, `needs_codebase_map`, `has_git`, `project_path`.
 
-**Scan researcher registry:**
+**Detect runtime and set instruction file name:**
+
+Derive `RUNTIME` from the invoking prompt's `execution_context` path:
+- Path contains `/.codex/` → `RUNTIME=codex`
+- Path contains `/.gemini/` → `RUNTIME=gemini`
+- Path contains `/.config/opencode/` or `/.opencode/` → `RUNTIME=opencode`
+- Otherwise → `RUNTIME=claude`
+
+If `execution_context` path is not available, fall back to env vars:
 ```bash
-RESEARCHERS=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" researcher scan --raw 2>/dev/null || echo '{"count":0,"researchers":[]}')
+if [ -n "$CODEX_HOME" ]; then RUNTIME="codex"
+elif [ -n "$GEMINI_CONFIG_DIR" ]; then RUNTIME="gemini"
+elif [ -n "$OPENCODE_CONFIG_DIR" ] || [ -n "$OPENCODE_CONFIG" ]; then RUNTIME="opencode"
+else RUNTIME="claude"; fi
 ```
 
-Parse `RESEARCHERS` JSON for: `count`, `researchers` (array of `{name, output_file, description, file_path}` objects).
+Set the instruction file variable:
+```bash
+if [ "$RUNTIME" = "codex" ]; then INSTRUCTION_FILE="AGENTS.md"; else INSTRUCTION_FILE="CLAUDE.md"; fi
+```
 
-**If `project_exists` is true:** Error — project already initialized. Use `/gsd:progress`.
+All subsequent references to the project instruction file use `$INSTRUCTION_FILE`.
 
-<decision_logging>
-**Initialize decision logging (silent failure — never breaks workflow):**
+**If `project_exists` is true:** Error — project already initialized. Use `/gsd-progress`.
+
+**If `has_git` is false:** Initialize git:
 
 ```bash
-LOG_INIT=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" log-decision-init --workflow new-project --phase "setup" 2>/dev/null) || true
-LOG_FILE=$(echo "$LOG_INIT" | node -e "const d=require('fs').readFileSync('/dev/stdin','utf8');try{console.log(JSON.parse(d).log_file)}catch{}" 2>/dev/null) || true
+git init
 ```
-
-After each user response during context gathering, log the decision:
-
-```bash
-if [ -n "$LOG_FILE" ]; then
-  node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" log-decision --log-file "$LOG_FILE" --question "$QUESTION" --response "$RESPONSE" 2>/dev/null || true
-fi
-```
-
-All logging calls use `2>/dev/null || true` — logging NEVER breaks the workflow.
-</decision_logging>
 
 ## 2. Brownfield Offer
 
@@ -169,17 +103,22 @@ All logging calls use `2>/dev/null || true` — logging NEVER breaks the workflo
 
 **If `needs_codebase_map` is true** (from init — existing code detected but no codebase map):
 
+
+**Text mode (`workflow.text_mode: true` in config or `--text` flag):** Set `TEXT_MODE=true` if `--text` is present in `$ARGUMENTS` OR `text_mode` from init JSON is `true`. When TEXT_MODE is active, replace every `AskUserQuestion` call with a plain-text numbered list and ask the user to type their choice number. This is required for non-Claude runtimes (OpenAI Codex, Gemini CLI, etc.) where `AskUserQuestion` is not available.
 Use AskUserQuestion:
+
 - header: "Codebase"
 - question: "I detected existing code in this directory. Would you like to map the codebase first?"
 - options:
-  - "Map codebase first" — Run /gsd:map-codebase to understand existing architecture (Recommended)
+  - "Map codebase first" — Run /gsd-map-codebase to understand existing architecture (Recommended)
   - "Skip mapping" — Proceed with project initialization
 
 **If "Map codebase first":**
+
 ```
-Run `/gsd:map-codebase` first, then return to `/gsd:new-project`
+Run `/gsd-map-codebase` first, then return to `/gsd-new-project`
 ```
+
 Exit command.
 
 **If "Skip mapping" OR `needs_codebase_map` is false:** Continue to Step 3.
@@ -219,7 +158,7 @@ AskUserQuestion([
     multiSelect: false,
     options: [
       { label: "Yes (Recommended)", description: "Planning docs tracked in version control" },
-      { label: "No", description: "Keep ${planning_root}/ local-only (add to .gitignore)" }
+      { label: "No", description: "Keep .planning/ local-only (add to .gitignore)" }
     ]
   }
 ])
@@ -263,38 +202,27 @@ AskUserQuestion([
     options: [
       { label: "Balanced (Recommended)", description: "Sonnet for most agents — good quality/cost ratio" },
       { label: "Quality", description: "Opus for research/roadmap — higher cost, deeper analysis" },
-      { label: "Budget", description: "Haiku where possible — fastest, lowest cost" }
+      { label: "Budget", description: "Haiku where possible — fastest, lowest cost" },
+      { label: "Inherit", description: "Use the current session model for all agents (OpenCode /model)" }
     ]
   }
 ])
 ```
 
-Create `${planning_root}/config.json` with mode set to "yolo":
+Create `.planning/config.json` with all settings (CLI fills in remaining defaults automatically):
 
-```json
-{
-  "mode": "yolo",
-  "granularity": "[selected]",
-  "parallelization": true|false,
-  "commit_docs": true|false,
-  "model_profile": "quality|balanced|budget",
-  "workflow": {
-    "research": true|false,
-    "plan_check": true|false,
-    "verifier": true|false,
-    "nyquist_validation": depth !== "quick",
-    "auto_advance": true
-  }
-}
+```bash
+mkdir -p .planning
+node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" config-new-project '{"mode":"yolo","granularity":"[selected]","parallelization":true|false,"commit_docs":true|false,"model_profile":"quality|balanced|budget|inherit","workflow":{"research":true|false,"plan_check":true|false,"verifier":true|false,"nyquist_validation":true|false,"auto_advance":true}}'
 ```
 
-**If commit_docs = No:** Add `${planning_root}/` to `.gitignore`.
+**If commit_docs = No:** Add `.planning/` to `.gitignore`.
 
 **Commit config.json:**
 
 ```bash
 mkdir -p .planning
-node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "chore: add project config" --files ${planning_root}/config.json
+node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "chore: add project config" --files .planning/config.json
 ```
 
 **Persist auto-advance chain flag to config (survives context compaction):**
@@ -325,11 +253,20 @@ Ask inline (freeform, NOT AskUserQuestion):
 
 Wait for their response. This gives you the context needed to ask intelligent follow-up questions.
 
+**Research-before-questions mode:** Check if `workflow.research_before_questions` is enabled in `.planning/config.json` (or the config from init context). When enabled, before asking follow-up questions about a topic area:
+
+1. Do a brief web search for best practices related to what the user described
+2. Mention key findings naturally as you ask questions (e.g., "Most projects like this use X — is that what you're thinking, or something different?")
+3. This makes questions more informed without changing the conversational flow
+
+When disabled (default), ask questions directly as before.
+
 **Follow the thread:**
 
 Based on what they said, ask follow-up questions that dig into their response. Use AskUserQuestion with options that probe what they mentioned — interpretations, clarifications, concrete examples.
 
 Keep following threads. Each answer opens new threads to explore. Ask about:
+
 - What excited them
 - What problem sparked this
 - What they mean by vague terms
@@ -337,6 +274,7 @@ Keep following threads. Each answer opens new threads to explore. Ask about:
 - What's already decided
 
 Consult `questioning.md` for techniques:
+
 - Challenge vagueness
 - Make abstract concrete
 - Surface assumptions
@@ -365,7 +303,7 @@ Loop until "Create PROJECT.md" selected.
 
 **If auto mode:** Synthesize from provided document. No "Ready?" gate was shown — proceed directly to commit.
 
-Synthesize all context into `${planning_root}/PROJECT.md` using the template from `templates/project.md`.
+Synthesize all context into `.planning/PROJECT.md` using the template from `templates/project.md`.
 
 **For greenfield projects:**
 
@@ -396,7 +334,7 @@ All Active requirements are hypotheses until shipped and validated.
 
 Infer Validated requirements from existing code:
 
-1. Read `${planning_root}/codebase/ARCHITECTURE.md` and `STACK.md`
+1. Read `.planning/codebase/ARCHITECTURE.md` and `STACK.md`
 2. Identify what the codebase already does
 3. These become the initial Validated set
 
@@ -438,13 +376,34 @@ Initialize with any decisions made during questioning:
 *Last updated: [date] after initialization*
 ```
 
+**Evolution section** (include at the end of PROJECT.md, before the footer):
+
+```markdown
+## Evolution
+
+This document evolves at phase transitions and milestone boundaries.
+
+**After each phase transition** (via `/gsd-transition`):
+1. Requirements invalidated? → Move to Out of Scope with reason
+2. Requirements validated? → Move to Validated with phase reference
+3. New requirements emerged? → Add to Active
+4. Decisions to log? → Add to Key Decisions
+5. "What This Is" still accurate? → Update if drifted
+
+**After each milestone** (via `/gsd-complete-milestone`):
+1. Full review of all sections
+2. Core Value check — still the right priority?
+3. Audit Out of Scope — reasons still valid?
+4. Update Context with current state
+```
+
 Do not compress. Capture everything gathered.
 
 **Commit PROJECT.md:**
 
 ```bash
 mkdir -p .planning
-node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs: initialize project" --files ${planning_root}/PROJECT.md
+node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs: initialize project" --files .planning/PROJECT.md
 ```
 
 ## 5. Workflow Preferences
@@ -509,7 +468,7 @@ questions: [
     multiSelect: false,
     options: [
       { label: "Yes (Recommended)", description: "Planning docs tracked in version control" },
-      { label: "No", description: "Keep ${planning_root}/ local-only (add to .gitignore)" }
+      { label: "No", description: "Keep .planning/ local-only (add to .gitignore)" }
     ]
   }
 ]
@@ -563,44 +522,68 @@ questions: [
     options: [
       { label: "Balanced (Recommended)", description: "Sonnet for most agents — good quality/cost ratio" },
       { label: "Quality", description: "Opus for research/roadmap — higher cost, deeper analysis" },
-      { label: "Budget", description: "Haiku where possible — fastest, lowest cost" }
+      { label: "Budget", description: "Haiku where possible — fastest, lowest cost" },
+      { label: "Inherit", description: "Use the current session model for all agents (OpenCode /model)" }
     ]
   }
 ]
 ```
 
-Create `${planning_root}/config.json` with all settings:
+Create `.planning/config.json` with all settings (CLI fills in remaining defaults automatically):
 
-```json
-{
-  "mode": "yolo|interactive",
-  "granularity": "coarse|standard|fine",
-  "parallelization": true|false,
-  "commit_docs": true|false,
-  "model_profile": "quality|balanced|budget",
-  "workflow": {
-    "research": true|false,
-    "plan_check": true|false,
-    "verifier": true|false,
-    "nyquist_validation": depth !== "quick"
-  }
-}
+```bash
+mkdir -p .planning
+node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" config-new-project '{"mode":"[yolo|interactive]","granularity":"[selected]","parallelization":true|false,"commit_docs":true|false,"model_profile":"quality|balanced|budget|inherit","workflow":{"research":true|false,"plan_check":true|false,"verifier":true|false,"nyquist_validation":[false if granularity=coarse, true otherwise]}}'
 ```
 
+**Note:** Run `/gsd-settings` anytime to update model profile, workflow agents, branching strategy, and other preferences.
+
 **If commit_docs = No:**
+
 - Set `commit_docs: false` in config.json
-- Add `${planning_root}/` to `.gitignore` (create if needed)
+- Add `.planning/` to `.gitignore` (create if needed)
 
 **If commit_docs = Yes:**
+
 - No additional gitignore entries needed
 
 **Commit config.json:**
 
 ```bash
-node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "chore: add project config" --files ${planning_root}/config.json
+node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "chore: add project config" --files .planning/config.json
 ```
 
-**Note:** Run `/gsd:settings` anytime to update these preferences.
+## 5.1. Sub-Repo Detection
+
+**Detect multi-repo workspace:**
+
+Check for directories with their own `.git` folders (separate repos within the workspace):
+
+```bash
+find . -maxdepth 1 -type d -not -name ".*" -not -name "node_modules" -exec test -d "{}/.git" \; -print
+```
+
+**If sub-repos found:**
+
+Strip the `./` prefix to get directory names (e.g., `./backend` → `backend`).
+
+Use AskUserQuestion:
+
+- header: "Multi-Repo Workspace"
+- question: "I detected separate git repos in this workspace. Which directories contain code that GSD should commit to?"
+- multiSelect: true
+- options: one option per detected directory
+  - "[directory name]" — Separate git repo
+
+**If user selects one or more directories:**
+
+- Set `planning.sub_repos` in config.json to the selected directory names array (e.g., `["backend", "frontend"]`)
+- Auto-set `planning.commit_docs` to `false` (planning docs stay local in multi-repo workspaces)
+- Add `.planning/` to `.gitignore` if not already present
+
+Config changes are saved locally — no commit needed since `commit_docs` is `false` in multi-repo mode.
+
+**If no sub-repos found or user selects none:** Continue with no changes to config.
 
 ## 5.5. Resolve Model Profile
 
@@ -611,6 +594,7 @@ Use models from init: `researcher_model`, `synthesizer_model`, `roadmapper_model
 **If auto mode:** Default to "Research first" without asking.
 
 Use AskUserQuestion:
+
 - header: "Research"
 - question: "Research the domain ecosystem before defining requirements?"
 - options:
@@ -620,6 +604,7 @@ Use AskUserQuestion:
 **If "Research first":**
 
 Display stage banner:
+
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  GSD ► RESEARCHING
@@ -629,303 +614,20 @@ Researching [domain] ecosystem...
 ```
 
 Create research directory:
+
 ```bash
-mkdir -p ${planning_root}/research
+mkdir -p .planning/research
 ```
 
 **Determine milestone context:**
 
 Check if this is greenfield or subsequent milestone:
+
 - If no "Validated" requirements in PROJECT.md → Greenfield (building from scratch)
 - If "Validated" requirements exist → Subsequent milestone (adding to existing app)
 
-### Step 6.1: Check Registry Availability
-
-Check `researchers` from the researcher scan result.
-
-**If `researchers` is empty** (directory doesn't exist OR no valid types found):
-
-Display fallback notice:
-```
-○ Registry not found — using standard researchers.
-  Tip: The researchers/ directory enables dynamic selection.
-```
-
-→ Go to **Step 6.5 (Legacy Fallback)**
-
-**If `researchers` has entries:**
-
-→ Continue to **Step 6.2 (AI Selection)**
-
-### Step 6.2: AI-Powered Researcher Recommendation
-
-Read config for `research.always_include` and `research.max_researchers`:
-```bash
-node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" config-get research.always_include 2>/dev/null || echo "[]"
-node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" config-get research.max_researchers 2>/dev/null || echo "12"
-```
-
-Filter `always_include` against actual `researchers` names — silently drop any names that don't match a discovered type (config may reference types not yet installed).
-
-**Build AI selection context from:**
-- PROJECT.md summary (core value, constraints)
-- Codebase signals from init (`is_brownfield`, `has_codebase_map`, `has_existing_code`, `has_package_file`)
-- If brownfield: read `${planning_root}/codebase/ARCHITECTURE.md` and `STACK.md` for existing patterns
-- Available researcher types from `researchers` (name + description for each)
-- `always_include` list from config (these get "high" relevance by default)
-
-**Try AI recommendation.** Analyze the project context and available researcher types. Score each researcher's relevance (high/medium/low) and generate a 1-sentence rationale. Always-include types automatically receive "high" relevance.
-
-**If the AI recommendation step fails** (LLM timeout, unparseable response), **immediately fall back to manual catalog selection within this same step** (do NOT proceed to Step 6.3 or fall through to Step 6.5):
-
-```
-⚠ AI recommendation unavailable ({error reason}). Select manually:
-
-Available researchers:
-| # | Researcher | Description |
-|---|------------|-------------|
-| 1 | {name} | {description} |
-| 2 | {name} | {description} |
-| ... | ... | ... |
-```
-
-```
-AskUserQuestion([
-  {
-    header: "Researchers",
-    question: "Which researchers would you like to run? (e.g., 'stack, features, architecture')",
-    multiSelect: false,
-    options: [
-      { label: "Core 4 (stack, features, architecture, pitfalls)", description: "Standard research set" },
-      { label: "All available", description: "Run all {N} researchers" },
-      { label: "Other", description: "Type researcher names (e.g., 'stack, features, security')" }
-    ]
-  }
-])
-```
-
-If "Core 4": select stack, features, architecture, pitfalls (filter to only those that exist in `researchers`).
-If "All available": select all discovered types (up to max cap).
-If "Other" (free-text): parse names, apply the same parse-and-confirm pattern as Step 6.3.
-
-After manual selection, skip to Step 6.3 validation checks then Step 6.4 (spawning).
-
-**If AI recommendation succeeds**, present recommendation as a table:
-
-```
-## Recommended Researchers
-
-Based on your project context, I recommend:
-
-| # | Researcher | Relevance | Rationale |
-|---|------------|-----------|-----------|
-| 1 | {name} | High | [1-sentence rationale] |
-| 2 | {name} | High | [1-sentence rationale] |
-| 3 | {name} | Medium | [1-sentence rationale] |
-| 4 | {name} | Medium | [1-sentence rationale] |
-
-### Full Catalog
-
-Also available (not recommended for this project):
-- **{type-name}** — {description}
-- **{type-name}** — {description}
-```
-
-→ Continue to Step 6.3
-
-### Step 6.3: User Confirmation (with parse-and-confirm loop)
-
-**If auto mode:** Skip user confirmation — use AI recommendations directly. If AI failed in auto mode, use `always_include` list or fall back to core 4 (stack, features, architecture, pitfalls). → Go to validation checks below.
-
-Ask "Add or remove any?" using AskUserQuestion with single-select (NOT multiSelect):
-
-```
-AskUserQuestion([
-  {
-    header: "Researchers",
-    question: "Add or remove any researchers? (e.g., 'add security, remove pitfalls')",
-    multiSelect: false,
-    options: [
-      { label: "Looks good", description: "Use the recommended set" },
-      { label: "Other", description: "Type your changes (e.g., 'add security, remove pitfalls')" }
-    ]
-  }
-])
-```
-
-**If "Looks good":** Use recommended set as-is. → Go to validation checks below.
-
-**If "Other" (free-text):** Enter parse-and-confirm loop:
-
-```
-LOOP:
-  1. Parse additions and removals from free-text
-
-  2. **Unknown researcher name detection (REG-04):**
-     If a name doesn't match any type in researchers:
-
-     I don't see a "{name}" researcher type yet. Would you like to:
-
-     AskUserQuestion([
-       {
-         header: "New Type",
-         question: "Create a custom '{name}' researcher?",
-         multiSelect: false,
-         options: [
-           { label: "Create it now", description: "I'll guide you through a 4-question setup (takes ~2 minutes)" },
-           { label: "Skip it", description: "Continue without {name} research" }
-         ]
-       }
-     ])
-
-     If "Create it now": Run guided creation flow:
-       Q1: "What should this researcher's output file be named? (e.g., SECURITY.md)"
-           Default: uppercased name + .md
-       Q2: "What should this researcher investigate?"
-           Show examples relevant to the name
-       Q3: "How will this research be used? (downstream consumer)"
-           Show examples
-       Q4: "What makes this research high-quality? (List 3 checkboxes)"
-           Show examples
-
-       Write type file to: ~/.claude/get-shit-done/researchers/custom/{name}.md
-       (Use _template.md format: frontmatter with name, output_file, description + <prompt_template> + <output_template>)
-
-       Display: ✓ Created: ~/.claude/get-shit-done/researchers/custom/{name}.md
-       Add to current selection and researchers.
-
-     If "Skip it": Remove that name from the additions.
-
-  3. Show interpretation:
-     "I understood: add {X}, remove {Y}. Updated set: [{list}]"
-     "Correct?"
-
-  4. AskUserQuestion([
-       {
-         header: "Confirm",
-         question: "Is this correct?",
-         multiSelect: false,
-         options: [
-           { label: "Yes", description: "Proceed with this set" },
-           { label: "No, let me clarify", description: "I'll re-enter my changes" }
-         ]
-       }
-     ])
-
-  5. If "Yes": exit loop with confirmed set
-  6. If "No, let me clarify": return to top of loop — show current set again
-     and re-prompt with same AskUserQuestion ("Looks good" / "Other")
-```
-
-**Validation checks (after confirmation):**
-
-- If count > `config.research.max_researchers` (default 12): "Error: {N} researchers selected (max: {max}). Remove at least {N - max}." Loop back to "Add or remove?" prompt.
-- If count == 1: "Warning: Only 1 researcher selected — synthesis will be limited." Show AskUserQuestion: "Continue with 1?" / "Select more". If "Select more": loop back.
-- If count == 0: "Warning: No researchers selected." Show AskUserQuestion: "Skip research entirely?" / "Select researchers". If "Select researchers": loop back.
-- Validate each selected type file: check frontmatter has name, output_file, description and prompt_template exists. If invalid: "Error: Type file {name} has invalid format: {errors}. Fix or remove it." Hard error — don't continue until fixed or removed.
-
-### Step 6.4: Dynamic Spawning in Waves of 4
-
-For each selected researcher, load the full type file to get its prompt_template:
-```bash
-node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" researcher load {name}
-```
-
-Build Task() prompt from the type file's prompt_template:
-- Replace `{DOMAIN}` with project domain (from PROJECT.md)
-- Replace `{MILESTONE_CONTEXT}` with greenfield/subsequent context
-- Replace `{RESEARCH_QUESTION}` with dimension-appropriate question (from prompt_template)
-- Replace `{PROJECT_CONTEXT}` with PROJECT.md summary
-- Set output path: `${planning_root}/research/{output_file}`
-- Use template: `~/.claude/get-shit-done/templates/research-project/{output_file}` (if it exists, otherwise let researcher create from output_template in type file)
-
-Batch into waves of 4:
-
-```
-wave_size = 4
-waves = chunk(selected_researchers, wave_size)
-total_waves = len(waves)
-
-for i, wave in enumerate(waves):
-  Display:
-  ◆ Spawning wave {i+1} of {total_waves}...
-    → {researcher.name} research
-    → {researcher.name} research
-    → {researcher.name} research
-    → {researcher.name} research
-
-  Spawn all researchers in this wave as parallel Task() calls:
-
-  Task(prompt="First, read $HOME/.claude/agents/gsd-project-researcher.md for your role and instructions.
-
-  <research_type>
-  Project Research — {researcher.name} dimension for [domain].
-  </research_type>
-
-  <milestone_context>
-  {greenfield_or_subsequent_context}
-  </milestone_context>
-
-  {researcher.prompt_template with variables substituted}
-
-  <output>
-  Write to: ${planning_root}/research/{researcher.output_file}
-  Use template (if exists): ~/.claude/get-shit-done/templates/research-project/{researcher.output_file}
-  </output>
-  ", subagent_type="gsd-project-researcher", model="{researcher_model}", description="{researcher.name} research")
-
-  Wait for all tasks in wave to complete.
-
-  Display wave report:
-  ✓ Wave {i+1} complete: {researcher1.name} ✓, {researcher2.name} ✓, ...
-
-  **Error handling per wave:**
-
-  If 1 researcher fails:
-    Display:
-    ⚠ Researcher Failed: {name}
-    Error: {error_message}
-
-    AskUserQuestion([
-      {
-        header: "Failed",
-        question: "Researcher '{name}' failed. What would you like to do?",
-        multiSelect: false,
-        options: [
-          { label: "Retry", description: "Re-spawn the failed researcher" },
-          { label: "Skip", description: "Continue without this researcher's output" },
-          { label: "Abort", description: "Stop research entirely" }
-        ]
-      }
-    ])
-
-  If ALL researchers in wave fail:
-    Display:
-    ❌ Wave {i+1} Failed — all {wave_size} researchers failed.
-
-    AskUserQuestion([
-      {
-        header: "Wave Failed",
-        question: "All researchers in this wave failed. What would you like to do?",
-        multiSelect: false,
-        options: [
-          { label: "Retry wave", description: "Wait and retry all researchers in this wave" },
-          { label: "Select different", description: "Return to researcher selection" },
-          { label: "Continue without research", description: "Skip remaining research, proceed to requirements" }
-        ]
-      }
-    ])
-
-    If "Select different": return to Step 6.3 user confirmation with current selection displayed.
-```
-
-**After all waves complete:** Continue to the synthesizer step below.
-
-### Step 6.5: Legacy Fallback
-
-**This path is only reached when `researchers` is empty (Step 6.1).**
-
 Display spawning indicator:
+
 ```
 ◆ Spawning 4 researchers in parallel...
   → Stack research
@@ -956,6 +658,8 @@ What's the standard 2025 stack for [domain]?
 - {project_path} (Project context and goals)
 </files_to_read>
 
+${AGENT_SKILLS_RESEARCHER}
+
 <downstream_consumer>
 Your STACK.md feeds into roadmap creation. Be prescriptive:
 - Specific libraries with versions
@@ -970,7 +674,7 @@ Your STACK.md feeds into roadmap creation. Be prescriptive:
 </quality_gate>
 
 <output>
-Write to: ${planning_root}/research/STACK.md
+Write to: .planning/research/STACK.md
 Use template: ~/.claude/get-shit-done/templates/research-project/STACK.md
 </output>
 ", subagent_type="gsd-project-researcher", model="{researcher_model}", description="Stack research")
@@ -994,6 +698,8 @@ What features do [domain] products have? What's table stakes vs differentiating?
 - {project_path} (Project context)
 </files_to_read>
 
+${AGENT_SKILLS_RESEARCHER}
+
 <downstream_consumer>
 Your FEATURES.md feeds into requirements definition. Categorize clearly:
 - Table stakes (must have or users leave)
@@ -1008,7 +714,7 @@ Your FEATURES.md feeds into requirements definition. Categorize clearly:
 </quality_gate>
 
 <output>
-Write to: ${planning_root}/research/FEATURES.md
+Write to: .planning/research/FEATURES.md
 Use template: ~/.claude/get-shit-done/templates/research-project/FEATURES.md
 </output>
 ", subagent_type="gsd-project-researcher", model="{researcher_model}", description="Features research")
@@ -1032,6 +738,8 @@ How are [domain] systems typically structured? What are major components?
 - {project_path} (Project context)
 </files_to_read>
 
+${AGENT_SKILLS_RESEARCHER}
+
 <downstream_consumer>
 Your ARCHITECTURE.md informs phase structure in roadmap. Include:
 - Component boundaries (what talks to what)
@@ -1046,7 +754,7 @@ Your ARCHITECTURE.md informs phase structure in roadmap. Include:
 </quality_gate>
 
 <output>
-Write to: ${planning_root}/research/ARCHITECTURE.md
+Write to: .planning/research/ARCHITECTURE.md
 Use template: ~/.claude/get-shit-done/templates/research-project/ARCHITECTURE.md
 </output>
 ", subagent_type="gsd-project-researcher", model="{researcher_model}", description="Architecture research")
@@ -1070,6 +778,8 @@ What do [domain] projects commonly get wrong? Critical mistakes?
 - {project_path} (Project context)
 </files_to_read>
 
+${AGENT_SKILLS_RESEARCHER}
+
 <downstream_consumer>
 Your PITFALLS.md prevents mistakes in roadmap/planning. For each pitfall:
 - Warning signs (how to detect early)
@@ -1084,81 +794,39 @@ Your PITFALLS.md prevents mistakes in roadmap/planning. For each pitfall:
 </quality_gate>
 
 <output>
-Write to: ${planning_root}/research/PITFALLS.md
+Write to: .planning/research/PITFALLS.md
 Use template: ~/.claude/get-shit-done/templates/research-project/PITFALLS.md
 </output>
 ", subagent_type="gsd-project-researcher", model="{researcher_model}", description="Pitfalls research")
 ```
 
-### Step 6.6: Synthesize Research
-
-**This step runs after either Step 6.4 (dynamic) or Step 6.5 (legacy fallback).**
-
-After all researchers complete, read and validate research files, then spawn synthesizer with inlined content:
-
-**Pre-flight validation:** Before building the synthesizer prompt, read each research output file and verify it exists and is non-empty. For the dynamic path, the files are determined by the selected researchers' `output_file` fields. For the legacy path, the files are STACK.md, FEATURES.md, ARCHITECTURE.md, PITFALLS.md.
+After all 4 agents complete, spawn synthesizer to create SUMMARY.md:
 
 ```
-For each selected researcher:
-  Read ${planning_root}/research/{researcher.output_file} → ${FILE_CONTENT}
-```
+Task(prompt="
+<task>
+Synthesize research outputs into SUMMARY.md.
+</task>
 
-If any file is missing or empty, fail with clear error:
-```
-Error: Research file missing or empty: ${planning_root}/research/{FILE}.md
-All research files must exist before synthesis. Check researcher agent output.
-```
+<files_to_read>
+- .planning/research/STACK.md
+- .planning/research/FEATURES.md
+- .planning/research/ARCHITECTURE.md
+- .planning/research/PITFALLS.md
+</files_to_read>
 
-**Build synthesizer prompt with inlined content:**
-```
-Task(prompt="First, read the gsd-research-synthesizer agent file for your role and instructions.
-
-<research_files>
-
-<research_file name="{output_file_1}">
-{content of ${planning_root}/research/{output_file_1}}
-</research_file>
-
-<research_file name="{output_file_2}">
-{content of ${planning_root}/research/{output_file_2}}
-</research_file>
-
-...repeat for each research file...
-
-</research_files>
+${AGENT_SKILLS_SYNTHESIZER}
 
 <output>
-Write to: ${planning_root}/research/SUMMARY.md
-Commit all research files in ${planning_root}/research/ after writing.
+Write to: .planning/research/SUMMARY.md
+Use template: ~/.claude/get-shit-done/templates/research-project/SUMMARY.md
+Commit after writing.
 </output>
 ", subagent_type="gsd-research-synthesizer", model="{synthesizer_model}", description="Synthesize research")
 ```
 
-**Handle contradiction return from synthesizer:**
-
-After synthesizer returns, check for `<contradictions>` block in the return:
-
-- **If no contradictions:** Proceed normally to research complete banner.
-- **If contradictions detected:** Show each contradiction to user via AskUserQuestion:
-  ```
-  Warning: Research Contradiction Detected
-
-  Topic: {topic}
-  - {file_a} recommends: {position_a}
-  - {file_b} recommends: {position_b}
-  Impact: {impact}
-
-  Options:
-  1. Pick: {position_a}
-  2. Pick: {position_b}
-  3. Re-run {file_a} and/or {file_b} research to resolve
-  ```
-  - If user picks a position: pass resolution as additional context and re-spawn synthesizer (max 1 re-synthesis, 2 total)
-  - If user requests more research: re-run affected researcher(s), then re-synthesize
-  - If contradictions persist after re-synthesis: force user to pick positions, apply as edits to existing SUMMARY.md (no additional synthesis run)
-  - Track synthesis count — max 2 total (initial + 1 re-synthesis)
-
 Display research complete banner and key findings:
+
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  GSD ► RESEARCH COMPLETE ✓
@@ -1170,7 +838,7 @@ Display research complete banner and key findings:
 **Table Stakes:** [from SUMMARY.md]
 **Watch Out For:** [from SUMMARY.md]
 
-Files: `${planning_root}/research/`
+Files: `.planning/research/`
 ```
 
 **If "Skip research":** Continue to Step 7.
@@ -1178,6 +846,7 @@ Files: `${planning_root}/research/`
 ## 7. Define Requirements
 
 Display stage banner:
+
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  GSD ► DEFINING REQUIREMENTS
@@ -1187,6 +856,7 @@ Display stage banner:
 **Load context:**
 
 Read PROJECT.md and extract:
+
 - Core value (the ONE thing that must work)
 - Stated constraints (budget, timeline, tech limitations)
 - Any explicit scope boundaries
@@ -1194,6 +864,7 @@ Read PROJECT.md and extract:
 **If research exists:** Read research/FEATURES.md and extract feature categories.
 
 **If auto mode:**
+
 - Auto-include all table stakes features (users expect these)
 - Include features explicitly mentioned in provided document
 - Auto-defer differentiators not mentioned in document
@@ -1232,6 +903,7 @@ Here are the features for [domain]:
 Ask: "What are the main things users need to be able to do?"
 
 For each capability mentioned:
+
 - Ask clarifying questions to make it specific
 - Probe for related capabilities
 - Group into categories
@@ -1250,6 +922,7 @@ For each category, use AskUserQuestion:
   - "None for v1" — Defer entire category
 
 Track responses:
+
 - Selected features → v1 requirements
 - Unselected table stakes → v2 (users expect these)
 - Unselected differentiators → out of scope
@@ -1257,6 +930,7 @@ Track responses:
 **Identify gaps:**
 
 Use AskUserQuestion:
+
 - header: "Additions"
 - question: "Any requirements research missed? (Features specific to your vision)"
 - options:
@@ -1269,7 +943,8 @@ Cross-check requirements against Core Value from PROJECT.md. If gaps detected, s
 
 **Generate REQUIREMENTS.md:**
 
-Create `${planning_root}/REQUIREMENTS.md` with:
+Create `.planning/REQUIREMENTS.md` with:
+
 - v1 Requirements grouped by category (checkboxes, REQ-IDs)
 - v2 Requirements (deferred)
 - Out of Scope (explicit exclusions with reasoning)
@@ -1280,12 +955,14 @@ Create `${planning_root}/REQUIREMENTS.md` with:
 **Requirement quality criteria:**
 
 Good requirements are:
+
 - **Specific and testable:** "User can reset password via email link" (not "Handle password reset")
 - **User-centric:** "User can X" (not "System does Y")
 - **Atomic:** One capability per requirement (not "User can login and manage profile")
 - **Independent:** Minimal dependencies on other requirements
 
 Reject vague requirements. Push for specificity:
+
 - "Handle authentication" → "User can log in with email/password and stay logged in across sessions"
 - "Support sharing" → "User can share post via link that opens in recipient's browser"
 
@@ -1317,12 +994,13 @@ If "adjust": Return to scoping.
 **Commit requirements:**
 
 ```bash
-node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs: define v1 requirements" --files ${planning_root}/REQUIREMENTS.md
+node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs: define v1 requirements" --files .planning/REQUIREMENTS.md
 ```
 
 ## 8. Create Roadmap
 
 Display stage banner:
+
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  GSD ► CREATING ROADMAP
@@ -1338,11 +1016,13 @@ Task(prompt="
 <planning_context>
 
 <files_to_read>
-- ${planning_root}/PROJECT.md (Project context)
-- ${planning_root}/REQUIREMENTS.md (v1 Requirements)
-- ${planning_root}/research/SUMMARY.md (Research findings - if exists)
-- ${planning_root}/config.json (Granularity and mode settings)
+- .planning/PROJECT.md (Project context)
+- .planning/REQUIREMENTS.md (v1 Requirements)
+- .planning/research/SUMMARY.md (Research findings - if exists)
+- .planning/config.json (Granularity and mode settings)
 </files_to_read>
+
+${AGENT_SKILLS_ROADMAPPER}
 
 </planning_context>
 
@@ -1363,6 +1043,7 @@ Write files first, then return. This ensures artifacts persist even if context i
 **Handle roadmapper return:**
 
 **If `## ROADMAP BLOCKED`:**
+
 - Present blocker information
 - Work with user to resolve
 - Re-spawn when resolved
@@ -1412,6 +1093,7 @@ Success criteria:
 **CRITICAL: Ask for approval before committing (interactive mode only):**
 
 Use AskUserQuestion:
+
 - header: "Roadmap"
 - question: "Does this roadmap structure work for you?"
 - options:
@@ -1422,8 +1104,10 @@ Use AskUserQuestion:
 **If "Approve":** Continue to commit.
 
 **If "Adjust phases":**
+
 - Get user's adjustment notes
 - Re-spawn roadmapper with revision context:
+
   ```
   Task(prompt="
   <revision>
@@ -1431,23 +1115,34 @@ Use AskUserQuestion:
   [user's notes]
 
   <files_to_read>
-  - ${planning_root}/ROADMAP.md (Current roadmap to revise)
+  - .planning/ROADMAP.md (Current roadmap to revise)
   </files_to_read>
+
+  ${AGENT_SKILLS_ROADMAPPER}
 
   Update the roadmap based on feedback. Edit files in place.
   Return ROADMAP REVISED with changes made.
   </revision>
   ", subagent_type="gsd-roadmapper", model="{roadmapper_model}", description="Revise roadmap")
   ```
+
 - Present revised roadmap
 - Loop until user approves
 
-**If "Review full file":** Display raw `cat ${planning_root}/ROADMAP.md`, then re-ask.
+**If "Review full file":** Display raw `cat .planning/ROADMAP.md`, then re-ask.
+
+**Generate or refresh project instruction file before final commit:**
+
+```bash
+node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" generate-claude-md --output "$INSTRUCTION_FILE"
+```
+
+This ensures new projects get the default GSD workflow-enforcement guidance and current project context in `$INSTRUCTION_FILE`.
 
 **Commit roadmap (after approval or auto mode):**
 
 ```bash
-node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs: create roadmap ([N] phases)" --files ${planning_root}/ROADMAP.md ${planning_root}/STATE.md ${planning_root}/REQUIREMENTS.md
+node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs: create roadmap ([N] phases)" --files .planning/ROADMAP.md .planning/STATE.md .planning/REQUIREMENTS.md "$INSTRUCTION_FILE"
 ```
 
 ## 9. Done
@@ -1463,11 +1158,12 @@ Present completion summary:
 
 | Artifact       | Location                    |
 |----------------|-----------------------------|
-| Project        | `${planning_root}/PROJECT.md`      |
-| Config         | `${planning_root}/config.json`     |
-| Research       | `${planning_root}/research/`       |
-| Requirements   | `${planning_root}/REQUIREMENTS.md` |
-| Roadmap        | `${planning_root}/ROADMAP.md`      |
+| Project        | `.planning/PROJECT.md`      |
+| Config         | `.planning/config.json`     |
+| Research       | `.planning/research/`       |
+| Requirements   | `.planning/REQUIREMENTS.md` |
+| Roadmap        | `.planning/ROADMAP.md`      |
+| Project guide  | `$INSTRUCTION_FILE`         |
 
 **[N] phases** | **[X] requirements** | Ready to build ✓
 ```
@@ -1480,9 +1176,18 @@ Present completion summary:
 ╚══════════════════════════════════════════╝
 ```
 
-Exit skill and invoke SlashCommand("/gsd:discuss-phase 1 --auto")
+Exit skill and invoke SlashCommand("/gsd-discuss-phase 1 --auto")
 
 **If interactive mode:**
+
+Check if Phase 1 has UI indicators (look for `**UI hint**: yes` in Phase 1 detail section of ROADMAP.md):
+
+```bash
+PHASE1_SECTION=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" roadmap get-phase 1 2>/dev/null)
+PHASE1_HAS_UI=$(echo "$PHASE1_SECTION" | grep -qi "UI hint.*yes" && echo "true" || echo "false")
+```
+
+**If Phase 1 has UI (`PHASE1_HAS_UI` is `true`):**
 
 ```
 ───────────────────────────────────────────────────────────────
@@ -1491,14 +1196,36 @@ Exit skill and invoke SlashCommand("/gsd:discuss-phase 1 --auto")
 
 **Phase 1: [Phase Name]** — [Goal from ROADMAP.md]
 
-/gsd:discuss-phase 1 — gather context and clarify approach
+/clear then:
 
-<sub>/clear first → fresh context window</sub>
+/gsd-discuss-phase 1 — gather context and clarify approach
 
 ---
 
 **Also available:**
-- /gsd:plan-phase 1 — skip discussion, plan directly
+- /gsd-ui-phase 1 — generate UI design contract (recommended for frontend phases)
+- /gsd-plan-phase 1 — skip discussion, plan directly
+
+───────────────────────────────────────────────────────────────
+```
+
+**If Phase 1 has no UI:**
+
+```
+───────────────────────────────────────────────────────────────
+
+## ▶ Next Up
+
+**Phase 1: [Phase Name]** — [Goal from ROADMAP.md]
+
+/clear then:
+
+/gsd-discuss-phase 1 — gather context and clarify approach
+
+---
+
+**Also available:**
+- /gsd-plan-phase 1 — skip discussion, plan directly
 
 ───────────────────────────────────────────────────────────────
 ```
@@ -1507,35 +1234,30 @@ Exit skill and invoke SlashCommand("/gsd:discuss-phase 1 --auto")
 
 <output>
 
-- `${planning_root}/PROJECT.md`
-- `${planning_root}/config.json`
-- `${planning_root}/research/` (if research selected)
+- `.planning/PROJECT.md`
+- `.planning/config.json`
+- `.planning/research/` (if research selected)
   - `STACK.md`
   - `FEATURES.md`
   - `ARCHITECTURE.md`
   - `PITFALLS.md`
   - `SUMMARY.md`
-- `${planning_root}/REQUIREMENTS.md`
-- `${planning_root}/ROADMAP.md`
-- `${planning_root}/STATE.md`
+- `.planning/REQUIREMENTS.md`
+- `.planning/ROADMAP.md`
+- `.planning/STATE.md`
+- `$INSTRUCTION_FILE` (`AGENTS.md` for Codex, `CLAUDE.md` for all other runtimes)
 
 </output>
 
 <success_criteria>
 
-- [ ] Project name asked FIRST (before any context gathering)
-- [ ] Name slugified and confirmed with user
-- [ ] Duplicate names blocked with clear error directing to /gsd:switch
-- [ ] ${planning_root}/ directory created under `${BOOTSTRAP_PATH}/<project>/`
-- [ ] Active context set to new project via /gsd:switch
-- [ ] config.json seeded from global config defaults
-- [ ] Scope path asked and stored in config.json (if provided)
+- [ ] .planning/ directory created
 - [ ] Git repo initialized
 - [ ] Brownfield detection completed
 - [ ] Deep questioning completed (threads followed, not rushed)
 - [ ] PROJECT.md captures full context → **committed**
 - [ ] config.json has workflow mode, granularity, parallelization → **committed**
-- [ ] Research completed (if selected) — dynamic researcher selection with registry, or legacy 4-researcher fallback → **committed**
+- [ ] Research completed (if selected) — 4 parallel agents spawned → **committed**
 - [ ] Requirements gathered (from research or conversation)
 - [ ] User scoped each category (v1/v2/out of scope)
 - [ ] REQUIREMENTS.md created with REQ-IDs → **committed**
@@ -1545,7 +1267,8 @@ Exit skill and invoke SlashCommand("/gsd:discuss-phase 1 --auto")
 - [ ] ROADMAP.md created with phases, requirement mappings, success criteria
 - [ ] STATE.md initialized
 - [ ] REQUIREMENTS.md traceability updated
-- [ ] User knows next step is `/gsd:discuss-phase 1`
+- [ ] `$INSTRUCTION_FILE` generated with GSD workflow guidance (AGENTS.md for Codex, CLAUDE.md otherwise)
+- [ ] User knows next step is `/gsd-discuss-phase 1`
 
 **Atomic commits:** Each phase commits its artifacts immediately. If context is lost, artifacts persist.
 

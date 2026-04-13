@@ -116,7 +116,7 @@ For: Choosing between options, new external integration.
 
 7. Return to plan-phase.md.
 
-**Output:** `${planning_root}/phases/XX-name/DISCOVERY.md`
+**Output:** `.planning/phases/XX-name/DISCOVERY.md`
 </step>
 
 <step name="level_3_deep_dive">
@@ -169,7 +169,7 @@ For: Architectural decisions, novel problems, high-risk choices.
 
 8. Return to plan-phase.md.
 
-**Output:** `${planning_root}/phases/XX-name/DISCOVERY.md` (comprehensive)
+**Output:** `.planning/phases/XX-name/DISCOVERY.md` (comprehensive)
 </step>
 
 <step name="identify_unknowns">
@@ -203,7 +203,7 @@ Run the discovery:
 </step>
 
 <step name="create_discovery_output">
-Write `${planning_root}/phases/XX-name/DISCOVERY.md`:
+Write `.planning/phases/XX-name/DISCOVERY.md`:
 - Summary with recommendation
 - Key findings with sources
 - Code examples if applicable
@@ -248,7 +248,7 @@ If "address first": Gather user input on questions, update discovery.
 
 <step name="offer_next">
 ```
-Discovery complete: ${planning_root}/phases/XX-name/DISCOVERY.md
+Discovery complete: .planning/phases/XX-name/DISCOVERY.md
 Recommendation: [one-liner]
 Confidence: [level]
 
