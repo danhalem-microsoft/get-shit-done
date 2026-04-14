@@ -9,8 +9,12 @@ const { loadConfig, resolveModelInternal, findPhaseInternal, getRoadmapPhaseInte
 const { resolveIdentity } = require('./identity.cjs');
 const { readActiveContext, writeActiveContext, listProjects } = require('./context.cjs');
 
-function getLatestCompletedMilestone(cwd) {
-  const milestonesPath = path.join(planningPaths(cwd).planning, 'MILESTONES.md');
+function getLatestCompletedMilestone(cwd, planningRootOverride) {
+  const planningDir = planningRootOverride
+    ? path.join(cwd, planningRootOverride)
+    : null;
+  if (!planningDir) return null;
+  const milestonesPath = path.join(planningDir, 'MILESTONES.md');
   if (!fs.existsSync(milestonesPath)) return null;
 
   try {
@@ -459,7 +463,7 @@ function cmdInitNewMilestone(cwd, raw) {
   const planningRootPath = ctx.planning_root;
   const config = loadConfig(cwd);
   const milestone = getMilestoneInfo(cwd);
-  const latestCompleted = getLatestCompletedMilestone(cwd);
+  const latestCompleted = getLatestCompletedMilestone(cwd, planningRootPath);
   const phasesDir = planningRootPath ? path.join(cwd, planningRootPath, 'phases') : null;
   let phaseDirCount = 0;
 
@@ -509,7 +513,9 @@ function cmdInitNewMilestone(cwd, raw) {
 
 function cmdInitQuick(cwd, description, raw) {
   const ctx = tryGetPlanningContext(cwd);
-  const planningRootPath = ctx.planning_root;
+  // Fall back to flat .planning/ when multi-user context isn't available
+  const planningRootPath = ctx.planning_root
+    || (fs.existsSync(path.join(cwd, '.planning')) ? '.planning' : null);
   const config = loadConfig(cwd);
   const now = new Date();
   const slug = description ? generateSlugInternal(description)?.substring(0, 40) : null;
