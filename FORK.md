@@ -93,10 +93,100 @@ Or manually:
 
 ```bash
 git fetch upstream
+git checkout -b upstream-sync   # Work branch — never merge directly on main
 git merge upstream/main
-# Resolve any conflicts
-node bin/install.js --global
+# Resolve conflicts (see playbook below)
+node --test tests/             # Must pass before fast-forwarding main
+git checkout main && git merge --ff-only upstream-sync
+node bin/install.js --global   # Reinstall from merged main
 ```
+
+### Upstream Sync Playbook
+
+This section captures hard-won lessons from syncing 714 upstream commits into our 102-commit fork (April 2026). Follow this next time.
+
+#### Phase 1: Pre-merge setup
+
+1. **Create work branch**: `git checkout -b upstream-sync`
+2. **Snapshot test baseline**: `node --test tests/ 2>&1 | tail -5` — record pass/fail count
+3. **NEVER run on main** — always merge on a branch, fast-forward main only after all tests pass
+
+#### Phase 2: Merge and resolve conflicts
+
+1. `git fetch upstream && git merge upstream/main`
+2. Resolve conflicts in waves by complexity:
+   - **Wave 1**: `core.cjs` — path resolution is the hardest. Our `getPlanningRoot()` (multi-user) vs upstream's `planningDir()` (flat). Resolution: `planningPaths()` delegates to `getPlanningRoot()`, add flat `.planning/` fallback when no `users/` dir exists
+   - **Wave 2**: `init.cjs`, `state.cjs`, `phase.cjs` — these use `planningPaths()` for all path resolution
+   - **Wave 3**: Remaining libs (`commands.cjs`, `workstream.cjs`, `config.cjs`, etc.)
+   - **Wave 4**: Markdown files (workflows, agents, templates) — usually take upstream version + re-add our additions
+   - **Wave 5**: Test files — take upstream tests, fix for multi-user compat (see below)
+
+3. **Commit the merge** once all conflict markers are resolved (tests may still fail)
+
+#### Phase 3: Fix test failures (the hard part)
+
+These are the recurring patterns we hit. Fix in this order:
+
+##### Pattern 1: Workstream awareness
+Upstream added workstream support (`GSD_WORKSTREAM` env var, `--ws` flag). Our `planningPaths()` and any function using `getPlanningRoot()` directly didn't incorporate workstream scoping.
+
+**Fix**: `planningPaths(cwd, wsOverride)` checks `wsOverride || process.env.GSD_WORKSTREAM`. Any function building phase/state paths should use `planningPaths()` not raw `getPlanningRoot()`.
+
+##### Pattern 2: Legacy structure detection
+Tests that create `.planning/PROJECT.md` without `.planning/users/` trigger our "Legacy .planning/ structure detected" hard error (`process.exit(1)`).
+
+**Fix**: Either (a) update the test to not create `PROJECT.md` at flat level, or (b) use `ROADMAP.md` instead (won't trigger legacy check).
+
+##### Pattern 3: Identity side effects
+`tryGetPlanningContext()` → `resolveIdentity()` → `lockIdentity()` writes `user-map.json`. This creates untracked files that break "nothing to commit" tests.
+
+**Fix**: Seed `user-map.json` in `createTempGitProject()` test helper with `{ _schema: 1, "Test User": "test-user" }`.
+
+##### Pattern 4: Commit attribution ordering
+Our TEAM-06 attribution check (`git diff --cached`) must run AFTER file staging, not before. Otherwise staged files aren't visible.
+
+**Fix**: Move the attribution block after the staging loop in `cmdCommit`.
+
+##### Pattern 5: process.cwd() in tests
+Some upstream tests use `process.cwd()` for file resolution. When the test runner runs from `tests/` dir, paths to `get-shit-done/templates/` or `commands/gsd/` break.
+
+**Fix**: Replace `process.cwd()` with `path.join(__dirname, '..')` in affected test files.
+
+##### Pattern 6: process.exit(1) can't be caught
+Our `error()` function calls `process.exit(1)`. `try/catch` can't catch this. Functions like `getPlanningRoot()` that hard-error on "no active project" will kill the subprocess.
+
+**Fix**: Functions called from init commands should use `tryGetPlanningContext()` (returns nulls) instead of `getPlanningRoot()` (hard-errors). Or accept a `planningRootOverride` parameter to avoid the call entirely.
+
+##### Pattern 7: Injection scan false positives
+Our command files (`archive-project.md`, `restore-project.md`, `switch.md`) contain `<user>` in path template strings like `.planning/users/<user>/`. The prompt injection scan flags these.
+
+**Fix**: Add to the `ALLOWLIST` in `prompt-injection-scan.test.cjs`. Comment must NOT contain literal `.planning/` or audit-paths will flag it too.
+
+##### Pattern 8: Expected file lists
+The Copilot install test has a hardcoded list of expected agent files. Our fork adds critic agents.
+
+**Fix**: Add new agent filenames to the `expected` array in `copilot-install.test.cjs`.
+
+##### Pattern 9: Missing template sections
+Upstream may add sections to templates (e.g., "Deferred Items" in `state.md`). Tests check for them.
+
+**Fix**: Add the section to `get-shit-done/templates/state.md` (or whichever template).
+
+#### Phase 4: Validate and merge
+
+1. Run full suite: `node --test tests/` — must be 0 failures
+2. Checkpoint: present results to user for approval
+3. Fast-forward: `git checkout main && git merge --ff-only upstream-sync`
+4. Reinstall: `node bin/install.js --global`
+5. Verify: `gsd-tools.cjs --version` shows correct version
+6. Clean up: `git branch -d upstream-sync`
+
+#### CRITICAL Safety Rules
+
+- **NEVER `require(install.js)`** in any agent or test — it has side effects that overwrite `~/.claude/get-shit-done/`
+- **NEVER commit MODULE.bazel.lock** without running the full test suite
+- **Stash before switching branches** — uncommitted changes to hooks/ will block checkout
+- **Keep the work branch** until main is verified — if anything breaks, you can go back
 
 ### Conflict Resolution
 
@@ -104,10 +194,15 @@ Files most likely to conflict during upstream sync:
 
 | File | Why | Resolution |
 |------|-----|------------|
-| `bin/install.js` | Template expansion functions added | Keep fork additions, merge upstream changes |
-| `get-shit-done/bin/gsd-tools.cjs` | Critic/researcher/mistake/taste commands | Keep fork additions, merge upstream changes |
+| `get-shit-done/bin/lib/core.cjs` | Path resolution divergence (multi-user vs flat) | Keep our `getPlanningRoot`, add upstream's new functions, make `planningPaths` workstream-aware |
+| `get-shit-done/bin/lib/init.cjs` | Init context fields differ | Keep our `tryGetPlanningContext` pattern, add upstream's new fields |
+| `get-shit-done/bin/lib/commands.cjs` | Commit attribution, new commands | Merge carefully — ordering matters for attribution |
+| `get-shit-done/bin/lib/phase.cjs` | Phase resolution paths | Use `planningPaths()` not raw `getPlanningRoot()` |
+| `get-shit-done/bin/gsd-tools.cjs` | Dispatcher changes | Keep our multi-user routing, merge upstream's new commands |
+| `bin/install.js` | Template expansion functions | Keep fork additions, merge upstream changes |
 | `agents/gsd-*.md` | Template markers added | Keep fork markers, merge upstream agent changes |
-| `get-shit-done/workflows/update.md` | Fork update section added | Keep fork section, merge upstream changes |
+| `tests/helpers.cjs` | Test helper structure | Keep our `createTempMultiUserProject`, update `createTempGitProject` |
+| `hooks/gsd-check-update.js` | npm registry check | Skip npm check (fork versioning), keep stale-hook detection |
 
 ## Fork Architecture
 
