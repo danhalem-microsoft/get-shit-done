@@ -338,22 +338,22 @@ describe('CR-CONFIG: config key registration', () => {
 // --- CR-INTEGRATION: workflow integration points ---
 
 describe('CR-INTEGRATION: workflow integration points', () => {
-  test('execute-phase.md contains code_review_gate step', { skip: !PLUGIN_AVAILABLE ? 'Plugin dir not installed' : false }, () => {
-    const content = fs.readFileSync(path.join(PLUGIN_WORKFLOWS_DIR, 'execute-phase.md'), 'utf-8');
+  test('execute-phase.md contains code_review_gate step', () => {
+    const content = fs.readFileSync(path.join(WORKFLOWS_DIR, 'execute-phase.md'), 'utf-8');
 
     assert.ok(content.includes('code_review_gate'),
       'execute-phase.md missing code_review_gate step name');
   });
 
-  test('execute-phase.md contains config-get workflow.code_review', { skip: !PLUGIN_AVAILABLE ? 'Plugin dir not installed' : false }, () => {
-    const content = fs.readFileSync(path.join(PLUGIN_WORKFLOWS_DIR, 'execute-phase.md'), 'utf-8');
+  test('execute-phase.md contains config-get workflow.code_review', () => {
+    const content = fs.readFileSync(path.join(WORKFLOWS_DIR, 'execute-phase.md'), 'utf-8');
 
     assert.match(content, /config-get\s+workflow\.code_review/,
       'execute-phase.md missing config-get workflow.code_review call');
   });
 
-  test('execute-phase.md does NOT contain ls.*REVIEW.md.*head pattern', { skip: !PLUGIN_AVAILABLE ? 'Plugin dir not installed' : false }, () => {
-    const content = fs.readFileSync(path.join(PLUGIN_WORKFLOWS_DIR, 'execute-phase.md'), 'utf-8');
+  test('execute-phase.md does NOT contain ls.*REVIEW.md.*head pattern', () => {
+    const content = fs.readFileSync(path.join(WORKFLOWS_DIR, 'execute-phase.md'), 'utf-8');
 
     // Extract code_review_gate section to check
     const gateMatch = content.match(/<step name="code_review_gate">([\s\S]*?)<\/step>/);
@@ -364,36 +364,36 @@ describe('CR-INTEGRATION: workflow integration points', () => {
     }
   });
 
-  test('quick.md contains code-review invocation', { skip: !PLUGIN_AVAILABLE ? 'Plugin dir not installed' : false }, () => {
-    const content = fs.readFileSync(path.join(PLUGIN_WORKFLOWS_DIR, 'quick.md'), 'utf-8');
+  test('quick.md contains code-review invocation', () => {
+    const content = fs.readFileSync(path.join(WORKFLOWS_DIR, 'quick.md'), 'utf-8');
 
     assert.ok(content.includes('code-review') || content.includes('code_review'),
       'quick.md missing code-review invocation');
   });
 
-  test('quick.md contains config-get workflow.code_review', { skip: !PLUGIN_AVAILABLE ? 'Plugin dir not installed' : false }, () => {
-    const content = fs.readFileSync(path.join(PLUGIN_WORKFLOWS_DIR, 'quick.md'), 'utf-8');
+  test('quick.md contains config-get workflow.code_review', () => {
+    const content = fs.readFileSync(path.join(WORKFLOWS_DIR, 'quick.md'), 'utf-8');
 
     assert.match(content, /config-get\s+workflow\.code_review/,
       'quick.md missing config-get workflow.code_review call');
   });
 
-  test('autonomous.md contains gsd:code-review skill invocation', { skip: !PLUGIN_AVAILABLE ? 'Plugin dir not installed' : false }, () => {
-    const content = fs.readFileSync(path.join(PLUGIN_WORKFLOWS_DIR, 'autonomous.md'), 'utf-8');
+  test('autonomous.md contains gsd:code-review skill invocation', () => {
+    const content = fs.readFileSync(path.join(WORKFLOWS_DIR, 'autonomous.md'), 'utf-8');
 
     assert.ok(content.includes('gsd:code-review'),
       'autonomous.md missing gsd:code-review skill invocation');
   });
 
-  test('autonomous.md contains gsd:code-review-fix skill invocation', { skip: !PLUGIN_AVAILABLE ? 'Plugin dir not installed' : false }, () => {
-    const content = fs.readFileSync(path.join(PLUGIN_WORKFLOWS_DIR, 'autonomous.md'), 'utf-8');
+  test('autonomous.md contains gsd:code-review-fix skill invocation', () => {
+    const content = fs.readFileSync(path.join(WORKFLOWS_DIR, 'autonomous.md'), 'utf-8');
 
     assert.ok(content.includes('gsd:code-review-fix'),
       'autonomous.md missing gsd:code-review-fix skill invocation');
   });
 
-  test('autonomous.md contains --auto flag for code-review-fix', { skip: !PLUGIN_AVAILABLE ? 'Plugin dir not installed' : false }, () => {
-    const content = fs.readFileSync(path.join(PLUGIN_WORKFLOWS_DIR, 'autonomous.md'), 'utf-8');
+  test('autonomous.md contains --auto flag for code-review-fix', () => {
+    const content = fs.readFileSync(path.join(WORKFLOWS_DIR, 'autonomous.md'), 'utf-8');
 
     assert.ok(content.includes('--auto'),
       'autonomous.md missing --auto flag for code-review-fix iteration');
