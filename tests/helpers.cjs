@@ -106,6 +106,14 @@ function createTempGitProject(prefix = 'gsd-test-') {
   execSync('git config user.name "Test User"', { cwd: tmpDir, stdio: 'pipe' });
   execSync('git config commit.gpgsign false', { cwd: tmpDir, stdio: 'pipe' });
 
+  // Seed user-map.json so identity resolution (lockIdentity) doesn't create
+  // it as a side-effect during commit attribution — that would make "nothing
+  // to commit" tests fail by introducing an untracked file.
+  fs.writeFileSync(
+    path.join(tmpDir, '.planning', 'user-map.json'),
+    JSON.stringify({ _schema: 1, 'Test User': 'test-user' }, null, 2) + '\n'
+  );
+
   // Create initial commit
   fs.writeFileSync(path.join(tmpDir, '.gitkeep'), '');
   execSync('git add -A', { cwd: tmpDir, stdio: 'pipe' });

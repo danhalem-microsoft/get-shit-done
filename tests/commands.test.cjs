@@ -1738,7 +1738,7 @@ describe('stats command', () => {
     execSync('git config user.email "test@example.com"', { cwd: tmpDir, stdio: 'pipe' });
     execSync('git config user.name "Test User"', { cwd: tmpDir, stdio: 'pipe' });
 
-    fs.writeFileSync(path.join(tmpDir, '.planning', 'PROJECT.md'), '# Project\n');
+    fs.writeFileSync(path.join(tmpDir, '.planning', 'ROADMAP.md'), '# Roadmap\n');
     execSync('git add -A', { cwd: tmpDir, stdio: 'pipe' });
     execSync('git commit -m "initial commit"', {
       cwd: tmpDir,

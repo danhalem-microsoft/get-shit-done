@@ -314,7 +314,28 @@ function cmdCommit(cwd, message, files, raw, amend, noVerify) {
     }
   }
 
+  // Stage files
+  const explicitFiles = files && files.length > 0;
+  const filesToStage = explicitFiles ? files : ['.planning/'];
+  for (const file of filesToStage) {
+    const fullPath = path.join(cwd, file);
+    if (!fs.existsSync(fullPath)) {
+      if (explicitFiles) {
+        // Caller passed an explicit --files list: missing files are skipped.
+        // Staging a deletion here would silently remove tracked planning files
+        // (e.g. STATE.md, ROADMAP.md) when they are temporarily absent (#2014).
+        continue;
+      }
+      // Default mode (staging all of .planning/): stage the deletion so
+      // removed planning files are not left dangling in the index.
+      execGit(cwd, ['rm', '--cached', '--ignore-unmatch', file]);
+    } else {
+      execGit(cwd, ['add', file]);
+    }
+  }
+
   // Auto-detect user/project for planning commit attribution (TEAM-06)
+  // Must run AFTER staging so git diff --cached reflects the files being committed.
   if (message && !amend) {
     try {
       const { tryGetPlanningContext } = require('./core.cjs');
@@ -342,26 +363,6 @@ function cmdCommit(cwd, message, files, raw, amend, noVerify) {
       }
     } catch {
       // If tryGetPlanningContext throws (e.g., legacy detection), fall back to no attribution
-    }
-  }
-
-  // Stage files
-  const explicitFiles = files && files.length > 0;
-  const filesToStage = explicitFiles ? files : ['.planning/'];
-  for (const file of filesToStage) {
-    const fullPath = path.join(cwd, file);
-    if (!fs.existsSync(fullPath)) {
-      if (explicitFiles) {
-        // Caller passed an explicit --files list: missing files are skipped.
-        // Staging a deletion here would silently remove tracked planning files
-        // (e.g. STATE.md, ROADMAP.md) when they are temporarily absent (#2014).
-        continue;
-      }
-      // Default mode (staging all of .planning/): stage the deletion so
-      // removed planning files are not left dangling in the index.
-      execGit(cwd, ['rm', '--cached', '--ignore-unmatch', file]);
-    } else {
-      execGit(cwd, ['add', file]);
     }
   }
 
