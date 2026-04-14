@@ -1814,10 +1814,21 @@ function clearPlanningRootCache() {
  * Returns common .planning file paths, multi-user-aware.
  * Upstream code calls this extensively; it now routes through our multi-user resolution.
  */
-function planningPaths(cwd) {
+function planningPaths(cwd, wsOverride) {
   const planningRoot = getPlanningRoot(cwd);
-  const base = path.join(cwd, planningRoot);
+  let base = path.join(cwd, planningRoot);
   const root = path.join(cwd, '.planning');
+
+  // Apply workstream scoping: explicit override > env var
+  const ws = wsOverride || process.env.GSD_WORKSTREAM || null;
+  if (ws) {
+    const BAD_SEGMENT = /[/\\]|\.\./;
+    if (BAD_SEGMENT.test(ws)) {
+      throw new Error(`GSD_WORKSTREAM contains invalid path characters: ${ws}`);
+    }
+    base = path.join(base, 'workstreams', ws);
+  }
+
   return {
     planning: base,
     state: path.join(base, 'STATE.md'),

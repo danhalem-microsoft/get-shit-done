@@ -119,15 +119,12 @@ const child = spawn(process.execPath, ['-e', `
     } catch (e) {}
   }
 
-  let latest = null;
-  try {
-    latest = execSync('npm view get-shit-done-cc version', { encoding: 'utf8', timeout: 10000, windowsHide: true }).trim();
-  } catch (e) {}
-
+  // Fork: skip npm registry check — this fork has its own versioning.
+  // Stale hook detection above is still useful for local installs.
   const result = {
-    update_available: latest && isNewer(latest, installed),
+    update_available: false,
     installed,
-    latest: latest || 'unknown',
+    latest: installed,
     checked: Math.floor(Date.now() / 1000),
     stale_hooks: staleHooks.length > 0 ? staleHooks : undefined
   };
