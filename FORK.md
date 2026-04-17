@@ -101,9 +101,29 @@ git checkout main && git merge --ff-only upstream-sync
 node bin/install.js --global   # Reinstall from merged main
 ```
 
+### ⚠️ READ FIRST: Murder-Merge Prevention
+
+**Before touching any upstream sync, read [docs/postmortems/2026-04-13-upstream-merge-murder.md](docs/postmortems/2026-04-13-upstream-merge-murder.md).**
+
+On 2026-04-13 an upstream merge deleted 11 fork-only workflow files (1,723 lines), silently gutted fork integration from 6+ more, and buried the damage under commit messages like "fix: sync workflow and command files with upstream versions" and "fix: replace stale /gsd: colon references with /gsd- hyphen format." The fork was effectively murdered while its log read like housekeeping. The postmortem is the definitive record and its process rules are binding for every future sync.
+
+**Three binding rules for upstream sync work:**
+
+1. **Fork-integrity audit must pass before merging to `main`.** Run `node scripts/audit-fork-integrity.js` (planned — part of the recovery). Zero regressions OR the merge does not proceed. Adding it to CI is tracked as an action item in the postmortem.
+
+2. **Commit bodies must state fork-integration status explicitly.** Any commit touching `get-shit-done/workflows/`, `agents/`, `commands/gsd/`, or `bin/install.js` during a sync must state, in prose:
+   - File counts by type (workflows: N, agents: N, commands: N)
+   - Which fork patches were reviewed and confirmed present
+   - Which fork features were intentionally dropped, and why
+   If none of those statements can be made truthfully, the commit does not happen.
+
+3. **>20 failing tests after a merge is an alarm, not a chore.** If the merge produces a flood of test failures, the default hypothesis is that fork content was overwritten and the tests are correctly alarming. Investigate each failing assertion — is it measuring a fork feature? If yes, the merge is wrong, not the test. Do **not** "fix" tests by making them match damaged content.
+
 ### Upstream Sync Playbook
 
 This section captures hard-won lessons from syncing 714 upstream commits into our 102-commit fork (April 2026). Follow this next time.
+
+**Applied learnings from the 2026-04-13 murder-merge incident are inlined below. Where you see ⚠️, the step is there specifically because it was skipped last time and cost the fork.**
 
 #### Phase 1: Pre-merge setup
 
@@ -118,12 +138,14 @@ This section captures hard-won lessons from syncing 714 upstream commits into ou
    - **Wave 1**: `core.cjs` — path resolution is the hardest. Our `getPlanningRoot()` (multi-user) vs upstream's `planningDir()` (flat). Resolution: `planningPaths()` delegates to `getPlanningRoot()`, add flat `.planning/` fallback when no `users/` dir exists
    - **Wave 2**: `init.cjs`, `state.cjs`, `phase.cjs` — these use `planningPaths()` for all path resolution
    - **Wave 3**: Remaining libs (`commands.cjs`, `workstream.cjs`, `config.cjs`, etc.)
-   - **Wave 4**: Markdown files (workflows, agents, templates) — usually take upstream version + re-add our additions
-   - **Wave 5**: Test files — take upstream tests, fix for multi-user compat (see below)
+   - **Wave 4**: Markdown files (workflows, agents, templates) — ⚠️ **NEVER `git checkout --theirs` on any file listed in the "Files with Fork Customizations" table below.** Do a three-way merge: upstream's new content + the fork's added content. If you are tempted to take upstream wholesale "just for this file" — stop, open the postmortem, and read Failure Mode #1. Every file that was murdered on 2026-04-13 was murdered via that exact shortcut.
+   - **Wave 5**: Test files — take upstream tests, fix for multi-user compat (see below). ⚠️ A failing workflow/agent content test is **not** a test file problem; it is almost certainly Wave 4 damage alarming. Go back to Wave 4 before touching the test.
 
-3. **Commit the merge** once all conflict markers are resolved (tests may still fail)
+3. **Commit the merge** once all conflict markers are resolved (tests may still fail). ⚠️ **Do not write "preserving all local patches" in the commit body unless you can name each preserved patch.** That phrase was used to describe the 2026-04-13 merge and it was false.
 
 #### Phase 3: Fix test failures (the hard part)
+
+⚠️ **First triage every failing test before "fixing" anything.** For each failing test, open the file it asserts on and ask: *is this test failing because fork-customised content was overwritten?* If yes, the fix is in Wave 4, not here. Only the patterns below (workstream, identity, tests that reference upstream-only paths, etc.) are legitimate Phase 3 work. The 2026-04-13 incident burned the fork by applying Phase 3 "fixes" to Wave 4 damage — running tests that were correctly alarming, then silencing them by modifying or deleting the fork content they were checking. Do not repeat.
 
 These are the recurring patterns we hit. Fix in this order:
 
