@@ -1,0 +1,461 @@
+{
+  "entries": [
+    {
+      "command_file": "commands/gsd/add-mistake.md",
+      "refs": [
+        {
+          "ref_text": "@~/.claude/get-shit-done/workflows/add-mistake.md",
+          "resolved_path": "get-shit-done/workflows/add-mistake.md",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "command_file": "commands/gsd/add-phase.md",
+      "refs": [
+        {
+          "ref_text": "@~/.claude/get-shit-done/workflows/add-phase.md",
+          "resolved_path": "get-shit-done/workflows/add-phase.md",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "command_file": "commands/gsd/add-taste.md",
+      "refs": [
+        {
+          "ref_text": "@~/.claude/get-shit-done/workflows/add-taste.md",
+          "resolved_path": "get-shit-done/workflows/add-taste.md",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "command_file": "commands/gsd/add-tests.md",
+      "refs": [
+        {
+          "ref_text": "@~/.claude/get-shit-done/workflows/add-tests.md",
+          "resolved_path": "get-shit-done/workflows/add-tests.md",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "command_file": "commands/gsd/add-todo.md",
+      "refs": [
+        {
+          "ref_text": "@~/.claude/get-shit-done/workflows/add-todo.md",
+          "resolved_path": "get-shit-done/workflows/add-todo.md",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "command_file": "commands/gsd/archive-project.md",
+      "refs": [
+        {
+          "ref_text": "@~/.claude/get-shit-done/workflows/archive-project.md",
+          "resolved_path": "get-shit-done/workflows/archive-project.md",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "command_file": "commands/gsd/audit-milestone.md",
+      "refs": [
+        {
+          "ref_text": "@~/.claude/get-shit-done/workflows/audit-milestone.md",
+          "resolved_path": "get-shit-done/workflows/audit-milestone.md",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "command_file": "commands/gsd/check-todos.md",
+      "refs": [
+        {
+          "ref_text": "@~/.claude/get-shit-done/workflows/check-todos.md",
+          "resolved_path": "get-shit-done/workflows/check-todos.md",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "command_file": "commands/gsd/cleanup.md",
+      "refs": [
+        {
+          "ref_text": "@~/.claude/get-shit-done/workflows/cleanup.md",
+          "resolved_path": "get-shit-done/workflows/cleanup.md",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "command_file": "commands/gsd/complete-milestone.md",
+      "refs": [
+        {
+          "ref_text": "@~/.claude/get-shit-done/templates/milestone-archive.md",
+          "resolved_path": "get-shit-done/templates/milestone-archive.md",
+          "exists": true
+        },
+        {
+          "ref_text": "@~/.claude/get-shit-done/workflows/complete-milestone.md",
+          "resolved_path": "get-shit-done/workflows/complete-milestone.md",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "command_file": "commands/gsd/critique.md",
+      "refs": [
+        {
+          "ref_text": "@~/.claude/get-shit-done/workflows/critique.md",
+          "resolved_path": "get-shit-done/workflows/critique.md",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "command_file": "commands/gsd/debug.md",
+      "refs": []
+    },
+    {
+      "command_file": "commands/gsd/discuss-phase.md",
+      "refs": [
+        {
+          "ref_text": "@~/.claude/get-shit-done/templates/context.md",
+          "resolved_path": "get-shit-done/templates/context.md",
+          "exists": true
+        },
+        {
+          "ref_text": "@~/.claude/get-shit-done/workflows/discuss-phase.md",
+          "resolved_path": "get-shit-done/workflows/discuss-phase.md",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "command_file": "commands/gsd/execute-phase.md",
+      "refs": [
+        {
+          "ref_text": "@~/.claude/get-shit-done/references/ui-brand.md",
+          "resolved_path": "get-shit-done/references/ui-brand.md",
+          "exists": true
+        },
+        {
+          "ref_text": "@~/.claude/get-shit-done/workflows/execute-phase.md",
+          "resolved_path": "get-shit-done/workflows/execute-phase.md",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "command_file": "commands/gsd/extract-taste.md",
+      "refs": [
+        {
+          "ref_text": "@~/.claude/get-shit-done/workflows/extract-taste.md",
+          "resolved_path": "get-shit-done/workflows/extract-taste.md",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "command_file": "commands/gsd/health.md",
+      "refs": [
+        {
+          "ref_text": "@~/.claude/get-shit-done/workflows/health.md",
+          "resolved_path": "get-shit-done/workflows/health.md",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "command_file": "commands/gsd/help.md",
+      "refs": [
+        {
+          "ref_text": "@~/.claude/get-shit-done/workflows/help.md",
+          "resolved_path": "get-shit-done/workflows/help.md",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "command_file": "commands/gsd/insert-phase.md",
+      "refs": [
+        {
+          "ref_text": "@~/.claude/get-shit-done/workflows/insert-phase.md",
+          "resolved_path": "get-shit-done/workflows/insert-phase.md",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "command_file": "commands/gsd/join-discord.md",
+      "refs": []
+    },
+    {
+      "command_file": "commands/gsd/list-phase-assumptions.md",
+      "refs": [
+        {
+          "ref_text": "@~/.claude/get-shit-done/workflows/list-phase-assumptions.md",
+          "resolved_path": "get-shit-done/workflows/list-phase-assumptions.md",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "command_file": "commands/gsd/map-codebase.md",
+      "refs": [
+        {
+          "ref_text": "@~/.claude/get-shit-done/workflows/map-codebase.md",
+          "resolved_path": "get-shit-done/workflows/map-codebase.md",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "command_file": "commands/gsd/mistakes.md",
+      "refs": [
+        {
+          "ref_text": "@~/.claude/get-shit-done/workflows/list-mistakes.md",
+          "resolved_path": "get-shit-done/workflows/list-mistakes.md",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "command_file": "commands/gsd/new-milestone.md",
+      "refs": [
+        {
+          "ref_text": "@~/.claude/get-shit-done/references/questioning.md",
+          "resolved_path": "get-shit-done/references/questioning.md",
+          "exists": true
+        },
+        {
+          "ref_text": "@~/.claude/get-shit-done/references/ui-brand.md",
+          "resolved_path": "get-shit-done/references/ui-brand.md",
+          "exists": true
+        },
+        {
+          "ref_text": "@~/.claude/get-shit-done/templates/project.md",
+          "resolved_path": "get-shit-done/templates/project.md",
+          "exists": true
+        },
+        {
+          "ref_text": "@~/.claude/get-shit-done/templates/requirements.md",
+          "resolved_path": "get-shit-done/templates/requirements.md",
+          "exists": true
+        },
+        {
+          "ref_text": "@~/.claude/get-shit-done/workflows/new-milestone.md",
+          "resolved_path": "get-shit-done/workflows/new-milestone.md",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "command_file": "commands/gsd/new-project.md",
+      "refs": [
+        {
+          "ref_text": "@~/.claude/get-shit-done/references/questioning.md",
+          "resolved_path": "get-shit-done/references/questioning.md",
+          "exists": true
+        },
+        {
+          "ref_text": "@~/.claude/get-shit-done/references/ui-brand.md",
+          "resolved_path": "get-shit-done/references/ui-brand.md",
+          "exists": true
+        },
+        {
+          "ref_text": "@~/.claude/get-shit-done/templates/project.md",
+          "resolved_path": "get-shit-done/templates/project.md",
+          "exists": true
+        },
+        {
+          "ref_text": "@~/.claude/get-shit-done/templates/requirements.md",
+          "resolved_path": "get-shit-done/templates/requirements.md",
+          "exists": true
+        },
+        {
+          "ref_text": "@~/.claude/get-shit-done/workflows/new-project.md",
+          "resolved_path": "get-shit-done/workflows/new-project.md",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "command_file": "commands/gsd/pause-work.md",
+      "refs": [
+        {
+          "ref_text": "@~/.claude/get-shit-done/workflows/pause-work.md",
+          "resolved_path": "get-shit-done/workflows/pause-work.md",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "command_file": "commands/gsd/plan-milestone-gaps.md",
+      "refs": [
+        {
+          "ref_text": "@~/.claude/get-shit-done/workflows/plan-milestone-gaps.md",
+          "resolved_path": "get-shit-done/workflows/plan-milestone-gaps.md",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "command_file": "commands/gsd/plan-phase.md",
+      "refs": [
+        {
+          "ref_text": "@~/.claude/get-shit-done/references/ui-brand.md",
+          "resolved_path": "get-shit-done/references/ui-brand.md",
+          "exists": true
+        },
+        {
+          "ref_text": "@~/.claude/get-shit-done/workflows/plan-phase.md",
+          "resolved_path": "get-shit-done/workflows/plan-phase.md",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "command_file": "commands/gsd/progress.md",
+      "refs": [
+        {
+          "ref_text": "@~/.claude/get-shit-done/workflows/progress.md",
+          "resolved_path": "get-shit-done/workflows/progress.md",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "command_file": "commands/gsd/quick.md",
+      "refs": [
+        {
+          "ref_text": "@~/.claude/get-shit-done/workflows/quick.md",
+          "resolved_path": "get-shit-done/workflows/quick.md",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "command_file": "commands/gsd/remove-phase.md",
+      "refs": [
+        {
+          "ref_text": "@~/.claude/get-shit-done/workflows/remove-phase.md",
+          "resolved_path": "get-shit-done/workflows/remove-phase.md",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "command_file": "commands/gsd/research-phase.md",
+      "refs": []
+    },
+    {
+      "command_file": "commands/gsd/restore-project.md",
+      "refs": [
+        {
+          "ref_text": "@~/.claude/get-shit-done/workflows/restore-project.md",
+          "resolved_path": "get-shit-done/workflows/restore-project.md",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "command_file": "commands/gsd/resume-work.md",
+      "refs": [
+        {
+          "ref_text": "@~/.claude/get-shit-done/workflows/resume-project.md",
+          "resolved_path": "get-shit-done/workflows/resume-project.md",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "command_file": "commands/gsd/set-profile.md",
+      "refs": [
+        {
+          "ref_text": "@~/.claude/get-shit-done/workflows/set-profile.md",
+          "resolved_path": "get-shit-done/workflows/set-profile.md",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "command_file": "commands/gsd/settings.md",
+      "refs": [
+        {
+          "ref_text": "@~/.claude/get-shit-done/workflows/settings.md",
+          "resolved_path": "get-shit-done/workflows/settings.md",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "command_file": "commands/gsd/switch.md",
+      "refs": [
+        {
+          "ref_text": "@~/.claude/get-shit-done/workflows/switch.md",
+          "resolved_path": "get-shit-done/workflows/switch.md",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "command_file": "commands/gsd/sync-upstream.md",
+      "refs": [
+        {
+          "ref_text": "@~/.claude/get-shit-done/workflows/sync-upstream.md",
+          "resolved_path": "get-shit-done/workflows/sync-upstream.md",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "command_file": "commands/gsd/team-status.md",
+      "refs": [
+        {
+          "ref_text": "@~/.claude/get-shit-done/workflows/team-status.md",
+          "resolved_path": "get-shit-done/workflows/team-status.md",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "command_file": "commands/gsd/update.md",
+      "refs": [
+        {
+          "ref_text": "@~/.claude/get-shit-done/workflows/update.md",
+          "resolved_path": "get-shit-done/workflows/update.md",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "command_file": "commands/gsd/validate-phase.md",
+      "refs": [
+        {
+          "ref_text": "@~/.claude/get-shit-done/workflows/validate-phase.md",
+          "resolved_path": "get-shit-done/workflows/validate-phase.md",
+          "exists": true
+        }
+      ]
+    },
+    {
+      "command_file": "commands/gsd/verify-work.md",
+      "refs": [
+        {
+          "ref_text": "@~/.claude/get-shit-done/templates/UAT.md",
+          "resolved_path": "get-shit-done/templates/UAT.md",
+          "exists": true
+        },
+        {
+          "ref_text": "@~/.claude/get-shit-done/workflows/verify-work.md",
+          "resolved_path": "get-shit-done/workflows/verify-work.md",
+          "exists": true
+        }
+      ]
+    }
+  ]
+}

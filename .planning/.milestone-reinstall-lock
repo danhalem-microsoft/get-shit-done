@@ -1,0 +1,4 @@
+milestone: v1.1 (Murder-Merge Recovery)
+created: 2026-04-17
+purpose: Prevent accidental `install.js --global` during recovery.
+removed-by: Phase 9, SAFE-06 (first task) — .planning/users/dan-halem/gsd-multi-user-monorepo-support/ROADMAP.md
