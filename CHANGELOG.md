@@ -18,16 +18,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Multi-User Support**: Multiple users can run independent GSD projects in the same monorepo without conflicting on planning artifacts, state, or git history
 - **Identity Resolution**: Automatic user identity from `git config user.name` with fallback chain (email → OS username), locked in `.planning/user-map.json`
 - **Active Project Context**: Per-user `.active` file (gitignored) tracks current project; overridable via `GSD_USER`/`GSD_PROJECT` env vars
-- **`/gsd:switch [project]`**: Switch active project (exact + fuzzy match) or list all projects with status summary
-- **`/gsd:team-status`**: Cross-user visibility — scans all user directories, reads STATE.md frontmatter, displays summary table (User, Project, Phase, Progress, Last Active)
-- **`/gsd:archive-project`**: Archive completed projects to `_archived/`, excluded from listings
-- **`/gsd:restore-project`**: Restore archived projects back to active directory
+- **`/gsd-switch [project]`**: Switch active project (exact + fuzzy match) or list all projects with status summary
+- **`/gsd-team-status`**: Cross-user visibility — scans all user directories, reads STATE.md frontmatter, displays summary table (User, Project, Phase, Progress, Last Active)
+- **`/gsd-archive-project`**: Archive completed projects to `_archived/`, excluded from listings
+- **`/gsd-restore-project`**: Restore archived projects back to active directory
 - **4-Tier Config Precedence**: defaults < `.planning/config.json` (global) < per-project `config.json` < `GSD_*` environment variables
 - **`config-resolve` Command**: Debug config layering — shows resolved value, source layer, and full chain
 - **9 GSD_* Environment Variables**: `GSD_MODEL_PROFILE`, `GSD_PARALLELIZATION`, `GSD_COMMIT_DOCS`, `GSD_RESEARCH`, `GSD_PLAN_CHECK`, `GSD_VERIFIER`, `GSD_BRANCHING_STRATEGY`, `GSD_SEARCH_GITIGNORED`, `GSD_MODEL_OVERRIDES`
 - **Commit Attribution**: Planning artifact commits auto-prefixed with `user/project/` scope (e.g., `docs(dan/frontend/phase-03):`)
 - **Legacy Migration Flow**: Detects old flat `.planning/PROJECT.md` structure and offers auto-migrate (copy-then-delete) or manual instructions; replaces hard error
-- **Single-Project Auto-Select**: If user has exactly one project, it's auto-selected without requiring `/gsd:switch`
+- **Single-Project Auto-Select**: If user has exactly one project, it's auto-selected without requiring `/gsd-switch`
 - **Per-Project Config**: Each project gets its own `config.json` seeded from global defaults at creation time
 - **CI/CD Detection**: `CI=true` or `GITHUB_ACTIONS=true` environments refuse to auto-create user directories
 - **Decision Logging Integration**: Wired into `discuss-phase`, `new-project`, `new-milestone`, and `plan-phase` workflows
@@ -41,8 +41,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`tryGetPlanningContext()`**: Now handles legacy detection and returns `legacy_detected` flag
 - **All 8 core modules**: Migrated from hardcoded `.planning/` to `getPlanningRoot()`
 - **83 workflow/agent files**: Updated to use resolved paths from init output
-- **`/gsd:new-project`**: Two-step bootstrap pattern (project name first, then init after directory exists)
-- **`/gsd:progress`**: Shows user/project context header; handles no-active-project gracefully
+- **`/gsd-new-project`**: Two-step bootstrap pattern (project name first, then init after directory exists)
+- **`/gsd-progress`**: Shows user/project context header; handles no-active-project gracefully
 - **`cmdCommit()`**: Auto-detects active context and adds user/project attribution to planning commits
 
 ### Stats
@@ -58,13 +58,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - **Patch skills deprecated**: All 4 patch skill directories (`gsd-patch`, `gsd-antagonist-patch`, `gsd-researcher-patch`, `gsd-synthesizer-patch`) are replaced by native fork integration. Remove old patch skill directories from `~/.claude/skills/`.
 - **Auto-repatch removed**: The `update.md` workflow no longer runs auto-repatch. Updates use `git pull` + `node install.js` instead of npm + reapply-patches.
-- **`/gsd:reapply-patches` deprecated**: No longer needed — all customizations ship natively with the fork.
+- **`/gsd-reapply-patches` deprecated**: No longer needed — all customizations ship natively with the fork.
 
 ### Added
 
 - **Decision Logging**: Per-session decision log files in `.planning/decisions/` capturing Q&A exchanges during discuss-phase, new-project, new-milestone, and plan-phase workflows
-- **Taste Library**: Decision preference extraction (`/gsd:extract-taste`), manual creation (`/gsd:add-taste`), consultation during discuss-phase, and auto-extraction hook in complete-milestone
-- **5 New Commands**: `/gsd:add-taste`, `/gsd:extract-taste`, `/gsd:add-mistake`, `/gsd:mistakes`, `/gsd:sync-upstream`
+- **Taste Library**: Decision preference extraction (`/gsd-extract-taste`), manual creation (`/gsd-add-taste`), consultation during discuss-phase, and auto-extraction hook in complete-milestone
+- **5 New Commands**: `/gsd-add-taste`, `/gsd-extract-taste`, `/gsd-add-mistake`, `/gsd-mistakes`, `/gsd-sync-upstream`
 - **6 Critic Agents**: `gsd-critic-plan`, `gsd-critic-code`, `gsd-critic-scope`, `gsd-critic-verify`, `gsd-critic-discuss`, `gsd-critic-strategy` — quality gates with structured finding reports
 - **11 Researcher Types**: `stack`, `features`, `pitfalls`, `architecture`, `conventions`, `data-model`, `build-system`, `deployment`, `testing`, `phase-research`, `_template` — AI-powered selection and adaptive synthesis
 - **Adaptive Synthesizer**: `gsd-research-synthesizer` adapts output format based on researcher findings
@@ -91,14 +91,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - **Auto-repatch workflow**: All 4 `<!-- gsd-patch:auto-repatch* -->` sections removed from `update.md`
 - **Patch skill dependencies**: No longer requires external patch skills to be installed
-- **`/gsd:reapply-patches` relevance**: Command still exists but is no longer referenced by update workflow
+- **`/gsd-reapply-patches` relevance**: Command still exists but is no longer referenced by update workflow
 
 ### Migration Guide
 
 **Before (v4.x):**
 1. Install via `npx get-shit-done-cc@latest`
 2. Install patch skills: `gsd-patch`, `gsd-antagonist-patch`, `gsd-researcher-patch`, `gsd-synthesizer-patch`
-3. After each GSD update: `/gsd:reapply-patches` to re-apply customizations
+3. After each GSD update: `/gsd-reapply-patches` to re-apply customizations
 4. Patch skills maintained separately from GSD core
 
 **After (v5.0):**
@@ -120,7 +120,7 @@ rm -rf ~/.claude/skills/gsd-taste-patch/
 ## [1.22.4] - 2026-03-03
 
 ### Added
-- `--discuss` flag for `/gsd:quick` — lightweight pre-planning discussion to gather context before quick tasks
+- `--discuss` flag for `/gsd-quick` — lightweight pre-planning discussion to gather context before quick tasks
 
 ### Fixed
 - Windows: `@file:` protocol resolution for large init payloads (>50KB) — all 32 workflow/agent files now resolve temp file paths instead of letting agents hallucinate `/tmp` paths (#841)
@@ -183,7 +183,7 @@ rm -rf ~/.claude/skills/gsd-taste-patch/
 - Codex multi-agent support: `request_user_input` mapping, multi-agent config, and agent role generation for Codex runtime
 - Analysis paralysis guard in agents to prevent over-deliberation during planning
 - Exhaustive cross-check and task-level TDD patterns in agent workflows
-- Code-aware discuss phase with codebase scouting — `/gsd:discuss-phase` now analyzes relevant source files before asking questions
+- Code-aware discuss phase with codebase scouting — `/gsd-discuss-phase` now analyzes relevant source files before asking questions
 
 ### Fixed
 - Update checker clears both cache paths to prevent stale version notifications
@@ -214,13 +214,13 @@ rm -rf ~/.claude/skills/gsd-taste-patch/
 
 ### Added
 - YAML frontmatter sync to STATE.md for machine-readable status tracking
-- `/gsd:add-tests` command for post-phase test generation
+- `/gsd-add-tests` command for post-phase test generation
 - Codex runtime support with skills-first installation
 - Standard `project_context` block in gsd-verifier output
 - Codex changelog and usage documentation
 
 ### Changed
-- Improved onboarding UX: installer now suggests `/gsd:new-project` instead of `/gsd:help`
+- Improved onboarding UX: installer now suggests `/gsd-new-project` instead of `/gsd-help`
 - Updated Discord invite to vanity URL (discord.gg/gsd)
 - Compressed Nyquist validation layer to align with GSD meta-prompt conventions
 - Requirements propagation now includes `phase_req_ids` from ROADMAP to workflow agents
@@ -228,7 +228,7 @@ rm -rf ~/.claude/skills/gsd-taste-patch/
 
 ### Fixed
 - Multi-level decimal phase handling (e.g., 72.1.1) with proper regex escaping
-- `/gsd:update` always installs latest package version
+- `/gsd-update` always installs latest package version
 - STATE.md decision corruption and dollar sign handling
 - STATE.md frontmatter mapping for requirements-completed status
 - Progress bar percent clamping to prevent RangeError crashes
@@ -252,7 +252,7 @@ rm -rf ~/.claude/skills/gsd-taste-patch/
 ## [1.20.5] - 2026-02-19
 
 ### Fixed
-- `/gsd:health --repair` now creates timestamped backup before regenerating STATE.md (#657)
+- `/gsd-health --repair` now creates timestamped backup before regenerating STATE.md (#657)
 
 ### Changed
 - Subagents now discover and load project CLAUDE.md and skills at spawn time for better project context (#671, #672)
@@ -300,15 +300,15 @@ rm -rf ~/.claude/skills/gsd-taste-patch/
 ## [1.20.0] - 2026-02-15
 
 ### Added
-- `/gsd:health` command — validates `.planning/` directory integrity with `--repair` flag for auto-fixing config.json and STATE.md
-- `--full` flag for `/gsd:quick` — enables plan-checking (max 2 iterations) and post-execution verification on quick tasks
-- `--auto` flag wired from `/gsd:new-project` through the full phase chain (discuss → plan → execute)
+- `/gsd-health` command — validates `.planning/` directory integrity with `--repair` flag for auto-fixing config.json and STATE.md
+- `--full` flag for `/gsd-quick` — enables plan-checking (max 2 iterations) and post-execution verification on quick tasks
+- `--auto` flag wired from `/gsd-new-project` through the full phase chain (discuss → plan → execute)
 - Auto-advance chains phase execution across full milestones when `workflow.auto_advance` is enabled
 
 ### Fixed
-- Plans created without user context — `/gsd:plan-phase` warns when no CONTEXT.md exists, `/gsd:discuss-phase` warns when plans already exist (#253)
+- Plans created without user context — `/gsd-plan-phase` warns when no CONTEXT.md exists, `/gsd-discuss-phase` warns when plans already exist (#253)
 - OpenCode installer converts `general-purpose` subagent type to OpenCode's `general`
-- `/gsd:complete-milestone` respects `commit_docs` setting when merging branches
+- `/gsd-complete-milestone` respects `commit_docs` setting when merging branches
 - Phase directories tracked in git via `.gitkeep` files
 
 ## [1.19.2] - 2026-02-15
@@ -365,12 +365,12 @@ rm -rf ~/.claude/skills/gsd-taste-patch/
 ## [1.18.0] - 2026-02-08
 
 ### Added
-- `--auto` flag for `/gsd:new-project` — runs research → requirements → roadmap automatically after config questions. Expects idea document via @ reference (e.g., `/gsd:new-project --auto @prd.md`)
+- `--auto` flag for `/gsd-new-project` — runs research → requirements → roadmap automatically after config questions. Expects idea document via @ reference (e.g., `/gsd-new-project --auto @prd.md`)
 
 ### Fixed
 - Windows: SessionStart hook now spawns detached process correctly
 - Windows: Replaced HEREDOC with literal newlines for git commit compatibility
-- Research decision from `/gsd:new-milestone` now persists to config.json
+- Research decision from `/gsd-new-milestone` now persists to config.json
 
 ## [1.17.0] - 2026-02-08
 
@@ -380,11 +380,11 @@ rm -rf ~/.claude/skills/gsd-taste-patch/
 - **gsd-tools template fill**: `template fill summary/plan/verification` — pre-filled document skeletons
 - **gsd-tools state progression**: `state advance-plan`, `state update-progress`, `state record-metric`, `state add-decision`, `state add-blocker`, `state resolve-blocker`, `state record-session` — automates STATE.md updates
 - **Local patch preservation**: Installer now detects locally modified GSD files, backs them up to `gsd-local-patches/`, and creates a manifest for restoration
-- `/gsd:reapply-patches` command to merge local modifications back after GSD updates
+- `/gsd-reapply-patches` command to merge local modifications back after GSD updates
 
 ### Changed
 - Agents (executor, planner, plan-checker, verifier) now use gsd-tools for state updates and verification instead of manual markdown parsing
-- `/gsd:update` workflow now notifies about backed-up local patches and suggests `/gsd:reapply-patches`
+- `/gsd-update` workflow now notifies about backed-up local patches and suggests `/gsd-reapply-patches`
 
 ### Fixed
 - Added workaround for Claude Code `classifyHandoffIfNeeded` bug that causes false agent failures — execute-phase and quick workflows now spot-check actual output before reporting failure
@@ -474,11 +474,11 @@ rm -rf ~/.claude/skills/gsd-taste-patch/
 - Install respects `attribution.commit` setting for OpenCode compatibility (#286)
 
 ### Fixed
-- **CRITICAL:** Prevent API keys from being committed via `/gsd:map-codebase` (#429)
+- **CRITICAL:** Prevent API keys from being committed via `/gsd-map-codebase` (#429)
 - Enforce context fidelity in planning pipeline - agents now honor CONTEXT.md decisions (#326, #216, #206)
 - Executor verifies task completion to prevent hallucinated success (#315)
-- Auto-create `config.json` when missing during `/gsd:settings` (#264)
-- `/gsd:update` respects local vs global install location
+- Auto-create `config.json` when missing during `/gsd-settings` (#264)
+- `/gsd-update` respects local vs global install location
 - Researcher writes RESEARCH.md regardless of `commit_docs` setting
 - Statusline crash handling, color validation, git staging rules
 - Statusline.js reference updated during install (#330)
@@ -497,7 +497,7 @@ rm -rf ~/.claude/skills/gsd-taste-patch/
 - Context compliance verification dimension in plan checker — flags if plans contradict user decisions
 
 ### Fixed
-- CONTEXT.md from `/gsd:discuss-phase` now properly flows to all downstream agents (researcher, planner, checker, revision loop)
+- CONTEXT.md from `/gsd-discuss-phase` now properly flows to all downstream agents (researcher, planner, checker, revision loop)
 
 ## [1.10.1] - 2025-01-30
 
@@ -516,7 +516,7 @@ rm -rf ~/.claude/skills/gsd-taste-patch/
 ## [1.9.12] - 2025-01-23
 
 ### Removed
-- `/gsd:whats-new` command — use `/gsd:update` instead (shows changelog with cancel option)
+- `/gsd-whats-new` command — use `/gsd-update` instead (shows changelog with cancel option)
 
 ### Fixed
 - Restored auto-release GitHub Actions workflow
@@ -537,7 +537,7 @@ rm -rf ~/.claude/skills/gsd-taste-patch/
 ## [1.9.9] - 2026-01-23
 
 ### Added
-- `/gsd:join-discord` command to quickly access the GSD Discord community invite link
+- `/gsd-join-discord` command to quickly access the GSD Discord community invite link
 
 ## [1.9.8] - 2025-01-22
 
@@ -572,7 +572,7 @@ rm -rf ~/.claude/skills/gsd-taste-patch/
 - Subagents can now access MCP tools (Context7, etc.) - workaround for Claude Code bug #13898
 - Installer: Escape/Ctrl+C now cancels instead of installing globally
 - Installer: Fixed hook paths on Windows
-- Removed stray backticks in `/gsd:new-project` output
+- Removed stray backticks in `/gsd-new-project` output
 
 ### Changed
 - Condensed verbose documentation in templates and workflows (-170 lines)
@@ -591,8 +591,8 @@ rm -rf ~/.claude/skills/gsd-taste-patch/
 
 ### Removed
 - **Codebase Intelligence System** — Removed due to overengineering concerns
-  - Deleted `/gsd:analyze-codebase` command
-  - Deleted `/gsd:query-intel` command
+  - Deleted `/gsd-analyze-codebase` command
+  - Deleted `/gsd-query-intel` command
   - Removed SQLite graph database and sql.js dependency (21MB)
   - Removed intel hooks (gsd-intel-index.js, gsd-intel-session.js, gsd-intel-prune.js)
   - Removed entity file generation and templates
@@ -603,8 +603,8 @@ rm -rf ~/.claude/skills/gsd-taste-patch/
 ## [1.9.0] - 2025-01-20
 
 ### Added
-- **Model Profiles** — `/gsd:set-profile` for quality/balanced/budget agent configurations
-- **Workflow Settings** — `/gsd:settings` command for toggling workflow behaviors interactively
+- **Model Profiles** — `/gsd-set-profile` for quality/balanced/budget agent configurations
+- **Workflow Settings** — `/gsd-settings` command for toggling workflow behaviors interactively
 
 ### Fixed
 - Orchestrators now inline file contents in Task prompts (fixes context issues with @ references)
@@ -615,7 +615,7 @@ rm -rf ~/.claude/skills/gsd-taste-patch/
 
 ### Added
 - Uncommitted planning mode: Keep `.planning/` local-only (not committed to git) via `planning.commit_docs: false` in config.json. Useful for OSS contributions, client work, or privacy preferences.
-- `/gsd:new-project` now asks about git tracking during initial setup, letting you opt out of committing planning docs from the start
+- `/gsd-new-project` now asks about git tracking during initial setup, letting you opt out of committing planning docs from the start
 
 ## [1.7.1] - 2026-01-19
 
@@ -625,7 +625,7 @@ rm -rf ~/.claude/skills/gsd-taste-patch/
 ## [1.7.0] - 2026-01-19
 
 ### Added
-- **Quick Mode** (`/gsd:quick`) — Execute small, ad-hoc tasks with GSD guarantees but skip optional agents (researcher, checker, verifier). Quick tasks live in `.planning/quick/` with their own tracking in STATE.md.
+- **Quick Mode** (`/gsd-quick`) — Execute small, ad-hoc tasks with GSD guarantees but skip optional agents (researcher, checker, verifier). Quick tasks live in `.planning/quick/` with their own tracking in STATE.md.
 
 ### Changed
 - Improved progress bar calculation to clamp values within 0-100 range
@@ -653,7 +653,7 @@ rm -rf ~/.claude/skills/gsd-taste-patch/
 ## [1.6.3] - 2025-01-17
 
 ### Added
-- `--gaps-only` flag for `/gsd:execute-phase` — executes only gap closure plans after verify-work finds issues, eliminating redundant state discovery
+- `--gaps-only` flag for `/gsd-execute-phase` — executes only gap closure plans after verify-work finds issues, eliminating redundant state discovery
 
 ## [1.6.2] - 2025-01-17
 
@@ -668,28 +668,28 @@ rm -rf ~/.claude/skills/gsd-taste-patch/
 
 ### Changed
 - Installer performs clean install of GSD folders, removing orphaned files from previous versions
-- `/gsd:update` shows changelog and asks for confirmation before updating, with clear warning about what gets replaced
+- `/gsd-update` shows changelog and asks for confirmation before updating, with clear warning about what gets replaced
 
 ## [1.6.0] - 2026-01-17
 
 ### Changed
-- **BREAKING:** Unified `/gsd:new-milestone` flow — now mirrors `/gsd:new-project` with questioning → research → requirements → roadmap in a single command
+- **BREAKING:** Unified `/gsd-new-milestone` flow — now mirrors `/gsd-new-project` with questioning → research → requirements → roadmap in a single command
 - Roadmapper agent now references templates instead of inline structures for easier maintenance
 
 ### Removed
-- **BREAKING:** `/gsd:discuss-milestone` — consolidated into `/gsd:new-milestone`
-- **BREAKING:** `/gsd:create-roadmap` — integrated into project/milestone flows
-- **BREAKING:** `/gsd:define-requirements` — integrated into project/milestone flows
-- **BREAKING:** `/gsd:research-project` — integrated into project/milestone flows
+- **BREAKING:** `/gsd-discuss-milestone` — consolidated into `/gsd-new-milestone`
+- **BREAKING:** `/gsd-create-roadmap` — integrated into project/milestone flows
+- **BREAKING:** `/gsd-define-requirements` — integrated into project/milestone flows
+- **BREAKING:** `/gsd-research-project` — integrated into project/milestone flows
 
 ### Added
-- `/gsd:verify-work` now includes next-step routing after verification completes
+- `/gsd-verify-work` now includes next-step routing after verification completes
 
 ## [1.5.30] - 2026-01-17
 
 ### Fixed
 - Output templates in `plan-phase`, `execute-phase`, and `audit-milestone` now render markdown correctly instead of showing literal backticks
-- Next-step suggestions now consistently recommend `/gsd:discuss-phase` before `/gsd:plan-phase` across all routing paths
+- Next-step suggestions now consistently recommend `/gsd-discuss-phase` before `/gsd-plan-phase` across all routing paths
 
 ## [1.5.29] - 2025-01-16
 
@@ -706,7 +706,7 @@ rm -rf ~/.claude/skills/gsd-taste-patch/
 ### Changed
 - Consolidated milestone workflow into single command
 - Merged domain expertise skills into agent configurations
-- **BREAKING:** Removed `/gsd:execute-plan` command (use `/gsd:execute-phase` instead)
+- **BREAKING:** Removed `/gsd-execute-plan` command (use `/gsd-execute-phase` instead)
 
 ### Fixed
 - Phase directory matching now handles both zero-padded (05-*) and unpadded (5-*) folder names
@@ -744,12 +744,12 @@ rm -rf ~/.claude/skills/gsd-taste-patch/
 - Consistent zero-padding for phase directories (01-name, not 1-name)
 - Plan file naming: `{phase}-{plan}-PLAN.md` pattern restored across all agents
 - Double-path bug in researcher git add command
-- Removed `/gsd:research-phase` from next-step suggestions (use `/gsd:plan-phase` instead)
+- Removed `/gsd-research-phase` from next-step suggestions (use `/gsd-plan-phase` instead)
 
 ## [1.5.22] - 2025-01-16
 
 ### Added
-- Statusline update indicator — shows `⬆ /gsd:update` when a new version is available
+- Statusline update indicator — shows `⬆ /gsd-update` when a new version is available
 
 ### Fixed
 - Planner now updates ROADMAP.md placeholders after planning completes
@@ -761,9 +761,9 @@ rm -rf ~/.claude/skills/gsd-taste-patch/
 - Research synthesizer agent that consolidates parallel research into SUMMARY.md
 
 ### Changed
-- **Unified `/gsd:new-project` flow** — Single command now handles questions → research → requirements → roadmap (~10 min)
+- **Unified `/gsd-new-project` flow** — Single command now handles questions → research → requirements → roadmap (~10 min)
 - Simplified README to reflect streamlined workflow: new-project → plan-phase → execute-phase
-- Added optional `/gsd:discuss-phase` documentation for UI/UX/behavior decisions before planning
+- Added optional `/gsd-discuss-phase` documentation for UI/UX/behavior decisions before planning
 
 ### Fixed
 - verify-work now shows clear checkpoint box with action prompt ("Type 'pass' or describe what's wrong")
@@ -786,11 +786,11 @@ rm -rf ~/.claude/skills/gsd-taste-patch/
 ## [1.5.19] - 2026-01-16
 
 ### Changed
-- `/gsd:discuss-phase` redesigned with intelligent gray area analysis — analyzes phase to identify discussable areas (UI, UX, Behavior, etc.), presents multi-select for user control, deep-dives each area with focused questioning
+- `/gsd-discuss-phase` redesigned with intelligent gray area analysis — analyzes phase to identify discussable areas (UI, UX, Behavior, etc.), presents multi-select for user control, deep-dives each area with focused questioning
 - Explicit scope guardrail prevents scope creep during discussion — captures deferred ideas without acting on them
 - CONTEXT.md template restructured for decisions (domain boundary, decisions by category, Claude's discretion, deferred ideas)
 - Downstream awareness: discuss-phase now explicitly documents that CONTEXT.md feeds researcher and planner agents
-- `/gsd:plan-phase` now integrates research — spawns `gsd-phase-researcher` before planning unless research exists or `--skip-research` flag used
+- `/gsd-plan-phase` now integrates research — spawns `gsd-phase-researcher` before planning unless research exists or `--skip-research` flag used
 
 ## [1.5.18] - 2026-01-16
 
@@ -807,7 +807,7 @@ rm -rf ~/.claude/skills/gsd-taste-patch/
 - **Statusline integration** — Context usage, model, and current task display
 
 ### Changed
-- `/gsd:plan-phase` refactored to thin orchestrator pattern (310 lines)
+- `/gsd-plan-phase` refactored to thin orchestrator pattern (310 lines)
   - Spawns `gsd-planner` for planning, `gsd-plan-checker` for verification
   - User sees status between agent spawns (not a black box)
 - Planning references deprecated with redirects to `gsd-planner` agent sections
@@ -823,7 +823,7 @@ rm -rf ~/.claude/skills/gsd-taste-patch/
 ## [1.5.17] - 2026-01-15
 
 ### Added
-- New `/gsd:update` command — check for updates, install, and display changelog of what changed (better UX than raw `npx get-shit-done-cc`)
+- New `/gsd-update` command — check for updates, install, and display changelog of what changed (better UX than raw `npx get-shit-done-cc`)
 
 ## [1.5.16] - 2026-01-15
 
@@ -834,10 +834,10 @@ rm -rf ~/.claude/skills/gsd-taste-patch/
 - Research subagent prompt template for context-only spawning
 
 ### Changed
-- `/gsd:research-phase` refactored to thin orchestrator — now injects rich context (key insight framing, downstream consumer info, quality gates) to gsd-researcher agent
-- `/gsd:research-project` refactored to spawn 4 parallel gsd-researcher agents with milestone-aware context (greenfield vs v1.1+) and roadmap implications guidance
-- `/gsd:debug` refactored to thin orchestrator (149 lines) — spawns gsd-debugger agent with full debugging expertise
-- `/gsd:new-milestone` now explicitly references MILESTONE-CONTEXT.md
+- `/gsd-research-phase` refactored to thin orchestrator — now injects rich context (key insight framing, downstream consumer info, quality gates) to gsd-researcher agent
+- `/gsd-research-project` refactored to spawn 4 parallel gsd-researcher agents with milestone-aware context (greenfield vs v1.1+) and roadmap implications guidance
+- `/gsd-debug` refactored to thin orchestrator (149 lines) — spawns gsd-debugger agent with full debugging expertise
+- `/gsd-new-milestone` now explicitly references MILESTONE-CONTEXT.md
 
 ### Deprecated
 - `workflows/research-phase.md` — consolidated into gsd-researcher agent
@@ -853,18 +853,18 @@ rm -rf ~/.claude/skills/gsd-taste-patch/
 - **Agents now install correctly** — The `agents/` folder (gsd-executor, gsd-verifier, gsd-integration-checker, gsd-milestone-auditor) was missing from npm package, now included
 
 ### Changed
-- Consolidated `/gsd:plan-fix` into `/gsd:plan-phase --gaps` for simpler workflow
+- Consolidated `/gsd-plan-fix` into `/gsd-plan-phase --gaps` for simpler workflow
 - UAT file writes now batched instead of per-response for better performance
 
 ## [1.5.14] - 2025-01-15
 
 ### Fixed
-- Plan-phase now always routes to `/gsd:execute-phase` after planning, even for single-plan phases
+- Plan-phase now always routes to `/gsd-execute-phase` after planning, even for single-plan phases
 
 ## [1.5.13] - 2026-01-15
 
 ### Fixed
-- `/gsd:new-milestone` now presents research and requirements paths as equal options, matching `/gsd:new-project` format
+- `/gsd-new-milestone` now presents research and requirements paths as equal options, matching `/gsd-new-project` format
 
 ## [1.5.12] - 2025-01-15
 
@@ -879,7 +879,7 @@ rm -rf ~/.claude/skills/gsd-taste-patch/
 
 ### Fixed
 - `MILESTONE-AUDIT.md` now versioned as `v{version}-MILESTONE-AUDIT.md` and archived on completion
-- `progress` now correctly routes to `/gsd:discuss-milestone` when between milestones (Route F)
+- `progress` now correctly routes to `/gsd-discuss-milestone` when between milestones (Route F)
 
 ## [1.5.11] - 2025-01-15
 
@@ -897,12 +897,12 @@ rm -rf ~/.claude/skills/gsd-taste-patch/
 ## [1.5.9] - 2025-01-15
 
 ### Added
-- Milestone audit system (`/gsd:audit-milestone`) for verifying milestone completion with parallel verification agents
+- Milestone audit system (`/gsd-audit-milestone`) for verifying milestone completion with parallel verification agents
 
 ### Changed
 - Checkpoint display format improved with box headers and unmissable "→ YOUR ACTION:" prompts
 - Subagent colors updated (executor: yellow, integration-checker: blue)
-- Execute-phase now recommends `/gsd:audit-milestone` when milestone completes
+- Execute-phase now recommends `/gsd-audit-milestone` when milestone completes
 
 ### Fixed
 - Research-phase no longer gatekeeps by domain type
@@ -965,7 +965,7 @@ rm -rf ~/.claude/skills/gsd-taste-patch/
 - **define-requirements**: Works without prior research. Gathers requirements through conversation when FEATURES.md doesn't exist.
 
 ### Removed
-- Dead `/gsd:status` command (referenced abandoned background agent model)
+- Dead `/gsd-status` command (referenced abandoned background agent model)
 - Unused `agent-history.md` template
 - `_archive/` directory with old execute-phase version
 
@@ -993,8 +993,8 @@ rm -rf ~/.claude/skills/gsd-taste-patch/
 ## [1.5.0] - 2026-01-14
 
 ### Added
-- New `/gsd:research-project` command for pre-roadmap ecosystem research — spawns parallel agents to investigate stack, features, architecture, and pitfalls before you commit to a roadmap
-- New `/gsd:define-requirements` command for scoping v1 requirements from research findings — transforms "what exists in this domain" into "what we're building"
+- New `/gsd-research-project` command for pre-roadmap ecosystem research — spawns parallel agents to investigate stack, features, architecture, and pitfalls before you commit to a roadmap
+- New `/gsd-define-requirements` command for scoping v1 requirements from research findings — transforms "what exists in this domain" into "what we're building"
 - Requirements traceability: phases now map to specific requirement IDs with 100% coverage validation
 
 ### Changed
@@ -1030,7 +1030,7 @@ rm -rf ~/.claude/skills/gsd-taste-patch/
 ## [1.4.25] - 2026-01-14
 
 ### Added
-- New `/gsd:whats-new` command shows changes since your installed version
+- New `/gsd-whats-new` command shows changes since your installed version
 - VERSION file written during installation for version tracking
 - CHANGELOG.md now included in package installation
 
@@ -1163,7 +1163,7 @@ rm -rf ~/.claude/skills/gsd-taste-patch/
 ## [1.4.3] - 2026-01-13
 
 ### Added
-- `/gsd:debug` command for systematic debugging with persistent state
+- `/gsd-debug` command for systematic debugging with persistent state
 
 ## [1.4.2] - 2026-01-13
 
@@ -1173,9 +1173,9 @@ rm -rf ~/.claude/skills/gsd-taste-patch/
 ## [1.4.1] - 2026-01-13
 
 ### Added
-- Parallel phase execution via `/gsd:execute-phase`
-- Parallel-aware planning in `/gsd:plan-phase`
-- `/gsd:status` command for parallel agent monitoring
+- Parallel phase execution via `/gsd-execute-phase`
+- Parallel-aware planning in `/gsd-plan-phase`
+- `/gsd-status` command for parallel agent monitoring
 - Parallelization configuration in config.json
 - Wave-based parallel execution with dependency graphs
 
@@ -1198,7 +1198,7 @@ rm -rf ~/.claude/skills/gsd-taste-patch/
 ## [1.3.34] - 2026-01-11
 
 ### Added
-- `/gsd:add-todo` and `/gsd:check-todos` for mid-session idea capture
+- `/gsd-add-todo` and `/gsd-check-todos` for mid-session idea capture
 
 ## [1.3.33] - 2026-01-11
 
@@ -1211,7 +1211,7 @@ rm -rf ~/.claude/skills/gsd-taste-patch/
 ## [1.3.32] - 2026-01-10
 
 ### Added
-- `/gsd:resume-task` for resuming interrupted subagent executions
+- `/gsd-resume-task` for resuming interrupted subagent executions
 
 ## [1.3.31] - 2026-01-08
 
@@ -1227,15 +1227,15 @@ rm -rf ~/.claude/skills/gsd-taste-patch/
 ## [1.3.29] - 2026-01-08
 
 ### Added
-- `/gsd:verify-work` for conversational UAT validation
-- `/gsd:plan-fix` for fixing UAT issues
+- `/gsd-verify-work` for conversational UAT validation
+- `/gsd-plan-fix` for fixing UAT issues
 - UAT issues template
 
 ## [1.3.28] - 2026-01-07
 
 ### Added
 - `--config-dir` CLI argument for multi-account setups
-- `/gsd:remove-phase` command
+- `/gsd-remove-phase` command
 
 ### Fixed
 - Validation for --config-dir edge cases
@@ -1383,12 +1383,12 @@ rm -rf ~/.claude/skills/gsd-taste-patch/
 ## [1.3.1] - 2025-12-17
 
 ### Added
-- `/gsd:map-codebase` documentation in help and README
+- `/gsd-map-codebase` documentation in help and README
 
 ## [1.3.0] - 2025-12-17
 
 ### Added
-- `/gsd:map-codebase` command for brownfield project analysis
+- `/gsd-map-codebase` command for brownfield project analysis
 - Codebase map templates (stack, architecture, structure, conventions, testing, integrations, concerns)
 - Parallel Explore agent orchestration for codebase analysis
 - Brownfield integration into GSD workflows
@@ -1484,9 +1484,9 @@ rm -rf ~/.claude/skills/gsd-taste-patch/
 
 ### Added
 - Pre-roadmap research workflow
-- `/gsd:research-phase` for niche domain ecosystem discovery
-- `/gsd:research-project` command with workflow and templates
-- `/gsd:create-roadmap` command with research-aware workflow
+- `/gsd-research-phase` for niche domain ecosystem discovery
+- `/gsd-research-project` command with workflow and templates
+- `/gsd-create-roadmap` command with research-aware workflow
 - Research subagent prompt templates
 
 ### Changed
@@ -1496,7 +1496,7 @@ rm -rf ~/.claude/skills/gsd-taste-patch/
 ## [1.0.11] - 2025-12-15
 
 ### Added
-- `/gsd:research-phase` for niche domain ecosystem discovery
+- `/gsd-research-phase` for niche domain ecosystem discovery
 
 ## [1.0.10] - 2025-12-15
 
@@ -1556,7 +1556,7 @@ rm -rf ~/.claude/skills/gsd-taste-patch/
 
 ### Added
 - Initial release of GSD (Get Shit Done) meta-prompting system
-- Core slash commands: `/gsd:new-project`, `/gsd:discuss-phase`, `/gsd:plan-phase`, `/gsd:execute-phase`
+- Core slash commands: `/gsd-new-project`, `/gsd-discuss-phase`, `/gsd-plan-phase`, `/gsd-execute-phase`
 - PROJECT.md and STATE.md templates
 - Phase-based development workflow
 - YOLO mode for autonomous execution

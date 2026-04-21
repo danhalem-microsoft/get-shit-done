@@ -11,12 +11,16 @@ Read all files referenced by the invoking prompt's execution_context before star
 <step name="parse_args">
 **Parse arguments:**
 
-Check if `--repair` flag is present in the command arguments.
+Check if `--repair` or `--backfill` flags are present in the command arguments.
 
 ```
 REPAIR_FLAG=""
+BACKFILL_FLAG=""
 if arguments contain "--repair"; then
   REPAIR_FLAG="--repair"
+fi
+if arguments contain "--backfill"; then
+  BACKFILL_FLAG="--backfill"
 fi
 ```
 </step>
@@ -25,7 +29,7 @@ fi
 **Run health validation:**
 
 ```bash
-node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" validate health $REPAIR_FLAG
+gsd-sdk query validate.health $REPAIR_FLAG $BACKFILL_FLAG
 ```
 
 Parse JSON output:
@@ -62,18 +66,18 @@ Errors: N | Warnings: N | Info: N
 ## Errors
 
 - [E001] config.json: JSON parse error at line 5
-  Fix: Run /gsd:health --repair to reset to defaults
+  Fix: Run /gsd-health --repair to reset to defaults
 
 - [E002] PROJECT.md not found
-  Fix: Run /gsd:new-project to create
+  Fix: Run /gsd-new-project to create
 ```
 
 **If warnings exist:**
 ```
 ## Warnings
 
-- [W001] STATE.md references phase 5, but only phases 1-3 exist
-  Fix: Run /gsd:health --repair to regenerate
+- [W002] STATE.md references phase 5, but only phases 1-3 exist
+  Fix: Review STATE.md manually before changing it; repair will not overwrite an existing STATE.md
 
 - [W005] Phase directory "1-setup" doesn't follow NN-name format
   Fix: Rename to match pattern (e.g., 01-setup)
@@ -90,7 +94,7 @@ Errors: N | Warnings: N | Info: N
 **Footer (if repairable issues exist and --repair was NOT used):**
 ```
 ---
-N issues can be auto-repaired. Run: /gsd:health --repair
+N issues can be auto-repaired. Run: /gsd-health --repair
 ```
 </step>
 
@@ -100,7 +104,7 @@ N issues can be auto-repaired. Run: /gsd:health --repair
 Ask user if they want to run repairs:
 
 ```
-Would you like to run /gsd:health --repair to fix N issues automatically?
+Would you like to run /gsd-health --repair to fix N issues automatically?
 ```
 
 If yes, re-run with --repair flag and display results.
@@ -112,7 +116,7 @@ If yes, re-run with --repair flag and display results.
 Re-run health check without --repair to confirm issues are resolved:
 
 ```bash
-node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" validate health
+gsd-sdk query validate.health
 ```
 
 Report final status.
@@ -130,7 +134,7 @@ Report final status.
 | E004 | error | STATE.md not found | Yes |
 | E005 | error | config.json parse error | Yes |
 | W001 | warning | PROJECT.md missing required section | No |
-| W002 | warning | STATE.md references invalid phase | Yes |
+| W002 | warning | STATE.md references invalid phase | No |
 | W003 | warning | config.json not found | Yes |
 | W004 | warning | config.json invalid field value | No |
 | W005 | warning | Phase directory naming mismatch | No |
@@ -138,6 +142,8 @@ Report final status.
 | W007 | warning | Phase on disk but not in ROADMAP | No |
 | W008 | warning | config.json: workflow.nyquist_validation absent (defaults to enabled but agents may skip) | Yes |
 | W009 | warning | Phase has Validation Architecture in RESEARCH.md but no VALIDATION.md | No |
+| W018 | warning | MILESTONES.md missing entry for archived milestone snapshot | Yes (`--backfill`) |
+| W019 | warning | Unrecognized .planning/ root file — not a canonical GSD artifact | No |
 | I001 | info | Plan without SUMMARY (may be in progress) | No |
 
 </error_codes>
@@ -148,8 +154,9 @@ Report final status.
 |--------|--------|------|
 | createConfig | Create config.json with defaults | None |
 | resetConfig | Delete + recreate config.json | Loses custom settings |
-| regenerateState | Create STATE.md from ROADMAP structure | Loses session history |
+| regenerateState | Create STATE.md from ROADMAP structure when it is missing | Loses session history |
 | addNyquistKey | Add workflow.nyquist_validation: true to config.json | None — matches existing default |
+| backfillMilestones | Synthesize missing MILESTONES.md entries from `.planning/milestones/vX.Y-ROADMAP.md` snapshots | None — additive only; triggered by `--backfill` flag |
 
 **Not repairable (too risky):**
 - PROJECT.md, ROADMAP.md content
@@ -157,3 +164,25 @@ Report final status.
 - Orphaned plan cleanup
 
 </repair_actions>
+
+<stale_task_cleanup>
+**Windows-specific:** Check for stale Claude Code task directories that accumulate on crash/freeze.
+These are left behind when subagents are force-killed and consume disk space.
+
+When `--repair` is active, detect and clean up:
+
+```bash
+# Check for stale task directories (older than 24 hours)
+TASKS_DIR="$HOME/.claude/tasks"
+if [ -d "$TASKS_DIR" ]; then
+  STALE_COUNT=$( (find "$TASKS_DIR" -maxdepth 1 -type d -mtime +1 2>/dev/null || true) | wc -l )
+  if [ "$STALE_COUNT" -gt 0 ]; then
+    echo "⚠️  Found $STALE_COUNT stale task directories in ~/.claude/tasks/"
+    echo "   These are leftover from crashed subagent sessions."
+    echo "   Run: rm -rf ~/.claude/tasks/*  (safe — only affects dead sessions)"
+  fi
+fi
+```
+
+Report as info diagnostic: `I002 | info | Stale subagent task directories found | Yes (--repair removes them)`
+</stale_task_cleanup>

@@ -3,38 +3,24 @@
  */
 
 const { test, describe, beforeEach, afterEach } = require('node:test');
-const assert = require('node:assert');
+const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
-const { runGsdTools, createTempMultiUserProject, cleanup } = require('./helpers.cjs');
-const { clearPlanningRootCache } = require('../get-shit-done/bin/lib/core.cjs');
-
-/** Helper: create multi-user project with common planning files. */
-function setupMultiUserProjectWithFiles(opts = {}) {
-  const { tmpDir, userSlug, projectName } = createTempMultiUserProject(opts);
-  const planningRoot = `.planning/users/${userSlug}/${projectName}`;
-  const projectDir = path.join(tmpDir, planningRoot);
-
-  return { tmpDir, userSlug, projectName, planningRoot, projectDir };
-}
+const { runGsdTools, createTempProject, cleanup } = require('./helpers.cjs');
 
 describe('init commands', () => {
-  let tmpDir, planningRoot, projectDir;
+  let tmpDir;
 
   beforeEach(() => {
-    const ctx = setupMultiUserProjectWithFiles();
-    tmpDir = ctx.tmpDir;
-    planningRoot = ctx.planningRoot;
-    projectDir = ctx.projectDir;
+    tmpDir = createTempProject();
   });
 
   afterEach(() => {
-    clearPlanningRootCache();
     cleanup(tmpDir);
   });
 
   test('init execute-phase returns file paths', () => {
-    const phaseDir = path.join(projectDir, 'phases', '03-api');
+    const phaseDir = path.join(tmpDir, '.planning', 'phases', '03-api');
     fs.mkdirSync(phaseDir, { recursive: true });
     fs.writeFileSync(path.join(phaseDir, '03-01-PLAN.md'), '# Plan');
 
@@ -42,13 +28,47 @@ describe('init commands', () => {
     assert.ok(result.success, `Command failed: ${result.error}`);
 
     const output = JSON.parse(result.output);
-    assert.strictEqual(output.state_path, `${planningRoot}/STATE.md`);
-    assert.strictEqual(output.roadmap_path, `${planningRoot}/ROADMAP.md`);
-    assert.strictEqual(output.config_path, `${planningRoot}/config.json`);
+    assert.strictEqual(output.state_path, '.planning/STATE.md');
+    assert.strictEqual(output.roadmap_path, '.planning/ROADMAP.md');
+    assert.strictEqual(output.config_path, '.planning/config.json');
+  });
+
+  test('init execute-phase respects model_overrides for executor_model', () => {
+    const phaseDir = path.join(tmpDir, '.planning', 'phases', '01-foundation');
+    fs.mkdirSync(phaseDir, { recursive: true });
+    fs.writeFileSync(path.join(phaseDir, '01-01-PLAN.md'), '# Plan');
+    fs.writeFileSync(path.join(tmpDir, '.planning', 'config.json'), JSON.stringify({
+      model_profile: 'balanced',
+      model_overrides: { 'gsd-executor': 'openai/o4-mini' },
+    }));
+
+    const result = runGsdTools('init execute-phase 1 --raw', tmpDir, { HOME: tmpDir });
+    assert.ok(result.success, `Command failed: ${result.error}`);
+
+    const output = JSON.parse(result.output);
+    assert.strictEqual(output.executor_model, 'openai/o4-mini',
+      'model_overrides["gsd-executor"] must take precedence over profile');
+  });
+
+  test('init execute-phase respects model_overrides when resolve_model_ids is omit', () => {
+    const phaseDir = path.join(tmpDir, '.planning', 'phases', '01-foundation');
+    fs.mkdirSync(phaseDir, { recursive: true });
+    fs.writeFileSync(path.join(phaseDir, '01-01-PLAN.md'), '# Plan');
+    fs.writeFileSync(path.join(tmpDir, '.planning', 'config.json'), JSON.stringify({
+      resolve_model_ids: 'omit',
+      model_overrides: { 'gsd-executor': 'openai/o4-mini' },
+    }));
+
+    const result = runGsdTools('init execute-phase 1 --raw', tmpDir, { HOME: tmpDir });
+    assert.ok(result.success, `Command failed: ${result.error}`);
+
+    const output = JSON.parse(result.output);
+    assert.strictEqual(output.executor_model, 'openai/o4-mini',
+      'model_overrides must take precedence even when resolve_model_ids is omit');
   });
 
   test('init plan-phase returns file paths', () => {
-    const phaseDir = path.join(projectDir, 'phases', '03-api');
+    const phaseDir = path.join(tmpDir, '.planning', 'phases', '03-api');
     fs.mkdirSync(phaseDir, { recursive: true });
     fs.writeFileSync(path.join(phaseDir, '03-CONTEXT.md'), '# Phase Context');
     fs.writeFileSync(path.join(phaseDir, '03-RESEARCH.md'), '# Research Findings');
@@ -59,13 +79,34 @@ describe('init commands', () => {
     assert.ok(result.success, `Command failed: ${result.error}`);
 
     const output = JSON.parse(result.output);
-    assert.strictEqual(output.state_path, `${planningRoot}/STATE.md`);
-    assert.strictEqual(output.roadmap_path, `${planningRoot}/ROADMAP.md`);
-    assert.strictEqual(output.requirements_path, `${planningRoot}/REQUIREMENTS.md`);
-    assert.strictEqual(output.context_path, `${planningRoot}/phases/03-api/03-CONTEXT.md`);
-    assert.strictEqual(output.research_path, `${planningRoot}/phases/03-api/03-RESEARCH.md`);
-    assert.strictEqual(output.verification_path, `${planningRoot}/phases/03-api/03-VERIFICATION.md`);
-    assert.strictEqual(output.uat_path, `${planningRoot}/phases/03-api/03-UAT.md`);
+    assert.strictEqual(output.state_path, '.planning/STATE.md');
+    assert.strictEqual(output.roadmap_path, '.planning/ROADMAP.md');
+    assert.strictEqual(output.requirements_path, '.planning/REQUIREMENTS.md');
+    assert.strictEqual(output.context_path, '.planning/phases/03-api/03-CONTEXT.md');
+    assert.strictEqual(output.research_path, '.planning/phases/03-api/03-RESEARCH.md');
+    assert.strictEqual(output.verification_path, '.planning/phases/03-api/03-VERIFICATION.md');
+    assert.strictEqual(output.uat_path, '.planning/phases/03-api/03-UAT.md');
+  });
+
+  test('init plan-phase exposes text_mode from config (defaults false)', () => {
+    const result = runGsdTools('init plan-phase 03', tmpDir);
+    assert.ok(result.success, `Command failed: ${result.error}`);
+    const output = JSON.parse(result.output);
+    assert.strictEqual(output.text_mode, false, 'text_mode should default to false');
+  });
+
+  test('init plan-phase exposes text_mode true when set in config', () => {
+    const configPath = path.join(tmpDir, '.planning', 'config.json');
+    const existing = fs.existsSync(configPath)
+      ? JSON.parse(fs.readFileSync(configPath, 'utf8'))
+      : {};
+    const config = { ...existing, workflow: { ...(existing.workflow || {}), text_mode: true } };
+    fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+
+    const result = runGsdTools('init plan-phase 03', tmpDir);
+    assert.ok(result.success, `Command failed: ${result.error}`);
+    const output = JSON.parse(result.output);
+    assert.strictEqual(output.text_mode, true, 'text_mode should reflect config value');
   });
 
   test('init progress returns file paths', () => {
@@ -73,14 +114,14 @@ describe('init commands', () => {
     assert.ok(result.success, `Command failed: ${result.error}`);
 
     const output = JSON.parse(result.output);
-    assert.strictEqual(output.state_path, `${planningRoot}/STATE.md`);
-    assert.strictEqual(output.roadmap_path, `${planningRoot}/ROADMAP.md`);
-    assert.strictEqual(output.project_path, `${planningRoot}/PROJECT.md`);
-    assert.strictEqual(output.config_path, `${planningRoot}/config.json`);
+    assert.strictEqual(output.state_path, '.planning/STATE.md');
+    assert.strictEqual(output.roadmap_path, '.planning/ROADMAP.md');
+    assert.strictEqual(output.project_path, '.planning/PROJECT.md');
+    assert.strictEqual(output.config_path, '.planning/config.json');
   });
 
   test('init phase-op returns core and optional phase file paths', () => {
-    const phaseDir = path.join(projectDir, 'phases', '03-api');
+    const phaseDir = path.join(tmpDir, '.planning', 'phases', '03-api');
     fs.mkdirSync(phaseDir, { recursive: true });
     fs.writeFileSync(path.join(phaseDir, '03-CONTEXT.md'), '# Phase Context');
     fs.writeFileSync(path.join(phaseDir, '03-RESEARCH.md'), '# Research');
@@ -91,17 +132,30 @@ describe('init commands', () => {
     assert.ok(result.success, `Command failed: ${result.error}`);
 
     const output = JSON.parse(result.output);
-    assert.strictEqual(output.state_path, `${planningRoot}/STATE.md`);
-    assert.strictEqual(output.roadmap_path, `${planningRoot}/ROADMAP.md`);
-    assert.strictEqual(output.requirements_path, `${planningRoot}/REQUIREMENTS.md`);
-    assert.strictEqual(output.context_path, `${planningRoot}/phases/03-api/03-CONTEXT.md`);
-    assert.strictEqual(output.research_path, `${planningRoot}/phases/03-api/03-RESEARCH.md`);
-    assert.strictEqual(output.verification_path, `${planningRoot}/phases/03-api/03-VERIFICATION.md`);
-    assert.strictEqual(output.uat_path, `${planningRoot}/phases/03-api/03-UAT.md`);
+    assert.strictEqual(output.state_path, '.planning/STATE.md');
+    assert.strictEqual(output.roadmap_path, '.planning/ROADMAP.md');
+    assert.strictEqual(output.requirements_path, '.planning/REQUIREMENTS.md');
+    assert.strictEqual(output.context_path, '.planning/phases/03-api/03-CONTEXT.md');
+    assert.strictEqual(output.research_path, '.planning/phases/03-api/03-RESEARCH.md');
+    assert.strictEqual(output.verification_path, '.planning/phases/03-api/03-VERIFICATION.md');
+    assert.strictEqual(output.uat_path, '.planning/phases/03-api/03-UAT.md');
+  });
+
+  test('init plan-phase detects has_reviews and reviews_path when REVIEWS.md exists', () => {
+    const phaseDir = path.join(tmpDir, '.planning', 'phases', '03-api');
+    fs.mkdirSync(phaseDir, { recursive: true });
+    fs.writeFileSync(path.join(phaseDir, '03-REVIEWS.md'), '# Cross-AI Reviews');
+
+    const result = runGsdTools('init plan-phase 03', tmpDir);
+    assert.ok(result.success, `Command failed: ${result.error}`);
+
+    const output = JSON.parse(result.output);
+    assert.strictEqual(output.has_reviews, true);
+    assert.strictEqual(output.reviews_path, '.planning/phases/03-api/03-REVIEWS.md');
   });
 
   test('init plan-phase omits optional paths if files missing', () => {
-    const phaseDir = path.join(projectDir, 'phases', '03-api');
+    const phaseDir = path.join(tmpDir, '.planning', 'phases', '03-api');
     fs.mkdirSync(phaseDir, { recursive: true });
 
     const result = runGsdTools('init plan-phase 03', tmpDir);
@@ -110,14 +164,16 @@ describe('init commands', () => {
     const output = JSON.parse(result.output);
     assert.strictEqual(output.context_path, undefined);
     assert.strictEqual(output.research_path, undefined);
+    assert.strictEqual(output.reviews_path, undefined);
+    assert.strictEqual(output.has_reviews, false);
   });
 
   // ── phase_req_ids extraction (fix for #684) ──────────────────────────────
 
   test('init plan-phase extracts phase_req_ids from ROADMAP', () => {
-    fs.mkdirSync(path.join(projectDir, 'phases', '03-api'), { recursive: true });
+    fs.mkdirSync(path.join(tmpDir, '.planning', 'phases', '03-api'), { recursive: true });
     fs.writeFileSync(
-      path.join(projectDir, 'ROADMAP.md'),
+      path.join(tmpDir, '.planning', 'ROADMAP.md'),
       `# Roadmap\n\n### Phase 3: API\n**Goal:** Build API\n**Requirements**: CP-01, CP-02, CP-03\n**Plans:** 0 plans\n`
     );
 
@@ -129,9 +185,9 @@ describe('init commands', () => {
   });
 
   test('init plan-phase strips brackets from phase_req_ids', () => {
-    fs.mkdirSync(path.join(projectDir, 'phases', '03-api'), { recursive: true });
+    fs.mkdirSync(path.join(tmpDir, '.planning', 'phases', '03-api'), { recursive: true });
     fs.writeFileSync(
-      path.join(projectDir, 'ROADMAP.md'),
+      path.join(tmpDir, '.planning', 'ROADMAP.md'),
       `# Roadmap\n\n### Phase 3: API\n**Goal:** Build API\n**Requirements**: [CP-01, CP-02]\n**Plans:** 0 plans\n`
     );
 
@@ -143,9 +199,9 @@ describe('init commands', () => {
   });
 
   test('init plan-phase returns null phase_req_ids when Requirements line is absent', () => {
-    fs.mkdirSync(path.join(projectDir, 'phases', '03-api'), { recursive: true });
+    fs.mkdirSync(path.join(tmpDir, '.planning', 'phases', '03-api'), { recursive: true });
     fs.writeFileSync(
-      path.join(projectDir, 'ROADMAP.md'),
+      path.join(tmpDir, '.planning', 'ROADMAP.md'),
       `# Roadmap\n\n### Phase 3: API\n**Goal:** Build API\n**Plans:** 0 plans\n`
     );
 
@@ -157,7 +213,7 @@ describe('init commands', () => {
   });
 
   test('init plan-phase returns null phase_req_ids when ROADMAP is absent', () => {
-    fs.mkdirSync(path.join(projectDir, 'phases', '03-api'), { recursive: true });
+    fs.mkdirSync(path.join(tmpDir, '.planning', 'phases', '03-api'), { recursive: true });
 
     const result = runGsdTools('init plan-phase 3', tmpDir);
     assert.ok(result.success, `Command failed: ${result.error}`);
@@ -167,11 +223,11 @@ describe('init commands', () => {
   });
 
   test('init execute-phase extracts phase_req_ids from ROADMAP', () => {
-    const phaseDir = path.join(projectDir, 'phases', '03-api');
+    const phaseDir = path.join(tmpDir, '.planning', 'phases', '03-api');
     fs.mkdirSync(phaseDir, { recursive: true });
     fs.writeFileSync(path.join(phaseDir, '03-01-PLAN.md'), '# Plan');
     fs.writeFileSync(
-      path.join(projectDir, 'ROADMAP.md'),
+      path.join(tmpDir, '.planning', 'ROADMAP.md'),
       `# Roadmap\n\n### Phase 3: API\n**Goal:** Build API\n**Requirements**: EX-01, EX-02\n**Plans:** 1 plans\n`
     );
 
@@ -183,9 +239,9 @@ describe('init commands', () => {
   });
 
   test('init plan-phase returns null phase_req_ids when value is TBD', () => {
-    fs.mkdirSync(path.join(projectDir, 'phases', '03-api'), { recursive: true });
+    fs.mkdirSync(path.join(tmpDir, '.planning', 'phases', '03-api'), { recursive: true });
     fs.writeFileSync(
-      path.join(projectDir, 'ROADMAP.md'),
+      path.join(tmpDir, '.planning', 'ROADMAP.md'),
       `# Roadmap\n\n### Phase 3: API\n**Goal:** Build API\n**Requirements**: TBD\n**Plans:** 0 plans\n`
     );
 
@@ -197,11 +253,11 @@ describe('init commands', () => {
   });
 
   test('init execute-phase returns null phase_req_ids when Requirements line is absent', () => {
-    const phaseDir = path.join(projectDir, 'phases', '03-api');
+    const phaseDir = path.join(tmpDir, '.planning', 'phases', '03-api');
     fs.mkdirSync(phaseDir, { recursive: true });
     fs.writeFileSync(path.join(phaseDir, '03-01-PLAN.md'), '# Plan');
     fs.writeFileSync(
-      path.join(projectDir, 'ROADMAP.md'),
+      path.join(tmpDir, '.planning', 'ROADMAP.md'),
       `# Roadmap\n\n### Phase 3: API\n**Goal:** Build API\n**Plans:** 1 plans\n`
     );
 
@@ -214,26 +270,235 @@ describe('init commands', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// ROADMAP fallback for init plan-phase / execute-phase / verify-work (#1238)
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('init commands ROADMAP fallback when phase directory does not exist (#1238)', () => {
+  let tmpDir;
+
+  beforeEach(() => {
+    tmpDir = createTempProject();
+    fs.writeFileSync(
+      path.join(tmpDir, '.planning', 'ROADMAP.md'),
+      '# Roadmap\n\n### Phase 1: Foundation Setup\n**Goal:** Bootstrap project\n**Requirements**: R-01, R-02\n**Plans:** TBD\n'
+    );
+  });
+
+  afterEach(() => {
+    cleanup(tmpDir);
+  });
+
+  test('init plan-phase falls back to ROADMAP when no phase directory exists', () => {
+    const result = runGsdTools('init plan-phase 1', tmpDir);
+    assert.ok(result.success, `Command failed: ${result.error}`);
+
+    const output = JSON.parse(result.output);
+    assert.strictEqual(output.phase_found, true, 'phase_found should be true from ROADMAP fallback');
+    assert.strictEqual(output.phase_dir, null, 'phase_dir should be null (no directory yet)');
+    assert.strictEqual(output.phase_number, '1');
+    assert.strictEqual(output.phase_name, 'Foundation Setup');
+    assert.strictEqual(output.phase_slug, 'foundation-setup');
+    assert.strictEqual(output.padded_phase, '01');
+  });
+
+  test('init execute-phase falls back to ROADMAP when no phase directory exists', () => {
+    const result = runGsdTools('init execute-phase 1', tmpDir);
+    assert.ok(result.success, `Command failed: ${result.error}`);
+
+    const output = JSON.parse(result.output);
+    assert.strictEqual(output.phase_found, true, 'phase_found should be true from ROADMAP fallback');
+    assert.strictEqual(output.phase_dir, null, 'phase_dir should be null (no directory yet)');
+    assert.strictEqual(output.phase_number, '1');
+    assert.strictEqual(output.phase_name, 'Foundation Setup');
+    assert.strictEqual(output.phase_slug, 'foundation-setup');
+    assert.strictEqual(output.phase_req_ids, 'R-01, R-02');
+  });
+
+  test('init verify-work falls back to ROADMAP when no phase directory exists', () => {
+    const result = runGsdTools('init verify-work 1', tmpDir);
+    assert.ok(result.success, `Command failed: ${result.error}`);
+
+    const output = JSON.parse(result.output);
+    assert.strictEqual(output.phase_found, true, 'phase_found should be true from ROADMAP fallback');
+    assert.strictEqual(output.phase_dir, null, 'phase_dir should be null (no directory yet)');
+    assert.strictEqual(output.phase_number, '1');
+    assert.strictEqual(output.phase_name, 'Foundation Setup');
+  });
+
+  test('init plan-phase returns phase_found false when neither directory nor ROADMAP entry exists', () => {
+    const result = runGsdTools('init plan-phase 99', tmpDir);
+    assert.ok(result.success, `Command failed: ${result.error}`);
+
+    const output = JSON.parse(result.output);
+    assert.strictEqual(output.phase_found, false);
+    assert.strictEqual(output.phase_dir, null);
+    assert.strictEqual(output.phase_number, null);
+    assert.strictEqual(output.phase_name, null);
+  });
+
+  test('init plan-phase prefers disk directory over ROADMAP fallback', () => {
+    const phaseDir = path.join(tmpDir, '.planning', 'phases', '01-foundation-setup');
+    fs.mkdirSync(phaseDir, { recursive: true });
+    fs.writeFileSync(path.join(phaseDir, '01-01-PLAN.md'), '# Plan');
+
+    const result = runGsdTools('init plan-phase 1', tmpDir);
+    assert.ok(result.success, `Command failed: ${result.error}`);
+
+    const output = JSON.parse(result.output);
+    assert.strictEqual(output.phase_found, true);
+    assert.ok(output.phase_dir !== null, 'phase_dir should point to disk directory');
+    assert.ok(output.phase_dir.includes('01-foundation-setup'));
+    assert.strictEqual(output.plan_count, 1);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// init ignores archived phases from prior milestones that share a phase number
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('init commands ignore archived phases from prior milestones sharing a number', () => {
+  let tmpDir;
+
+  beforeEach(() => {
+    tmpDir = createTempProject();
+    // Current milestone ROADMAP has Phase 2 but no disk directory yet
+    fs.writeFileSync(
+      path.join(tmpDir, '.planning', 'ROADMAP.md'),
+      '# v2.0 Roadmap\n\n### Phase 2: New Feature\n**Goal:** New v2.0 feature\n**Requirements**: NEW-01, NEW-02\n**Plans:** TBD\n'
+    );
+    // Prior milestone archive has a shipped Phase 2 with different slug and artifacts
+    const archivedDir = path.join(tmpDir, '.planning', 'milestones', 'v1.0-phases', '02-old-feature');
+    fs.mkdirSync(archivedDir, { recursive: true });
+    fs.writeFileSync(path.join(archivedDir, '2-CONTEXT.md'), '# OLD v1.0 Phase 2 context');
+    fs.writeFileSync(path.join(archivedDir, '2-RESEARCH.md'), '# OLD v1.0 Phase 2 research');
+  });
+
+  afterEach(() => {
+    cleanup(tmpDir);
+  });
+
+  test('init plan-phase prefers current ROADMAP entry over archived v1.0 phase of same number', () => {
+    const result = runGsdTools('init plan-phase 2', tmpDir);
+    assert.ok(result.success, `Command failed: ${result.error}`);
+
+    const output = JSON.parse(result.output);
+    assert.strictEqual(output.phase_found, true);
+    assert.strictEqual(output.phase_name, 'New Feature',
+      'phase_name must come from current ROADMAP.md, not archived v1.0');
+    assert.strictEqual(output.phase_slug, 'new-feature');
+    assert.strictEqual(output.phase_dir, null,
+      'phase_dir must be null — current milestone has no directory yet');
+    assert.strictEqual(output.has_context, false,
+      'has_context must not inherit archived v1.0 artifacts');
+    assert.strictEqual(output.has_research, false,
+      'has_research must not inherit archived v1.0 artifacts');
+    assert.ok(!output.context_path,
+      'context_path must not point at archived v1.0 file');
+    assert.ok(!output.research_path,
+      'research_path must not point at archived v1.0 file');
+    assert.strictEqual(output.phase_req_ids, 'NEW-01, NEW-02');
+  });
+
+  test('init execute-phase prefers current ROADMAP entry over archived v1.0 phase of same number', () => {
+    const result = runGsdTools('init execute-phase 2', tmpDir);
+    assert.ok(result.success, `Command failed: ${result.error}`);
+
+    const output = JSON.parse(result.output);
+    assert.strictEqual(output.phase_found, true);
+    assert.strictEqual(output.phase_name, 'New Feature');
+    assert.strictEqual(output.phase_slug, 'new-feature');
+    assert.strictEqual(output.phase_dir, null);
+    assert.strictEqual(output.phase_req_ids, 'NEW-01, NEW-02');
+  });
+
+  test('init verify-work prefers current ROADMAP entry over archived v1.0 phase of same number', () => {
+    const result = runGsdTools('init verify-work 2', tmpDir);
+    assert.ok(result.success, `Command failed: ${result.error}`);
+
+    const output = JSON.parse(result.output);
+    assert.strictEqual(output.phase_found, true);
+    assert.strictEqual(output.phase_name, 'New Feature');
+    assert.strictEqual(output.phase_dir, null);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Bug #2391: zero-padded phase numbers must not bypass archived-phase guard
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('init plan-phase zero-padded phase number (bug #2391)', () => {
+  let tmpDir;
+
+  beforeEach(() => {
+    tmpDir = createTempProject();
+    // Current milestone ROADMAP has Phase 3 (unpadded heading)
+    fs.writeFileSync(
+      path.join(tmpDir, '.planning', 'ROADMAP.md'),
+      '# v2.0 Roadmap\n\n### Phase 3: Rotation Engine + Availability\n**Goal**: Rotation\n**Requirements**: ROTA-01, ROTA-02\n**Plans:** TBD\n'
+    );
+    // Prior milestone archive has a shipped Phase 3 with different content
+    const archivedDir = path.join(tmpDir, '.planning', 'milestones', 'v1.0-phases', '03-plant-collection-and-rooms');
+    fs.mkdirSync(archivedDir, { recursive: true });
+    fs.writeFileSync(path.join(archivedDir, '03-CONTEXT.md'), '# OLD v1.0 Phase 3 context');
+    fs.writeFileSync(path.join(archivedDir, '03-RESEARCH.md'), '# OLD v1.0 Phase 3 research');
+  });
+
+  afterEach(() => {
+    cleanup(tmpDir);
+  });
+
+  test('zero-padded "03" returns current ROADMAP phase, not archived v1.0 phase', () => {
+    const result = runGsdTools('init plan-phase 03', tmpDir);
+    assert.ok(result.success, `Command failed: ${result.error}`);
+
+    const output = JSON.parse(result.output);
+    assert.strictEqual(output.phase_found, true);
+    assert.strictEqual(output.phase_name, 'Rotation Engine + Availability',
+      'phase_name must come from current ROADMAP.md, not the archived v1.0 phase');
+    assert.strictEqual(output.phase_dir, null,
+      'phase_dir must be null — current milestone has no directory yet');
+    assert.strictEqual(output.has_context, false,
+      'has_context must not inherit archived v1.0 artifacts');
+    assert.strictEqual(output.has_research, false,
+      'has_research must not inherit archived v1.0 artifacts');
+    assert.ok(!output.context_path || !output.context_path.includes('v1.0'),
+      'context_path must not point at archived v1.0 file');
+    assert.strictEqual(output.phase_req_ids, 'ROTA-01, ROTA-02');
+  });
+
+  test('unpadded "3" and zero-padded "03" return identical phase identity', () => {
+    const result3 = runGsdTools('init plan-phase 3', tmpDir);
+    const result03 = runGsdTools('init plan-phase 03', tmpDir);
+    assert.ok(result3.success && result03.success, 'both commands must succeed');
+
+    const out3 = JSON.parse(result3.output);
+    const out03 = JSON.parse(result03.output);
+    assert.strictEqual(out03.phase_name, out3.phase_name,
+      'phase_name must be identical regardless of padding');
+    assert.strictEqual(out03.phase_slug, out3.phase_slug,
+      'phase_slug must be identical regardless of padding');
+    assert.strictEqual(out03.phase_req_ids, out3.phase_req_ids,
+      'phase_req_ids must be identical regardless of padding');
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // cmdInitTodos (INIT-01)
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('cmdInitTodos', () => {
-  let tmpDir, planningRoot, projectDir;
+  let tmpDir;
 
   beforeEach(() => {
-    const ctx = setupMultiUserProjectWithFiles();
-    tmpDir = ctx.tmpDir;
-    planningRoot = ctx.planningRoot;
-    projectDir = ctx.projectDir;
+    tmpDir = createTempProject();
   });
 
   afterEach(() => {
-    clearPlanningRootCache();
     cleanup(tmpDir);
   });
 
   test('empty pending dir returns zero count', () => {
-    fs.mkdirSync(path.join(projectDir, 'todos', 'pending'), { recursive: true });
+    fs.mkdirSync(path.join(tmpDir, '.planning', 'todos', 'pending'), { recursive: true });
 
     const result = runGsdTools('init todos', tmpDir);
     assert.ok(result.success, `Command failed: ${result.error}`);
@@ -255,7 +520,7 @@ describe('cmdInitTodos', () => {
   });
 
   test('multiple todos with fields are read correctly', () => {
-    const pendingDir = path.join(projectDir, 'todos', 'pending');
+    const pendingDir = path.join(tmpDir, '.planning', 'todos', 'pending');
     fs.mkdirSync(pendingDir, { recursive: true });
 
     fs.writeFileSync(path.join(pendingDir, 'task-1.md'), 'title: Fix bug\narea: backend\ncreated: 2026-02-25');
@@ -274,11 +539,11 @@ describe('cmdInitTodos', () => {
     assert.strictEqual(task1.title, 'Fix bug');
     assert.strictEqual(task1.area, 'backend');
     assert.strictEqual(task1.created, '2026-02-25');
-    assert.strictEqual(task1.path, `${planningRoot}/todos/pending/task-1.md`);
+    assert.strictEqual(task1.path, '.planning/todos/pending/task-1.md');
   });
 
   test('area filter returns only matching todos', () => {
-    const pendingDir = path.join(projectDir, 'todos', 'pending');
+    const pendingDir = path.join(tmpDir, '.planning', 'todos', 'pending');
     fs.mkdirSync(pendingDir, { recursive: true });
 
     fs.writeFileSync(path.join(pendingDir, 'task-1.md'), 'title: Fix bug\narea: backend\ncreated: 2026-02-25');
@@ -297,7 +562,7 @@ describe('cmdInitTodos', () => {
   });
 
   test('area filter miss returns zero count', () => {
-    const pendingDir = path.join(projectDir, 'todos', 'pending');
+    const pendingDir = path.join(tmpDir, '.planning', 'todos', 'pending');
     fs.mkdirSync(pendingDir, { recursive: true });
 
     fs.writeFileSync(path.join(pendingDir, 'task-1.md'), 'title: Fix bug\narea: backend\ncreated: 2026-02-25');
@@ -311,7 +576,7 @@ describe('cmdInitTodos', () => {
   });
 
   test('malformed file uses defaults', () => {
-    const pendingDir = path.join(projectDir, 'todos', 'pending');
+    const pendingDir = path.join(tmpDir, '.planning', 'todos', 'pending');
     fs.mkdirSync(pendingDir, { recursive: true });
 
     fs.writeFileSync(path.join(pendingDir, 'broken.md'), 'some random content without fields');
@@ -328,7 +593,7 @@ describe('cmdInitTodos', () => {
   });
 
   test('non-md files are ignored', () => {
-    const pendingDir = path.join(projectDir, 'todos', 'pending');
+    const pendingDir = path.join(tmpDir, '.planning', 'todos', 'pending');
     fs.mkdirSync(pendingDir, { recursive: true });
 
     fs.writeFileSync(path.join(pendingDir, 'task.md'), 'title: Real task\narea: dev\ncreated: 2026-01-01');
@@ -348,17 +613,13 @@ describe('cmdInitTodos', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('cmdInitMilestoneOp', () => {
-  let tmpDir, planningRoot, projectDir;
+  let tmpDir;
 
   beforeEach(() => {
-    const ctx = setupMultiUserProjectWithFiles();
-    tmpDir = ctx.tmpDir;
-    planningRoot = ctx.planningRoot;
-    projectDir = ctx.projectDir;
+    tmpDir = createTempProject();
   });
 
   afterEach(() => {
-    clearPlanningRootCache();
     cleanup(tmpDir);
   });
 
@@ -373,8 +634,8 @@ describe('cmdInitMilestoneOp', () => {
   });
 
   test('multiple phases with no summaries', () => {
-    const phase1 = path.join(projectDir, 'phases', '01-setup');
-    const phase2 = path.join(projectDir, 'phases', '02-api');
+    const phase1 = path.join(tmpDir, '.planning', 'phases', '01-setup');
+    const phase2 = path.join(tmpDir, '.planning', 'phases', '02-api');
     fs.mkdirSync(phase1, { recursive: true });
     fs.mkdirSync(phase2, { recursive: true });
     fs.writeFileSync(path.join(phase1, '01-01-PLAN.md'), '# Plan');
@@ -390,8 +651,8 @@ describe('cmdInitMilestoneOp', () => {
   });
 
   test('mix of complete and incomplete phases', () => {
-    const phase1 = path.join(projectDir, 'phases', '01-setup');
-    const phase2 = path.join(projectDir, 'phases', '02-api');
+    const phase1 = path.join(tmpDir, '.planning', 'phases', '01-setup');
+    const phase2 = path.join(tmpDir, '.planning', 'phases', '02-api');
     fs.mkdirSync(phase1, { recursive: true });
     fs.mkdirSync(phase2, { recursive: true });
     fs.writeFileSync(path.join(phase1, '01-01-PLAN.md'), '# Plan');
@@ -408,7 +669,7 @@ describe('cmdInitMilestoneOp', () => {
   });
 
   test('all phases complete', () => {
-    const phase1 = path.join(projectDir, 'phases', '01-setup');
+    const phase1 = path.join(tmpDir, '.planning', 'phases', '01-setup');
     fs.mkdirSync(phase1, { recursive: true });
     fs.writeFileSync(path.join(phase1, '01-01-PLAN.md'), '# Plan');
     fs.writeFileSync(path.join(phase1, '01-01-SUMMARY.md'), '# Summary');
@@ -423,8 +684,8 @@ describe('cmdInitMilestoneOp', () => {
   });
 
   test('archive directory scanning', () => {
-    fs.mkdirSync(path.join(projectDir, 'archive', 'v1.0'), { recursive: true });
-    fs.mkdirSync(path.join(projectDir, 'archive', 'v0.9'), { recursive: true });
+    fs.mkdirSync(path.join(tmpDir, '.planning', 'archive', 'v1.0'), { recursive: true });
+    fs.mkdirSync(path.join(tmpDir, '.planning', 'archive', 'v0.9'), { recursive: true });
 
     const result = runGsdTools('init milestone-op', tmpDir);
     assert.ok(result.success, `Command failed: ${result.error}`);
@@ -449,27 +710,23 @@ describe('cmdInitMilestoneOp', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('cmdInitPhaseOp fallback', () => {
-  let tmpDir, planningRoot, projectDir;
+  let tmpDir;
 
   beforeEach(() => {
-    const ctx = setupMultiUserProjectWithFiles();
-    tmpDir = ctx.tmpDir;
-    planningRoot = ctx.planningRoot;
-    projectDir = ctx.projectDir;
+    tmpDir = createTempProject();
   });
 
   afterEach(() => {
-    clearPlanningRootCache();
     cleanup(tmpDir);
   });
 
   test('normal path with existing directory', () => {
-    const phaseDir = path.join(projectDir, 'phases', '03-api');
+    const phaseDir = path.join(tmpDir, '.planning', 'phases', '03-api');
     fs.mkdirSync(phaseDir, { recursive: true });
     fs.writeFileSync(path.join(phaseDir, '03-CONTEXT.md'), '# Context');
     fs.writeFileSync(path.join(phaseDir, '03-01-PLAN.md'), '# Plan');
     fs.writeFileSync(
-      path.join(projectDir, 'ROADMAP.md'),
+      path.join(tmpDir, '.planning', 'ROADMAP.md'),
       '# Roadmap\n\n### Phase 3: API\n**Goal:** Build API\n**Plans:** 1 plans\n'
     );
 
@@ -485,7 +742,7 @@ describe('cmdInitPhaseOp fallback', () => {
 
   test('fallback to ROADMAP when no directory exists', () => {
     fs.writeFileSync(
-      path.join(projectDir, 'ROADMAP.md'),
+      path.join(tmpDir, '.planning', 'ROADMAP.md'),
       '# Roadmap\n\n### Phase 5: Widget Builder\n**Goal:** Build widgets\n**Plans:** TBD\n'
     );
 
@@ -501,9 +758,54 @@ describe('cmdInitPhaseOp fallback', () => {
     assert.strictEqual(output.has_plans, false);
   });
 
+  test('prefers current milestone roadmap entry over archived phase with same number', () => {
+    const archiveDir = path.join(
+      tmpDir,
+      '.planning',
+      'milestones',
+      'v1.2-phases',
+      '02-event-parser-and-queue-schema'
+    );
+    fs.mkdirSync(archiveDir, { recursive: true });
+    fs.writeFileSync(path.join(archiveDir, '02-CONTEXT.md'), '# Archived context');
+    fs.writeFileSync(path.join(archiveDir, '02-01-PLAN.md'), '# Archived plan');
+    fs.writeFileSync(path.join(archiveDir, '02-VERIFICATION.md'), '# Archived verification');
+
+    fs.writeFileSync(
+      path.join(tmpDir, '.planning', 'ROADMAP.md'),
+      `# Roadmap
+
+<details>
+<summary>Shipped milestone v1.2</summary>
+
+### Phase 2: Event Parser and Queue Schema
+**Goal:** Archived milestone work
+</details>
+
+## Milestone v1.3 Current
+
+### Phase 2: Retry Orchestration
+**Goal:** Current milestone work
+**Plans:** TBD
+`
+    );
+
+    const result = runGsdTools('init phase-op 2', tmpDir);
+    assert.ok(result.success, `Command failed: ${result.error}`);
+
+    const output = JSON.parse(result.output);
+    assert.strictEqual(output.phase_found, true);
+    assert.strictEqual(output.phase_dir, null);
+    assert.strictEqual(output.phase_name, 'Retry Orchestration');
+    assert.strictEqual(output.phase_slug, 'retry-orchestration');
+    assert.strictEqual(output.has_context, false);
+    assert.strictEqual(output.has_plans, false);
+    assert.strictEqual(output.has_verification, false);
+  });
+
   test('neither directory nor roadmap entry returns not found', () => {
     fs.writeFileSync(
-      path.join(projectDir, 'ROADMAP.md'),
+      path.join(tmpDir, '.planning', 'ROADMAP.md'),
       '# Roadmap\n\n### Phase 1: Setup\n**Goal:** Setup project\n**Plans:** TBD\n'
     );
 
@@ -521,17 +823,13 @@ describe('cmdInitPhaseOp fallback', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('cmdInitProgress', () => {
-  let tmpDir, planningRoot, projectDir;
+  let tmpDir;
 
   beforeEach(() => {
-    const ctx = setupMultiUserProjectWithFiles();
-    tmpDir = ctx.tmpDir;
-    planningRoot = ctx.planningRoot;
-    projectDir = ctx.projectDir;
+    tmpDir = createTempProject();
   });
 
   afterEach(() => {
-    clearPlanningRootCache();
     cleanup(tmpDir);
   });
 
@@ -549,18 +847,18 @@ describe('cmdInitProgress', () => {
 
   test('multiple phases with mixed statuses', () => {
     // Phase 01: complete (has plan + summary)
-    const phase1 = path.join(projectDir, 'phases', '01-setup');
+    const phase1 = path.join(tmpDir, '.planning', 'phases', '01-setup');
     fs.mkdirSync(phase1, { recursive: true });
     fs.writeFileSync(path.join(phase1, '01-01-PLAN.md'), '# Plan');
     fs.writeFileSync(path.join(phase1, '01-01-SUMMARY.md'), '# Summary');
 
     // Phase 02: in_progress (has plan, no summary)
-    const phase2 = path.join(projectDir, 'phases', '02-api');
+    const phase2 = path.join(tmpDir, '.planning', 'phases', '02-api');
     fs.mkdirSync(phase2, { recursive: true });
     fs.writeFileSync(path.join(phase2, '02-01-PLAN.md'), '# Plan');
 
     // Phase 03: pending (no plan, no research)
-    const phase3 = path.join(projectDir, 'phases', '03-ui');
+    const phase3 = path.join(tmpDir, '.planning', 'phases', '03-ui');
     fs.mkdirSync(phase3, { recursive: true });
     fs.writeFileSync(path.join(phase3, '03-CONTEXT.md'), '# Context');
 
@@ -587,7 +885,7 @@ describe('cmdInitProgress', () => {
   });
 
   test('researched status detected correctly', () => {
-    const phase1 = path.join(projectDir, 'phases', '01-setup');
+    const phase1 = path.join(tmpDir, '.planning', 'phases', '01-setup');
     fs.mkdirSync(phase1, { recursive: true });
     fs.writeFileSync(path.join(phase1, '01-RESEARCH.md'), '# Research');
 
@@ -602,7 +900,7 @@ describe('cmdInitProgress', () => {
   });
 
   test('all phases complete returns no current or next', () => {
-    const phase1 = path.join(projectDir, 'phases', '01-setup');
+    const phase1 = path.join(tmpDir, '.planning', 'phases', '01-setup');
     fs.mkdirSync(phase1, { recursive: true });
     fs.writeFileSync(path.join(phase1, '01-01-PLAN.md'), '# Plan');
     fs.writeFileSync(path.join(phase1, '01-01-SUMMARY.md'), '# Summary');
@@ -618,7 +916,7 @@ describe('cmdInitProgress', () => {
 
   test('paused_at detected from STATE.md', () => {
     fs.writeFileSync(
-      path.join(projectDir, 'STATE.md'),
+      path.join(tmpDir, '.planning', 'STATE.md'),
       '# Project State\n\n**Paused At:** Phase 2, Task 3 — implementing auth\n'
     );
 
@@ -632,7 +930,7 @@ describe('cmdInitProgress', () => {
 
   test('no paused_at when STATE.md has no pause line', () => {
     fs.writeFileSync(
-      path.join(projectDir, 'STATE.md'),
+      path.join(tmpDir, '.planning', 'STATE.md'),
       '# Project State\n\nSome content without pause.\n'
     );
 
@@ -649,29 +947,39 @@ describe('cmdInitProgress', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('cmdInitQuick', () => {
-  let tmpDir, planningRoot, projectDir;
+  let tmpDir;
 
   beforeEach(() => {
-    const ctx = setupMultiUserProjectWithFiles();
-    tmpDir = ctx.tmpDir;
-    planningRoot = ctx.planningRoot;
-    projectDir = ctx.projectDir;
+    tmpDir = createTempProject();
   });
 
   afterEach(() => {
-    clearPlanningRootCache();
     cleanup(tmpDir);
   });
 
-  test('with description generates slug and task_dir', () => {
+  test('with description generates slug and task_dir with YYMMDD-xxx format', () => {
     const result = runGsdTools('init quick "Fix login bug"', tmpDir);
     assert.ok(result.success, `Command failed: ${result.error}`);
 
     const output = JSON.parse(result.output);
+    assert.strictEqual(output.branch_name, null);
     assert.strictEqual(output.slug, 'fix-login-bug');
-    assert.strictEqual(output.next_num, 1);
-    assert.strictEqual(output.task_dir, `${planningRoot}/quick/1-fix-login-bug`);
     assert.strictEqual(output.description, 'Fix login bug');
+
+    // quick_id must match YYMMDD-xxx (6 digits, dash, 3 base36 chars)
+    assert.ok(/^\d{6}-[0-9a-z]{3}$/.test(output.quick_id),
+      `quick_id should match YYMMDD-xxx, got: "${output.quick_id}"`);
+
+    // task_dir must use the new ID format
+    assert.ok(output.task_dir.startsWith('.planning/quick/'),
+      `task_dir should start with .planning/quick/, got: "${output.task_dir}"`);
+    assert.ok(output.task_dir.endsWith('-fix-login-bug'),
+      `task_dir should end with -fix-login-bug, got: "${output.task_dir}"`);
+    assert.ok(/^\.planning\/quick\/\d{6}-[0-9a-z]{3}-fix-login-bug$/.test(output.task_dir),
+      `task_dir format wrong: "${output.task_dir}"`);
+
+    // next_num must NOT be present
+    assert.ok(!('next_num' in output), 'next_num should not be in output');
   });
 
   test('without description returns null slug and task_dir', () => {
@@ -682,19 +990,27 @@ describe('cmdInitQuick', () => {
     assert.strictEqual(output.slug, null);
     assert.strictEqual(output.task_dir, null);
     assert.strictEqual(output.description, null);
-    assert.strictEqual(output.next_num, 1);
+
+    // quick_id is still generated even without description
+    assert.ok(/^\d{6}-[0-9a-z]{3}$/.test(output.quick_id),
+      `quick_id should match YYMMDD-xxx, got: "${output.quick_id}"`);
   });
 
-  test('next number increments from existing entries', () => {
-    const quickDir = path.join(projectDir, 'quick');
-    fs.mkdirSync(path.join(quickDir, '1-old-task'), { recursive: true });
-    fs.mkdirSync(path.join(quickDir, '3-another-task'), { recursive: true });
+  test('two rapid calls produce different quick_ids (no collision within 2s window)', () => {
+    // Both calls happen within the same test, which is sub-second.
+    // They may or may not land in the same 2-second block. We just verify format.
+    const r1 = runGsdTools('init quick "Task one"', tmpDir);
+    const r2 = runGsdTools('init quick "Task two"', tmpDir);
+    assert.ok(r1.success && r2.success);
 
-    const result = runGsdTools('init quick "New task"', tmpDir);
-    assert.ok(result.success, `Command failed: ${result.error}`);
+    const o1 = JSON.parse(r1.output);
+    const o2 = JSON.parse(r2.output);
 
-    const output = JSON.parse(result.output);
-    assert.strictEqual(output.next_num, 4);
+    assert.ok(/^\d{6}-[0-9a-z]{3}$/.test(o1.quick_id));
+    assert.ok(/^\d{6}-[0-9a-z]{3}$/.test(o2.quick_id));
+
+    // Directories are distinct because slugs differ
+    assert.notStrictEqual(o1.task_dir, o2.task_dir);
   });
 
   test('long description truncates slug to 40 chars', () => {
@@ -704,6 +1020,44 @@ describe('cmdInitQuick', () => {
     const output = JSON.parse(result.output);
     assert.ok(output.slug.length <= 40, `Slug should be <= 40 chars, got ${output.slug.length}: "${output.slug}"`);
   });
+
+  test('returns quick branch name when quick_branch_template is configured', () => {
+    fs.writeFileSync(
+      path.join(tmpDir, '.planning', 'config.json'),
+      JSON.stringify({
+        git: {
+          quick_branch_template: 'gsd/quick-{num}-{slug}',
+        },
+      }, null, 2)
+    );
+
+    const result = runGsdTools('init quick "Fix login bug"', tmpDir);
+    assert.ok(result.success, `Command failed: ${result.error}`);
+
+    const output = JSON.parse(result.output);
+    assert.ok(output.branch_name, 'branch_name should be set');
+    assert.ok(output.branch_name.startsWith('gsd/quick-'));
+    assert.ok(output.branch_name.endsWith('-fix-login-bug'));
+    assert.ok(output.branch_name.includes(output.quick_id), 'branch_name should include quick_id');
+  });
+
+  test('uses fallback slug in quick branch name when description is omitted', () => {
+    fs.writeFileSync(
+      path.join(tmpDir, '.planning', 'config.json'),
+      JSON.stringify({
+        git: {
+          quick_branch_template: 'gsd/quick-{quick}-{slug}',
+        },
+      }, null, 2)
+    );
+
+    const result = runGsdTools('init quick', tmpDir);
+    assert.ok(result.success, `Command failed: ${result.error}`);
+
+    const output = JSON.parse(result.output);
+    assert.ok(output.branch_name, 'branch_name should be set');
+    assert.ok(output.branch_name.endsWith('-quick'), `Expected fallback slug in branch name, got "${output.branch_name}"`);
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -711,17 +1065,13 @@ describe('cmdInitQuick', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('cmdInitMapCodebase', () => {
-  let tmpDir, planningRoot, projectDir;
+  let tmpDir;
 
   beforeEach(() => {
-    const ctx = setupMultiUserProjectWithFiles();
-    tmpDir = ctx.tmpDir;
-    planningRoot = ctx.planningRoot;
-    projectDir = ctx.projectDir;
+    tmpDir = createTempProject();
   });
 
   afterEach(() => {
-    clearPlanningRootCache();
     cleanup(tmpDir);
   });
 
@@ -736,7 +1086,7 @@ describe('cmdInitMapCodebase', () => {
   });
 
   test('with existing maps lists md files only', () => {
-    const codebaseDir = path.join(projectDir, 'codebase');
+    const codebaseDir = path.join(tmpDir, '.planning', 'codebase');
     fs.mkdirSync(codebaseDir, { recursive: true });
     fs.writeFileSync(path.join(codebaseDir, 'STACK.md'), '# Stack');
     fs.writeFileSync(path.join(codebaseDir, 'ARCHITECTURE.md'), '# Architecture');
@@ -753,7 +1103,7 @@ describe('cmdInitMapCodebase', () => {
   });
 
   test('empty codebase dir returns no maps', () => {
-    const codebaseDir = path.join(projectDir, 'codebase');
+    const codebaseDir = path.join(tmpDir, '.planning', 'codebase');
     fs.mkdirSync(codebaseDir, { recursive: true });
 
     const result = runGsdTools('init map-codebase', tmpDir);
@@ -764,6 +1114,18 @@ describe('cmdInitMapCodebase', () => {
     assert.deepStrictEqual(output.existing_maps, []);
     assert.strictEqual(output.codebase_dir_exists, true);
   });
+
+  test('map-codebase workflow does not list OpenCode under runtimes without Task tool (#1316)', () => {
+    const workflow = fs.readFileSync(
+      path.join(__dirname, '..', 'get-shit-done', 'workflows', 'map-codebase.md'), 'utf8'
+    );
+    // OpenCode must NOT appear in the "WITHOUT Task tool" / "NOT available" condition
+    const withoutLine = workflow.split('\n').find(l =>
+      l.includes('NOT available') || l.includes('WITHOUT Task tool')
+    );
+    assert.ok(withoutLine, 'workflow should have a line about Task tool NOT being available');
+    assert.ok(!withoutLine.includes('OpenCode'), 'OpenCode must NOT be listed under runtimes WITHOUT Task tool');
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -771,17 +1133,13 @@ describe('cmdInitMapCodebase', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('cmdInitNewProject', () => {
-  let tmpDir, planningRoot, projectDir;
+  let tmpDir;
 
   beforeEach(() => {
-    const ctx = setupMultiUserProjectWithFiles();
-    tmpDir = ctx.tmpDir;
-    planningRoot = ctx.planningRoot;
-    projectDir = ctx.projectDir;
+    tmpDir = createTempProject();
   });
 
   afterEach(() => {
-    clearPlanningRootCache();
     cleanup(tmpDir);
   });
 
@@ -810,7 +1168,7 @@ describe('cmdInitNewProject', () => {
 
   test('brownfield with codebase map does not need map', () => {
     fs.writeFileSync(path.join(tmpDir, 'package.json'), '{"name":"test"}');
-    fs.mkdirSync(path.join(projectDir, 'codebase'), { recursive: true });
+    fs.mkdirSync(path.join(tmpDir, '.planning', 'codebase'), { recursive: true });
 
     const result = runGsdTools('init new-project', tmpDir);
     assert.ok(result.success, `Command failed: ${result.error}`);
@@ -828,43 +1186,86 @@ describe('cmdInitNewProject', () => {
     assert.strictEqual(output.planning_exists, true);
   });
 
-  test('returns project_name from active context', () => {
+  test('brownfield with Kotlin files detected (Android project)', () => {
+    const srcDir = path.join(tmpDir, 'app', 'src', 'main');
+    fs.mkdirSync(srcDir, { recursive: true });
+    fs.writeFileSync(path.join(srcDir, 'MainActivity.kt'), 'class MainActivity');
+
     const result = runGsdTools('init new-project', tmpDir);
     assert.ok(result.success, `Command failed: ${result.error}`);
 
     const output = JSON.parse(result.output);
-    assert.strictEqual(typeof output.project_name, 'string');
-    assert.ok(output.project_name.length > 0, 'project_name should be non-empty');
-    assert.strictEqual(output.active_project, output.project_name);
+    assert.strictEqual(output.has_existing_code, true);
+    assert.strictEqual(output.is_brownfield, true);
   });
 
-  test('returns config_path field', () => {
+  test('brownfield with build.gradle detected (Android/Gradle project)', () => {
+    fs.writeFileSync(path.join(tmpDir, 'build.gradle'), 'apply plugin: "com.android.application"');
+
     const result = runGsdTools('init new-project', tmpDir);
     assert.ok(result.success, `Command failed: ${result.error}`);
 
     const output = JSON.parse(result.output);
-    assert.ok(output.config_path, 'config_path should be set');
-    assert.ok(output.config_path.endsWith('/config.json'), 'config_path should end with config.json');
+    assert.strictEqual(output.has_package_file, true);
+    assert.strictEqual(output.is_brownfield, true);
+    assert.strictEqual(output.needs_codebase_map, true);
   });
 
-  test('returns scope_path null when not configured', () => {
+  test('brownfield with build.gradle.kts detected (Kotlin DSL)', () => {
+    fs.writeFileSync(path.join(tmpDir, 'build.gradle.kts'), 'plugins { id("com.android.application") }');
+
     const result = runGsdTools('init new-project', tmpDir);
     assert.ok(result.success, `Command failed: ${result.error}`);
 
     const output = JSON.parse(result.output);
-    assert.strictEqual(output.scope_path, null);
+    assert.strictEqual(output.has_package_file, true);
+    assert.strictEqual(output.is_brownfield, true);
   });
 
-  test('returns scope_path when configured in project config', () => {
-    // Write a config with scope_path
-    const configPath = path.join(projectDir, 'config.json');
-    fs.writeFileSync(configPath, JSON.stringify({ scope_path: 'packages/frontend' }));
+  test('brownfield with pom.xml detected (Maven project)', () => {
+    fs.writeFileSync(path.join(tmpDir, 'pom.xml'), '<project></project>');
 
     const result = runGsdTools('init new-project', tmpDir);
     assert.ok(result.success, `Command failed: ${result.error}`);
 
     const output = JSON.parse(result.output);
-    assert.strictEqual(output.scope_path, 'packages/frontend');
+    assert.strictEqual(output.has_package_file, true);
+    assert.strictEqual(output.is_brownfield, true);
+  });
+
+  test('brownfield with pubspec.yaml detected (Flutter/Dart project)', () => {
+    fs.writeFileSync(path.join(tmpDir, 'pubspec.yaml'), 'name: my_app');
+
+    const result = runGsdTools('init new-project', tmpDir);
+    assert.ok(result.success, `Command failed: ${result.error}`);
+
+    const output = JSON.parse(result.output);
+    assert.strictEqual(output.has_package_file, true);
+    assert.strictEqual(output.is_brownfield, true);
+  });
+
+  test('brownfield with Dart files detected', () => {
+    const libDir = path.join(tmpDir, 'lib');
+    fs.mkdirSync(libDir, { recursive: true });
+    fs.writeFileSync(path.join(libDir, 'main.dart'), 'void main() {}');
+
+    const result = runGsdTools('init new-project', tmpDir);
+    assert.ok(result.success, `Command failed: ${result.error}`);
+
+    const output = JSON.parse(result.output);
+    assert.strictEqual(output.has_existing_code, true);
+    assert.strictEqual(output.is_brownfield, true);
+  });
+
+  test('brownfield with C++ files detected', () => {
+    fs.writeFileSync(path.join(tmpDir, 'main.cpp'), 'int main() { return 0; }');
+
+    const result = runGsdTools('init new-project', tmpDir);
+    assert.ok(result.success, `Command failed: ${result.error}`);
+
+    const output = JSON.parse(result.output);
+    assert.strictEqual(output.has_existing_code, true);
+    assert.strictEqual(output.is_brownfield, true);
   });
 });
 
@@ -873,17 +1274,13 @@ describe('cmdInitNewProject', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('cmdInitNewMilestone', () => {
-  let tmpDir, planningRoot, projectDir;
+  let tmpDir;
 
   beforeEach(() => {
-    const ctx = setupMultiUserProjectWithFiles();
-    tmpDir = ctx.tmpDir;
-    planningRoot = ctx.planningRoot;
-    projectDir = ctx.projectDir;
+    tmpDir = createTempProject();
   });
 
   afterEach(() => {
-    clearPlanningRootCache();
     cleanup(tmpDir);
   });
 
@@ -898,13 +1295,13 @@ describe('cmdInitNewMilestone', () => {
     assert.ok('synthesizer_model' in output, 'Should have synthesizer_model');
     assert.ok('roadmapper_model' in output, 'Should have roadmapper_model');
     assert.ok('commit_docs' in output, 'Should have commit_docs');
-    assert.strictEqual(output.project_path, `${planningRoot}/PROJECT.md`);
-    assert.strictEqual(output.roadmap_path, `${planningRoot}/ROADMAP.md`);
-    assert.strictEqual(output.state_path, `${planningRoot}/STATE.md`);
+    assert.strictEqual(output.project_path, '.planning/PROJECT.md');
+    assert.strictEqual(output.roadmap_path, '.planning/ROADMAP.md');
+    assert.strictEqual(output.state_path, '.planning/STATE.md');
   });
 
   test('file existence flags reflect actual state', () => {
-    // Default: no STATE.md, ROADMAP.md, or PROJECT.md in project dir
+    // Default: no STATE.md, ROADMAP.md, or PROJECT.md
     const result1 = runGsdTools('init new-milestone', tmpDir);
     assert.ok(result1.success, `Command failed: ${result1.error}`);
 
@@ -913,10 +1310,10 @@ describe('cmdInitNewMilestone', () => {
     assert.strictEqual(output1.roadmap_exists, false);
     assert.strictEqual(output1.project_exists, false);
 
-    // Create files in multi-user project directory and verify flags change
-    fs.writeFileSync(path.join(projectDir, 'STATE.md'), '# State');
-    fs.writeFileSync(path.join(projectDir, 'ROADMAP.md'), '# Roadmap');
-    fs.writeFileSync(path.join(projectDir, 'PROJECT.md'), '# Project');
+    // Create files and verify flags change
+    fs.writeFileSync(path.join(tmpDir, '.planning', 'STATE.md'), '# State');
+    fs.writeFileSync(path.join(tmpDir, '.planning', 'ROADMAP.md'), '# Roadmap');
+    fs.writeFileSync(path.join(tmpDir, '.planning', 'PROJECT.md'), '# Project');
 
     const result2 = runGsdTools('init new-milestone', tmpDir);
     assert.ok(result2.success, `Command failed: ${result2.error}`);
@@ -926,489 +1323,250 @@ describe('cmdInitNewMilestone', () => {
     assert.strictEqual(output2.roadmap_exists, true);
     assert.strictEqual(output2.project_exists, true);
   });
-});
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Null planning_root handling (PATH-13)
-// ─────────────────────────────────────────────────────────────────────────────
-
-describe('null planning_root handling', () => {
-  afterEach(() => {
-    clearPlanningRootCache();
-  });
-
-  test('init commands return null/false paths when zero projects exist', () => {
-    const { tmpDir, userSlug } = createTempMultiUserProject({ withActive: false });
-    // Remove the project directory so zero projects remain
-    fs.rmSync(path.join(tmpDir, '.planning', 'users', userSlug, 'test-project'), { recursive: true });
-    try {
-      const result = runGsdTools('init new-milestone', tmpDir);
-      assert.ok(result.success, `Command failed: ${result.error}`);
-
-      const output = JSON.parse(result.output);
-      assert.strictEqual(output.planning_root, null);
-      assert.strictEqual(output.state_path, null);
-      assert.strictEqual(output.roadmap_path, null);
-      assert.strictEqual(output.project_path, null);
-      assert.strictEqual(output.state_exists, false);
-      assert.strictEqual(output.roadmap_exists, false);
-      assert.strictEqual(output.project_exists, false);
-    } finally {
-      cleanup(tmpDir);
-    }
-  });
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
-// init context fields (PATH-10)
-// ─────────────────────────────────────────────────────────────────────────────
-
-describe('init context fields', () => {
-  const { execSync } = require('child_process');
-  const { TOOLS_PATH } = require('./helpers.cjs');
-
-  afterEach(() => {
-    clearPlanningRootCache();
-  });
-
-  function setupMultiUserProjectWithFilesForContext(opts) {
-    const { tmpDir, userSlug, projectName } = createTempMultiUserProject(opts);
-    const projectDir = path.join(tmpDir, '.planning', 'users', userSlug, projectName);
-
-    // Create minimal planning files needed by init commands
+  test('reports latest completed milestone and archive target for reset flow', () => {
     fs.writeFileSync(
-      path.join(projectDir, 'STATE.md'),
-      '---\nphase: 1\nstatus: not_started\n---\n# State\n'
+      path.join(tmpDir, '.planning', 'MILESTONES.md'),
+      '# Milestones\n\n## v1.2 Search Refresh (Shipped: 2026-02-18)\n\n---\n'
     );
-    fs.writeFileSync(path.join(projectDir, 'ROADMAP.md'), '# Roadmap\n');
+    fs.mkdirSync(path.join(tmpDir, '.planning', 'phases', '06-refine-search'), { recursive: true });
+    fs.mkdirSync(path.join(tmpDir, '.planning', 'phases', '07-polish'), { recursive: true });
 
-    // Create a phase directory with a plan
-    const phaseDir = path.join(projectDir, 'phases', '01-test');
-    fs.mkdirSync(phaseDir, { recursive: true });
-    fs.writeFileSync(path.join(phaseDir, '01-01-PLAN.md'), '# Plan');
+    const result = runGsdTools('init new-milestone', tmpDir);
+    assert.ok(result.success, `Command failed: ${result.error}`);
 
-    return { tmpDir, userSlug, projectName, projectDir, phaseDir };
-  }
-
-  test('cmdInitProgress includes context fields', () => {
-    const { tmpDir, userSlug, projectName } = setupMultiUserProjectWithFilesForContext({});
-    try {
-      const result = runGsdTools('init progress', tmpDir);
-      assert.ok(result.success, `Command failed: ${result.error}`);
-
-      const output = JSON.parse(result.output);
-      assert.strictEqual(output.active_user, userSlug);
-      assert.strictEqual(output.active_project, projectName);
-      assert.strictEqual(output.planning_root, `.planning/users/${userSlug}/${projectName}`);
-    } finally {
-      cleanup(tmpDir);
-    }
+    const output = JSON.parse(result.output);
+    assert.strictEqual(output.latest_completed_milestone, 'v1.2');
+    assert.strictEqual(output.latest_completed_milestone_name, 'Search Refresh');
+    assert.strictEqual(output.phase_dir_count, 2);
+    assert.strictEqual(output.phase_archive_path, '.planning/milestones/v1.2-phases');
   });
 
-  test('cmdInitNewProject includes context fields (null when zero projects)', () => {
-    const { tmpDir, userSlug } = createTempMultiUserProject({ withActive: false });
-    // Remove the project directory so zero projects remain
-    fs.rmSync(path.join(tmpDir, '.planning', 'users', userSlug, 'test-project'), { recursive: true });
-    try {
-      const result = runGsdTools('init new-project', tmpDir);
-      assert.ok(result.success, `Command failed: ${result.error}`);
+  test('reset flow metadata is null-safe when no milestones file exists', () => {
+    const result = runGsdTools('init new-milestone', tmpDir);
+    assert.ok(result.success, `Command failed: ${result.error}`);
 
-      const output = JSON.parse(result.output);
-      // Identity resolves (git user.name is set), but no active project
-      assert.strictEqual(typeof output.active_user, 'string');
-      assert.strictEqual(output.active_project, null);
-      assert.strictEqual(output.planning_root, null);
-    } finally {
-      cleanup(tmpDir);
-    }
-  });
-
-  test('cmdInitExecutePhase includes context fields', () => {
-    const { tmpDir, userSlug, projectName } = setupMultiUserProjectWithFilesForContext({});
-    try {
-      const result = runGsdTools('init execute-phase 1', tmpDir);
-      assert.ok(result.success, `Command failed: ${result.error}`);
-
-      const output = JSON.parse(result.output);
-      assert.strictEqual(output.active_user, userSlug);
-      assert.strictEqual(output.active_project, projectName);
-      assert.strictEqual(output.planning_root, `.planning/users/${userSlug}/${projectName}`);
-    } finally {
-      cleanup(tmpDir);
-    }
-  });
-
-  test('cmdInitPlanPhase includes context fields', () => {
-    const { tmpDir, userSlug, projectName } = setupMultiUserProjectWithFilesForContext({});
-    try {
-      const result = runGsdTools('init plan-phase 1', tmpDir);
-      assert.ok(result.success, `Command failed: ${result.error}`);
-
-      const output = JSON.parse(result.output);
-      assert.strictEqual(output.active_user, userSlug);
-      assert.strictEqual(output.active_project, projectName);
-      assert.strictEqual(output.planning_root, `.planning/users/${userSlug}/${projectName}`);
-    } finally {
-      cleanup(tmpDir);
-    }
-  });
-
-  test('cmdInitMapCodebase includes context fields', () => {
-    const { tmpDir, userSlug, projectName } = setupMultiUserProjectWithFilesForContext({});
-    try {
-      const result = runGsdTools('init map-codebase', tmpDir);
-      assert.ok(result.success, `Command failed: ${result.error}`);
-
-      const output = JSON.parse(result.output);
-      assert.strictEqual(output.active_user, userSlug);
-      assert.strictEqual(output.active_project, projectName);
-      assert.strictEqual(output.planning_root, `.planning/users/${userSlug}/${projectName}`);
-    } finally {
-      cleanup(tmpDir);
-    }
-  });
-
-  test('cmdInitMistakes includes context fields', () => {
-    const { tmpDir, userSlug, projectName } = setupMultiUserProjectWithFilesForContext({});
-    try {
-      const result = runGsdTools('init mistakes', tmpDir);
-      assert.ok(result.success, `Command failed: ${result.error}`);
-
-      const output = JSON.parse(result.output);
-      assert.strictEqual(output.active_user, userSlug);
-      assert.strictEqual(output.active_project, projectName);
-      assert.strictEqual(output.planning_root, `.planning/users/${userSlug}/${projectName}`);
-    } finally {
-      cleanup(tmpDir);
-    }
-  });
-
-  test('GSD_USER override reflected in init output', () => {
-    const overrideSlug = 'override-user';
-    const { tmpDir, projectName } = setupMultiUserProjectWithFilesForContext({});
-
-    // Create project directory for the override user
-    const overrideProjectDir = path.join(
-      tmpDir, '.planning', 'users', overrideSlug, projectName, 'phases'
-    );
-    fs.mkdirSync(overrideProjectDir, { recursive: true });
-
-    try {
-      const result = execSync(`node "${TOOLS_PATH}" init progress`, {
-        cwd: tmpDir,
-        encoding: 'utf-8',
-        stdio: ['pipe', 'pipe', 'pipe'],
-        env: { ...process.env, GSD_USER: overrideSlug, GSD_PROJECT: projectName },
-      });
-
-      const output = JSON.parse(result.trim());
-      assert.strictEqual(output.active_user, overrideSlug);
-      assert.strictEqual(output.active_project, projectName);
-      assert.strictEqual(output.planning_root, `.planning/users/${overrideSlug}/${projectName}`);
-    } finally {
-      cleanup(tmpDir);
-    }
+    const output = JSON.parse(result.output);
+    assert.strictEqual(output.latest_completed_milestone, null);
+    assert.strictEqual(output.latest_completed_milestone_name, null);
+    assert.strictEqual(output.phase_dir_count, 0);
+    assert.strictEqual(output.phase_archive_path, null);
   });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// cmdInitSwitch (LIFE-03, LIFE-04)
+// findProjectRoot integration — gsd-tools resolves project root from sub-repo
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe('cmdInitSwitch', () => {
+describe('findProjectRoot integration via --cwd', () => {
+  let projectRoot;
+
+  beforeEach(() => {
+    projectRoot = createTempProject();
+    // Add ROADMAP.md so init quick doesn't error
+    fs.writeFileSync(
+      path.join(projectRoot, '.planning', 'ROADMAP.md'),
+      '# Roadmap\n\n## Phase 1: Foundation\n**Goal:** Setup\n'
+    );
+    // Write sub_repos config
+    fs.writeFileSync(
+      path.join(projectRoot, '.planning', 'config.json'),
+      JSON.stringify({ sub_repos: ['backend', 'frontend'] })
+    );
+    // Create sub-repo directory
+    fs.mkdirSync(path.join(projectRoot, 'backend'));
+  });
+
   afterEach(() => {
-    clearPlanningRootCache();
+    cleanup(projectRoot);
   });
 
-  test('switch with exact project match returns switched result', () => {
-    const { tmpDir, userSlug } = createTempMultiUserProject({ projectName: 'alpha' });
-    // Create a second project
-    fs.mkdirSync(path.join(tmpDir, '.planning', 'users', userSlug, 'beta', 'phases'), { recursive: true });
-    try {
-      const result = runGsdTools('switch beta', tmpDir);
-      assert.ok(result.success, `Command failed: ${result.error}`);
+  test('init quick from sub-repo CWD returns project_root pointing to parent', () => {
+    const backendDir = path.join(projectRoot, 'backend');
+    const result = runGsdTools(['init', 'quick', 'test task', '--cwd', backendDir]);
+    assert.ok(result.success, `Command failed: ${result.error}`);
 
-      const output = JSON.parse(result.output);
-      assert.strictEqual(output.switched, true);
-      assert.strictEqual(output.project, 'beta');
-      assert.ok(output.planning_root.includes('beta'));
-    } finally {
-      cleanup(tmpDir);
-    }
+    const output = JSON.parse(result.output);
+    assert.ok('project_root' in output, 'Should have project_root');
+    assert.strictEqual(output.project_root, projectRoot, 'project_root should be the parent, not the sub-repo');
+    assert.ok(output.roadmap_exists, 'Should find ROADMAP.md at project root');
   });
 
-  test('switch with fuzzy match (substring) finds project', () => {
-    const { tmpDir, userSlug } = createTempMultiUserProject({ projectName: 'my-frontend-app' });
-    // Create a second project to prevent auto-select
-    fs.mkdirSync(path.join(tmpDir, '.planning', 'users', userSlug, 'my-backend-api', 'phases'), { recursive: true });
-    try {
-      const result = runGsdTools('switch frontend', tmpDir);
-      assert.ok(result.success, `Command failed: ${result.error}`);
+  test('init quick from project root returns project_root as-is', () => {
+    const result = runGsdTools(['init', 'quick', 'test task', '--cwd', projectRoot]);
+    assert.ok(result.success, `Command failed: ${result.error}`);
 
-      const output = JSON.parse(result.output);
-      assert.strictEqual(output.switched, true);
-      assert.strictEqual(output.project, 'my-frontend-app');
-    } finally {
-      cleanup(tmpDir);
-    }
+    const output = JSON.parse(result.output);
+    assert.strictEqual(output.project_root, projectRoot);
   });
 
-  test('switch with no match returns error', () => {
-    const { tmpDir } = createTempMultiUserProject({ projectName: 'alpha' });
-    try {
-      const result = runGsdTools('switch nonexistent', tmpDir);
-      assert.strictEqual(result.success, false);
-      assert.ok(result.error.includes('not found'), `Expected "not found" in error: ${result.error}`);
-    } finally {
-      cleanup(tmpDir);
-    }
-  });
+  test('state load from sub-repo CWD reads project root config', () => {
+    // Write STATE.md at project root
+    fs.writeFileSync(
+      path.join(projectRoot, '.planning', 'STATE.md'),
+      '---\ncurrent_phase: 1\nphase_name: Foundation\n---\n# State\n'
+    );
 
-  test('switch without args returns project listing', () => {
-    const { tmpDir, userSlug } = createTempMultiUserProject({ projectName: 'alpha' });
-    // Create a second project
-    fs.mkdirSync(path.join(tmpDir, '.planning', 'users', userSlug, 'beta', 'phases'), { recursive: true });
-    try {
-      const result = runGsdTools('switch', tmpDir);
-      assert.ok(result.success, `Command failed: ${result.error}`);
+    const backendDir = path.join(projectRoot, 'backend');
+    const result = runGsdTools(['state', '--cwd', backendDir]);
+    assert.ok(result.success, `Command failed: ${result.error}`);
 
-      const output = JSON.parse(result.output);
-      assert.strictEqual(output.switched, false);
-      assert.ok(Array.isArray(output.projects));
-      assert.ok(output.projects.length >= 2);
-    } finally {
-      cleanup(tmpDir);
-    }
-  });
-
-  test('switch writes .active on successful match', () => {
-    const { tmpDir, userSlug } = createTempMultiUserProject({ projectName: 'alpha' });
-    // Create a second project
-    fs.mkdirSync(path.join(tmpDir, '.planning', 'users', userSlug, 'beta', 'phases'), { recursive: true });
-    try {
-      const result = runGsdTools('switch beta', tmpDir);
-      assert.ok(result.success, `Command failed: ${result.error}`);
-
-      // Check .active file was updated
-      const activePath = path.join(tmpDir, '.planning', 'users', userSlug, '.active');
-      const activeContent = JSON.parse(fs.readFileSync(activePath, 'utf-8'));
-      assert.strictEqual(activeContent.project, 'beta');
-    } finally {
-      cleanup(tmpDir);
-    }
-  });
-
-  test('switch with ambiguous match returns error', () => {
-    const { tmpDir, userSlug } = createTempMultiUserProject({ projectName: 'app-frontend' });
-    fs.mkdirSync(path.join(tmpDir, '.planning', 'users', userSlug, 'app-backend', 'phases'), { recursive: true });
-    try {
-      const result = runGsdTools('switch app', tmpDir);
-      assert.strictEqual(result.success, false);
-      assert.ok(result.error.includes('Ambiguous'), `Expected "Ambiguous" in error: ${result.error}`);
-    } finally {
-      cleanup(tmpDir);
-    }
+    const output = JSON.parse(result.output);
+    // Should find config from project root, not from backend/
+    assert.deepStrictEqual(output.config.sub_repos, ['backend', 'frontend'],
+      'Should read sub_repos from project root config');
   });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// cmdInitProjectSetup (LIFE-01, LIFE-02)
+// #2192: init plan-phase must include auto_advance, auto_chain_active, and mode
+// so workflows don't need separate config-get calls that loop on Kimi K2.5
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe('cmdInitProjectSetup', () => {
+describe('#2192: init plan-phase includes auto-advance config to prevent separate config-get loops', () => {
+  let tmpDir;
+
+  beforeEach(() => {
+    tmpDir = createTempProject();
+    fs.mkdirSync(path.join(tmpDir, '.planning', 'phases', '01-auth'), { recursive: true });
+    fs.writeFileSync(
+      path.join(tmpDir, '.planning', 'ROADMAP.md'),
+      ['# Roadmap', '', '## Milestone v1', '', '### Phase 1: Auth', '**Goal:** Auth'].join('\n')
+    );
+  });
+
   afterEach(() => {
-    clearPlanningRootCache();
+    cleanup(tmpDir);
   });
 
-  test('returns user identity and existing projects list', () => {
-    const { tmpDir, userSlug, projectName } = createTempMultiUserProject();
-    try {
-      const result = runGsdTools('init project-setup', tmpDir);
-      assert.ok(result.success, `Command failed: ${result.error}`);
-
-      const output = JSON.parse(result.output);
-      assert.strictEqual(output.user, userSlug);
-      assert.ok(Array.isArray(output.projects));
-      assert.ok(output.projects.some(p => p.name === projectName));
-      assert.strictEqual(output.planning_exists, true);
-    } finally {
-      cleanup(tmpDir);
-    }
+  test('init plan-phase includes auto_advance field (defaults false)', () => {
+    const result = runGsdTools('init plan-phase 1', tmpDir);
+    assert.ok(result.success, `Command failed: ${result.error}`);
+    const output = JSON.parse(result.output);
+    assert.ok('auto_advance' in output, 'init plan-phase must include auto_advance field');
+    assert.strictEqual(output.auto_advance, false, 'auto_advance should default to false');
   });
 
-  test('works without any existing projects', () => {
-    const { tmpDir, userSlug } = createTempMultiUserProject({ withActive: false });
-    // Remove the default project directory
-    const projectDir = path.join(tmpDir, '.planning', 'users', userSlug, 'test-project');
-    if (fs.existsSync(projectDir)) {
-      fs.rmSync(projectDir, { recursive: true, force: true });
-    }
-    try {
-      const result = runGsdTools('init project-setup', tmpDir);
-      assert.ok(result.success, `Command failed: ${result.error}`);
-
-      const output = JSON.parse(result.output);
-      assert.strictEqual(output.user, userSlug);
-      assert.deepStrictEqual(output.projects, []);
-    } finally {
-      cleanup(tmpDir);
-    }
+  test('init plan-phase includes auto_chain_active field (defaults false)', () => {
+    const result = runGsdTools('init plan-phase 1', tmpDir);
+    assert.ok(result.success, `Command failed: ${result.error}`);
+    const output = JSON.parse(result.output);
+    assert.ok('auto_chain_active' in output, 'init plan-phase must include auto_chain_active field');
+    assert.strictEqual(output.auto_chain_active, false, 'auto_chain_active should default to false');
   });
 
-  test('returns global config when present', () => {
-    const { tmpDir } = createTempMultiUserProject();
-    // Create a global config
+  test('init plan-phase includes mode field (defaults to interactive)', () => {
+    const result = runGsdTools('init plan-phase 1', tmpDir);
+    assert.ok(result.success, `Command failed: ${result.error}`);
+    const output = JSON.parse(result.output);
+    assert.ok('mode' in output, 'init plan-phase must include mode field');
+    assert.strictEqual(output.mode, 'interactive', 'mode should default to interactive');
+  });
+
+  test('init plan-phase reflects auto_advance true when set in config', () => {
+    const configPath = path.join(tmpDir, '.planning', 'config.json');
+    const cfg = { workflow: { auto_advance: true } };
+    fs.writeFileSync(configPath, JSON.stringify(cfg, null, 2));
+
+    const result = runGsdTools('init plan-phase 1', tmpDir);
+    assert.ok(result.success, `Command failed: ${result.error}`);
+    const output = JSON.parse(result.output);
+    assert.strictEqual(output.auto_advance, true, 'auto_advance should reflect config value');
+  });
+
+  test('init plan-phase reflects auto_chain_active true when set in config', () => {
+    const configPath = path.join(tmpDir, '.planning', 'config.json');
+    const cfg = { workflow: { _auto_chain_active: true } };
+    fs.writeFileSync(configPath, JSON.stringify(cfg, null, 2));
+
+    const result = runGsdTools('init plan-phase 1', tmpDir);
+    assert.ok(result.success, `Command failed: ${result.error}`);
+    const output = JSON.parse(result.output);
+    assert.strictEqual(output.auto_chain_active, true, 'auto_chain_active should reflect config value');
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// withProjectRoot: project identity injection (#1948)
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('withProjectRoot project identity', () => {
+  let tmpDir;
+
+  beforeEach(() => {
+    tmpDir = createTempProject();
+  });
+
+  afterEach(() => {
+    cleanup(tmpDir);
+  });
+
+  test('injects project_code when config.project_code is set', () => {
     fs.writeFileSync(
       path.join(tmpDir, '.planning', 'config.json'),
-      JSON.stringify({ mode: 'yolo', granularity: 'fine' }, null, 2),
-      'utf-8'
+      JSON.stringify({ project_code: 'CK' })
     );
-    try {
-      const result = runGsdTools('init project-setup', tmpDir);
-      assert.ok(result.success, `Command failed: ${result.error}`);
 
-      const output = JSON.parse(result.output);
-      assert.strictEqual(output.global_config.mode, 'yolo');
-      assert.strictEqual(output.global_config.granularity, 'fine');
-    } finally {
-      cleanup(tmpDir);
-    }
+    const result = runGsdTools(['init', 'quick', 'test task'], tmpDir, { HOME: tmpDir });
+    assert.ok(result.success, `Command failed: ${result.error}`);
+
+    const output = JSON.parse(result.output);
+    assert.strictEqual(output.project_code, 'CK');
+  });
+
+  test('injects project_title extracted from PROJECT.md H1', () => {
+    fs.writeFileSync(
+      path.join(tmpDir, '.planning', 'config.json'),
+      JSON.stringify({ project_code: 'CK' })
+    );
+    fs.writeFileSync(
+      path.join(tmpDir, '.planning', 'PROJECT.md'),
+      '# CareKit\n\nA care management platform.\n'
+    );
+
+    const result = runGsdTools(['init', 'quick', 'test task'], tmpDir, { HOME: tmpDir });
+    assert.ok(result.success, `Command failed: ${result.error}`);
+
+    const output = JSON.parse(result.output);
+    assert.strictEqual(output.project_title, 'CareKit');
+  });
+
+  test('omits project_code and project_title when project_code is not set', () => {
+    fs.writeFileSync(
+      path.join(tmpDir, '.planning', 'config.json'),
+      JSON.stringify({})
+    );
+
+    const result = runGsdTools(['init', 'quick', 'test task'], tmpDir, { HOME: tmpDir });
+    assert.ok(result.success, `Command failed: ${result.error}`);
+
+    const output = JSON.parse(result.output);
+    assert.strictEqual(output.project_code, undefined,
+      'project_code should not be present when not configured');
+    // project_title may or may not be present depending on PROJECT.md existence,
+    // but without project_code the workflow omits the identity suffix entirely
+  });
+
+  test('omits project_title when PROJECT.md does not exist', () => {
+    fs.writeFileSync(
+      path.join(tmpDir, '.planning', 'config.json'),
+      JSON.stringify({ project_code: 'CK' })
+    );
+    // Ensure no PROJECT.md exists (createTempProject doesn't create one)
+    const projectMdPath = path.join(tmpDir, '.planning', 'PROJECT.md');
+    if (fs.existsSync(projectMdPath)) fs.unlinkSync(projectMdPath);
+
+    const result = runGsdTools(['init', 'quick', 'test task'], tmpDir, { HOME: tmpDir });
+    assert.ok(result.success, `Command failed: ${result.error}`);
+
+    const output = JSON.parse(result.output);
+    assert.strictEqual(output.project_code, 'CK',
+      'project_code should still be present');
+    assert.strictEqual(output.project_title, undefined,
+      'project_title should not be present when PROJECT.md is missing');
   });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// cmdArchiveProject / cmdRestoreProject (LIFE-09)
+// roadmap analyze command
 // ─────────────────────────────────────────────────────────────────────────────
-
-describe('cmdArchiveProject', () => {
-  afterEach(() => {
-    clearPlanningRootCache();
-  });
-
-  test('archive moves project directory to _archived/', () => {
-    const { tmpDir, userSlug } = createTempMultiUserProject({ projectName: 'old-project' });
-    // Create a second project so we have something after archive
-    fs.mkdirSync(path.join(tmpDir, '.planning', 'users', userSlug, 'current-project', 'phases'), { recursive: true });
-    try {
-      const result = runGsdTools('archive-project old-project', tmpDir);
-      assert.ok(result.success, `Command failed: ${result.error}`);
-
-      const output = JSON.parse(result.output);
-      assert.strictEqual(output.archived, true);
-      assert.strictEqual(output.project, 'old-project');
-
-      // Verify directory was moved
-      const archivedPath = path.join(tmpDir, '.planning', 'users', userSlug, '_archived', 'old-project');
-      const originalPath = path.join(tmpDir, '.planning', 'users', userSlug, 'old-project');
-      assert.ok(fs.existsSync(archivedPath), 'Archived directory should exist');
-      assert.ok(!fs.existsSync(originalPath), 'Original directory should not exist');
-    } finally {
-      cleanup(tmpDir);
-    }
-  });
-
-  test('archive clears .active when archiving active project', () => {
-    const { tmpDir, userSlug } = createTempMultiUserProject({ projectName: 'active-project' });
-    // Create a second project
-    fs.mkdirSync(path.join(tmpDir, '.planning', 'users', userSlug, 'other-project', 'phases'), { recursive: true });
-    try {
-      const result = runGsdTools('archive-project active-project', tmpDir);
-      assert.ok(result.success, `Command failed: ${result.error}`);
-
-      // .active should either be cleared or point to the remaining project
-      const activePath = path.join(tmpDir, '.planning', 'users', userSlug, '.active');
-      if (fs.existsSync(activePath)) {
-        const activeContent = JSON.parse(fs.readFileSync(activePath, 'utf-8'));
-        assert.notStrictEqual(activeContent.project, 'active-project', 'Should not still point to archived project');
-      }
-    } finally {
-      cleanup(tmpDir);
-    }
-  });
-
-  test('archive errors on nonexistent project', () => {
-    const { tmpDir } = createTempMultiUserProject();
-    try {
-      const result = runGsdTools('archive-project nonexistent', tmpDir);
-      assert.strictEqual(result.success, false);
-      assert.ok(result.error.includes('not found') || result.error.includes('does not exist'),
-        `Expected error about missing project: ${result.error}`);
-    } finally {
-      cleanup(tmpDir);
-    }
-  });
-});
-
-describe('cmdRestoreProject', () => {
-  afterEach(() => {
-    clearPlanningRootCache();
-  });
-
-  test('restore moves project from _archived/ back', () => {
-    const { tmpDir, userSlug } = createTempMultiUserProject({ projectName: 'current' });
-    // Create an archived project
-    const archivedPath = path.join(tmpDir, '.planning', 'users', userSlug, '_archived', 'old-project', 'phases');
-    fs.mkdirSync(archivedPath, { recursive: true });
-    try {
-      const result = runGsdTools('restore-project old-project', tmpDir);
-      assert.ok(result.success, `Command failed: ${result.error}`);
-
-      const output = JSON.parse(result.output);
-      assert.strictEqual(output.restored, true);
-      assert.strictEqual(output.project, 'old-project');
-
-      // Verify directory was moved
-      const restoredPath = path.join(tmpDir, '.planning', 'users', userSlug, 'old-project');
-      const archivedDir = path.join(tmpDir, '.planning', 'users', userSlug, '_archived', 'old-project');
-      assert.ok(fs.existsSync(restoredPath), 'Restored directory should exist');
-      assert.ok(!fs.existsSync(archivedDir), 'Archived directory should not exist');
-    } finally {
-      cleanup(tmpDir);
-    }
-  });
-
-  test('restore errors on duplicate name', () => {
-    const { tmpDir, userSlug } = createTempMultiUserProject({ projectName: 'my-project' });
-    // Create a project with the same name in _archived
-    const archivedPath = path.join(tmpDir, '.planning', 'users', userSlug, '_archived', 'my-project', 'phases');
-    fs.mkdirSync(archivedPath, { recursive: true });
-    try {
-      const result = runGsdTools('restore-project my-project', tmpDir);
-      assert.strictEqual(result.success, false);
-      assert.ok(result.error.includes('already exists'),
-        `Expected "already exists" in error: ${result.error}`);
-    } finally {
-      cleanup(tmpDir);
-    }
-  });
-
-  test('restore errors on project not found in _archived', () => {
-    const { tmpDir } = createTempMultiUserProject();
-    try {
-      const result = runGsdTools('restore-project nonexistent', tmpDir);
-      assert.strictEqual(result.success, false);
-      assert.ok(result.error.includes('not found'),
-        `Expected "not found" in error: ${result.error}`);
-    } finally {
-      cleanup(tmpDir);
-    }
-  });
-
-  test('restore sets restored project as active', () => {
-    const { tmpDir, userSlug } = createTempMultiUserProject({ projectName: 'current' });
-    // Create an archived project
-    const archivedPath = path.join(tmpDir, '.planning', 'users', userSlug, '_archived', 'restored-project', 'phases');
-    fs.mkdirSync(archivedPath, { recursive: true });
-    try {
-      const result = runGsdTools('restore-project restored-project', tmpDir);
-      assert.ok(result.success, `Command failed: ${result.error}`);
-
-      // Check .active file was updated
-      const activePath = path.join(tmpDir, '.planning', 'users', userSlug, '.active');
-      const activeContent = JSON.parse(fs.readFileSync(activePath, 'utf-8'));
-      assert.strictEqual(activeContent.project, 'restored-project');
-    } finally {
-      cleanup(tmpDir);
-    }
-  });
-});

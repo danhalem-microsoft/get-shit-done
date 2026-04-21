@@ -755,7 +755,7 @@ Tag: v[X.Y]
 
 **Start Next Milestone** — questioning → research → requirements → roadmap
 
-`/gsd:new-milestone`
+`/gsd-new-milestone`
 
 <sub>`/clear` first → fresh context window</sub>
 
@@ -807,6 +807,6 @@ Milestone completion is successful when:
 - [ ] Known gaps recorded in MILESTONES.md if user proceeded with incomplete requirements
 - [ ] RETROSPECTIVE.md updated with milestone section
 - [ ] Cross-milestone trends updated
-- [ ] User knows next step (/gsd:new-milestone)
+- [ ] User knows next step (/gsd-new-milestone)
 
 </success_criteria>

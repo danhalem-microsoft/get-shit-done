@@ -116,7 +116,7 @@ AskUserQuestion: "Research the domain ecosystem for new features before defining
 - "Research first (Recommended)" — Discover patterns, features, architecture for NEW capabilities
 - "Skip research" — Go straight to requirements
 
-**Persist choice to config** (so future `/gsd:plan-phase` honors it):
+**Persist choice to config** (so future `/gsd-plan-phase` honors it):
 
 ```bash
 # If "Research first": persist true
@@ -706,11 +706,11 @@ node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs: create milest
 
 **Phase [N]: [Phase Name]** — [Goal]
 
-`/gsd:discuss-phase [N]` — gather context and clarify approach
+`/gsd-discuss-phase [N]` — gather context and clarify approach
 
 <sub>`/clear` first → fresh context window</sub>
 
-Also: `/gsd:plan-phase [N]` — skip discussion, plan directly
+Also: `/gsd-plan-phase [N]` — skip discussion, plan directly
 ```
 
 </process>
@@ -727,7 +727,7 @@ Also: `/gsd:plan-phase [N]` — skip discussion, plan directly
 - [ ] User feedback incorporated (if any)
 - [ ] ROADMAP.md phases continue from previous milestone
 - [ ] All commits made (if planning docs committed)
-- [ ] User knows next step: `/gsd:discuss-phase [N]`
+- [ ] User knows next step: `/gsd-discuss-phase [N]`
 
 **Atomic commits:** Each phase commits its artifacts immediately.
 </success_criteria>

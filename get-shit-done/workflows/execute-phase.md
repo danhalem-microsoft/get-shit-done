@@ -460,7 +460,7 @@ Execute each wave in sequence. Within a wave: parallel if `PARALLELIZATION=true`
 
    **If "Fix manually":**
    - Log to STATE.md: current wave, remaining waves, findings
-   - Present: "Execution paused. Fix the issues manually, then resume with `/gsd:execute-phase {phase}`"
+   - Present: "Execution paused. Fix the issues manually, then resume with `/gsd-execute-phase {phase}`"
    - Stop execution (return partial completion to aggregate_results)
 
    **If "Accept tech debt":**
@@ -888,7 +888,7 @@ STATUS=${AUDIT_STATUS:-$VERIFIER_STATUS}
 |--------|--------|
 | `passed` | → update_roadmap |
 | `human_needed` | Present items for human testing, get approval or feedback |
-| `gaps_found` | Present gap summary, offer `/gsd:plan-phase {phase} --gaps` |
+| `gaps_found` | Present gap summary, offer `/gsd-plan-phase {phase} --gaps` |
 
 **If human_needed:**
 ```
@@ -914,15 +914,15 @@ All automated checks passed. {N} items need human testing:
 ---
 ## ▶ Next Up
 
-`/gsd:plan-phase {X} --gaps`
+`/gsd-plan-phase {X} --gaps`
 
 <sub>`/clear` first → fresh context window</sub>
 
 Also: `cat {phase_dir}/{phase_num}-VERIFICATION.md` — full report
-Also: `/gsd:verify-work {X}` — manual testing first
+Also: `/gsd-verify-work {X}` — manual testing first
 ```
 
-Gap closure cycle: `/gsd:plan-phase {X} --gaps` reads VERIFICATION.md → creates gap plans with `gap_closure: true` → user runs `/gsd:execute-phase {X} --gaps-only` → verifier re-runs.
+Gap closure cycle: `/gsd-plan-phase {X} --gaps` reads VERIFICATION.md → creates gap plans with `gap_closure: true` → user runs `/gsd-execute-phase {X} --gaps-only` → verifier re-runs.
 </step>
 
 <step name="update_roadmap">
@@ -959,7 +959,7 @@ Failure to evaluate the verification-auditor step is a workflow violation — su
 
 <step name="offer_next">
 
-**Exception:** If `gaps_found`, the `verify_phase_goal` step already presents the gap-closure path (`/gsd:plan-phase {X} --gaps`). No additional routing needed — skip auto-advance.
+**Exception:** If `gaps_found`, the `verify_phase_goal` step already presents the gap-closure path (`/gsd-plan-phase {X} --gaps`). No additional routing needed — skip auto-advance.
 
 **No-transition check (spawned by auto-advance chain):**
 
@@ -1008,7 +1008,7 @@ Read and follow `~/.claude/get-shit-done/workflows/transition.md`, passing throu
 
 **If neither `--auto` nor `AUTO_CFG` is true:**
 
-The workflow ends. The user runs `/gsd:progress` or invokes the transition workflow manually.
+The workflow ends. The user runs `/gsd-progress` or invokes the transition workflow manually.
 </step>
 
 </process>
@@ -1041,7 +1041,7 @@ Orchestrator: ~10-15% context. Subagents: fresh 200k each. No polling (Task bloc
 </success_criteria>
 
 <resumption>
-Re-run `/gsd:execute-phase {phase}` → discover_plans finds completed SUMMARYs → skips them → resumes from first incomplete plan → continues wave execution.
+Re-run `/gsd-execute-phase {phase}` → discover_plans finds completed SUMMARYs → skips them → resumes from first incomplete plan → continues wave execution.
 
 STATE.md tracks: last completed plan, current wave, pending checkpoints, code-critic fix cycle counter per wave.
 

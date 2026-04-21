@@ -23,7 +23,7 @@ Parse JSON for: `researcher_model`, `planner_model`, `checker_model`, `research_
 
 **File paths (for <files_to_read> blocks):** `state_path`, `roadmap_path`, `requirements_path`, `context_path`, `research_path`, `verification_path`, `uat_path`. These are null if files don't exist.
 
-**If `planning_exists` is false:** Error — run `/gsd:new-project` first.
+**If `planning_exists` is false:** Error — run `/gsd-new-project` first.
 
 <decision_logging>
 **Initialize decision logging (silent failure — never breaks workflow):**
@@ -173,7 +173,7 @@ Use AskUserQuestion:
   - "Run discuss-phase first" — Capture design decisions before planning
 
 If "Continue without context": Proceed to step 5.
-If "Run discuss-phase first": Display `/gsd:discuss-phase {X}` and exit workflow.
+If "Run discuss-phase first": Display `/gsd-discuss-phase {X}` and exit workflow.
 
 ## 5. Handle Research
 
@@ -368,7 +368,7 @@ for i, wave in enumerate(waves):
     </research_type>
 
     <phase_context>
-    IMPORTANT: If CONTEXT.md exists below, it contains user decisions from /gsd:discuss-phase.
+    IMPORTANT: If CONTEXT.md exists below, it contains user decisions from /gsd-discuss-phase.
     - **Decisions** = Locked — research THESE deeply, no alternatives
     - **Claude's Discretion** = Freedom areas — research options, recommend
     - **Deferred Ideas** = Out of scope — ignore
@@ -478,7 +478,7 @@ Answer: "What do I need to know to PLAN this phase well?"
 </objective>
 
 <files_to_read>
-- {context_path} (USER DECISIONS from /gsd:discuss-phase)
+- {context_path} (USER DECISIONS from /gsd-discuss-phase)
 - {requirements_path} (Project requirements)
 - {state_path} (Project decisions and history)
 </files_to_read>
@@ -562,7 +562,7 @@ VALIDATION_EXISTS=$(ls "${PHASE_DIR}"/*-VALIDATION.md 2>/dev/null | head -1)
 ```
 
 If missing and Nyquist enabled — ask user:
-1. Re-run: `/gsd:plan-phase {PHASE} --research`
+1. Re-run: `/gsd-plan-phase {PHASE} --research`
 2. Disable Nyquist in config
 3. Continue anyway (plans fail Dimension 8)
 
@@ -590,7 +590,7 @@ Planner prompt:
 - {state_path} (Project State)
 - {roadmap_path} (Roadmap)
 - {requirements_path} (Requirements)
-- {context_path} (USER DECISIONS from /gsd:discuss-phase)
+- {context_path} (USER DECISIONS from /gsd-discuss-phase)
 - {research_path} (Technical Research)
 - {verification_path} (Verification Gaps - if --gaps)
 - {uat_path} (UAT Gaps - if --gaps)
@@ -603,7 +603,7 @@ Planner prompt:
 </planning_context>
 
 <downstream_consumer>
-Output consumed by /gsd:execute-phase. Plans need:
+Output consumed by /gsd-execute-phase. Plans need:
 - Frontmatter (wave, depends_on, files_modified, autonomous)
 - Tasks in XML format
 - Verification criteria
@@ -678,7 +678,7 @@ Checker prompt:
 - {PHASE_DIR}/*-PLAN.md (Plans to verify)
 - {roadmap_path} (Roadmap)
 - {requirements_path} (Requirements)
-- {context_path} (USER DECISIONS from /gsd:discuss-phase)
+- {context_path} (USER DECISIONS from /gsd-discuss-phase)
 - {research_path} (Technical Research — includes Validation Architecture)
 </files_to_read>
 
@@ -991,14 +991,14 @@ The `--no-transition` flag tells execute-phase to return status after verificati
 
   Auto-advance pipeline finished.
 
-  Next: /gsd:discuss-phase ${NEXT_PHASE} --auto
+  Next: /gsd-discuss-phase ${NEXT_PHASE} --auto
   ```
 - **GAPS FOUND / VERIFICATION FAILED** → Display result, stop chain:
   ```
   Auto-advance stopped: Execution needs review.
 
   Review the output above and continue manually:
-  /gsd:execute-phase ${PHASE}
+  /gsd-execute-phase ${PHASE}
   ```
 
 **If neither `--auto` nor config enabled:**
@@ -1029,7 +1029,7 @@ Verification: {Passed | Passed with override | Skipped}
 
 **Execute Phase {X}** — run all {N} plans
 
-/gsd:execute-phase {X}
+/gsd-execute-phase {X}
 
 <sub>/clear first → fresh context window</sub>
 
@@ -1037,7 +1037,7 @@ Verification: {Passed | Passed with override | Skipped}
 
 **Also available:**
 - cat ${planning_root}/phases/{phase-dir}/*-PLAN.md — review plans
-- /gsd:plan-phase {X} --research — re-research first
+- /gsd-plan-phase {X} --research — re-research first
 
 ───────────────────────────────────────────────────────────────
 </offer_next>

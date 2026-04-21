@@ -8,27 +8,57 @@ const path = require('path');
 
 const TOOLS_PATH = path.join(__dirname, '..', 'get-shit-done', 'bin', 'gsd-tools.cjs');
 
+// Upstream addition: base env vars that must be cleared in child processes so
+// session-scoped workstream routing does not leak between tests.
+const TEST_ENV_BASE = {
+  GSD_SESSION_KEY: '',
+  CODEX_THREAD_ID: '',
+  CLAUDE_SESSION_ID: '',
+  CLAUDE_CODE_SSE_PORT: '',
+  OPENCODE_SESSION_ID: '',
+  GEMINI_SESSION_ID: '',
+  CURSOR_SESSION_ID: '',
+  WINDSURF_SESSION_ID: '',
+  TERM_SESSION_ID: '',
+  WT_SESSION: '',
+  TMUX_PANE: '',
+  ZELLIJ_SESSION_NAME: '',
+  TTY: '',
+  SSH_TTY: '',
+};
+
 /**
  * Run gsd-tools command.
  *
  * @param {string|string[]} args - Command string (shell-interpreted) or array
  *   of arguments (shell-bypassed via execFileSync, safe for JSON and dollar signs).
  * @param {string} cwd - Working directory.
+ * @param {object} [env] - Optional env overrides merged on top of process.env.
+ *   Pass { HOME: cwd } to sandbox ~/.gsd/ lookups in tests that assert concrete
+ *   config values that could be overridden by a developer's defaults.json.
  */
-function runGsdTools(args, cwd = process.cwd()) {
+function runGsdTools(args, cwd = process.cwd(), env = {}) {
   try {
     let result;
+    const childEnv = { ...process.env, ...TEST_ENV_BASE, ...env };
     if (Array.isArray(args)) {
       result = execFileSync(process.execPath, [TOOLS_PATH, ...args], {
         cwd,
         encoding: 'utf-8',
         stdio: ['pipe', 'pipe', 'pipe'],
+        env: childEnv,
       });
     } else {
-      result = execSync(`node "${TOOLS_PATH}" ${args}`, {
+      // Split shell-style string into argv, stripping surrounding quotes, so we
+      // can invoke execFileSync with process.execPath instead of relying on
+      // `node` being on PATH (it isn't in Claude Code shell sessions).
+      const argv = (args.match(/(?:[^\s"']+|"[^"]*"|'[^']*')+/g) || [])
+        .map(t => t.replace(/"([^"]*)"/g, '$1').replace(/'([^']*)'/g, '$1'));
+      result = execFileSync(process.execPath, [TOOLS_PATH, ...argv], {
         cwd,
         encoding: 'utf-8',
         stdio: ['pipe', 'pipe', 'pipe'],
+        env: childEnv,
       });
     }
     return { success: true, output: result.trim() };
@@ -41,41 +71,60 @@ function runGsdTools(args, cwd = process.cwd()) {
   }
 }
 
+// Upstream addition: bare temp dir helper.
+function createTempDir(prefix = 'gsd-test-') {
+  return fs.mkdtempSync(path.join(require('os').tmpdir(), prefix));
+}
+
 /**
  * Create temp directory structure (legacy flat layout).
  *
  * @deprecated Use createTempMultiUserProject() for new tests.
- * Creates .planning/users/ to prevent legacy structure detection error,
- * but does not create a full multi-user structure.
- * Callers should migrate to createTempMultiUserProject() and use the
- * returned { tmpDir, userSlug, projectName } to construct paths via
- * `.planning/users/${userSlug}/${projectName}/`.
+ * Creates .planning/users/ to prevent legacy structure detection error in
+ * fork's getPlanningRoot path resolver.
  */
-function createTempProject() {
-  const tmpDir = fs.mkdtempSync(path.join(require('os').tmpdir(), 'gsd-test-'));
+function createTempProject(prefix = 'gsd-test-') {
+  const tmpDir = fs.mkdtempSync(path.join(require('os').tmpdir(), prefix));
   fs.mkdirSync(path.join(tmpDir, '.planning', 'phases'), { recursive: true });
+  // Fork patch: seed .planning/users/ so fork's legacy-layout detection does
+  // not hard-error when a test uses the flat layout on purpose.
   fs.mkdirSync(path.join(tmpDir, '.planning', 'users'), { recursive: true });
   return tmpDir;
 }
 
 /**
- * Create temp directory with initialized git repo (legacy flat layout).
+ * Create temp directory with initialized git repo and at least one commit.
  *
- * @deprecated Use createTempMultiUserProject() for new tests.
- * Creates .planning/users/ to prevent legacy structure detection error.
- * Callers should migrate to createTempMultiUserProject().
+ * Fork additions on top of upstream helper (FORK.md Phase 3 Pattern 3):
+ *  - Seeds `.planning/users/` so fork's legacy-layout detection does not
+ *    hard-error during test setup.
+ *  - Seeds `.planning/user-map.json` with `{ _schema: 1, "Test": "test" }`
+ *    so resolveIdentity() finds a deterministic test-user entry instead of
+ *    falling back to the developer's real git identity.
  */
-function createTempGitProject() {
-  const tmpDir = fs.mkdtempSync(path.join(require('os').tmpdir(), 'gsd-test-'));
+function createTempGitProject(prefix = 'gsd-test-') {
+  const tmpDir = fs.mkdtempSync(path.join(require('os').tmpdir(), prefix));
   fs.mkdirSync(path.join(tmpDir, '.planning', 'phases'), { recursive: true });
   fs.mkdirSync(path.join(tmpDir, '.planning', 'users'), { recursive: true });
 
   execSync('git init', { cwd: tmpDir, stdio: 'pipe' });
   execSync('git config user.email "test@test.com"', { cwd: tmpDir, stdio: 'pipe' });
   execSync('git config user.name "Test"', { cwd: tmpDir, stdio: 'pipe' });
+  execSync('git config commit.gpgsign false', { cwd: tmpDir, stdio: 'pipe' });
 
-  // Create initial commit
-  fs.writeFileSync(path.join(tmpDir, '.gitkeep'), '');
+  fs.writeFileSync(
+    path.join(tmpDir, '.planning', 'PROJECT.md'),
+    '# Project\n\nTest project.\n'
+  );
+
+  // Fork patch (Pattern 3): deterministic user-map seed for identity tests.
+  const userMap = { _schema: 1, Test: 'test' };
+  fs.writeFileSync(
+    path.join(tmpDir, '.planning', 'user-map.json'),
+    JSON.stringify(userMap, null, 2) + '\n',
+    'utf-8'
+  );
+
   execSync('git add -A', { cwd: tmpDir, stdio: 'pipe' });
   execSync('git commit -m "initial commit"', { cwd: tmpDir, stdio: 'pipe' });
 
@@ -86,6 +135,9 @@ function createTempGitProject() {
  * Create temp directory with full multi-user structure, git repo, and user-map.json.
  * Returns { tmpDir, userSlug, projectName } so callers can compute planningRoot as
  * `.planning/users/${userSlug}/${projectName}`.
+ *
+ * Fork-only helper (FORK.md §Files Modified — helpers.cjs row). Preferred over
+ * createTempGitProject for any new test that exercises identity or multi-project flows.
  */
 function createTempMultiUserProject(opts = {}) {
   const {
@@ -109,8 +161,9 @@ function createTempMultiUserProject(opts = {}) {
   execSync('git init', { cwd: tmpDir, stdio: 'pipe' });
   execSync(`git config user.email "${userEmail}"`, { cwd: tmpDir, stdio: 'pipe' });
   execSync(`git config user.name "${userName}"`, { cwd: tmpDir, stdio: 'pipe' });
+  execSync('git config commit.gpgsign false', { cwd: tmpDir, stdio: 'pipe' });
 
-  // Create user-map.json
+  // Create user-map.json (FORK.md Pattern 3 — identity seed)
   const userMap = { _schema: 1, [userName]: userSlug };
   fs.writeFileSync(
     path.join(tmpDir, '.planning', 'user-map.json'),
@@ -131,7 +184,7 @@ function createTempMultiUserProject(opts = {}) {
     );
   }
 
-  // Create .gitignore for .active files
+  // Create .gitignore for .active files (they are session-local, not committed)
   fs.writeFileSync(
     path.join(tmpDir, '.gitignore'),
     '**/.active\n',
@@ -149,4 +202,13 @@ function cleanup(tmpDir) {
   fs.rmSync(tmpDir, { recursive: true, force: true });
 }
 
-module.exports = { runGsdTools, createTempProject, createTempGitProject, createTempMultiUserProject, cleanup, TOOLS_PATH };
+module.exports = {
+  runGsdTools,
+  createTempDir,
+  createTempProject,
+  createTempGitProject,
+  createTempMultiUserProject,
+  cleanup,
+  TOOLS_PATH,
+  TEST_ENV_BASE,
+};
