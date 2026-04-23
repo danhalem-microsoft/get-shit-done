@@ -1,0 +1,18 @@
+load("@aspect_rules_js//js:defs.bzl", "js_test")
+
+# Runfiles strategy: tags=["local"] disables Bazel sandboxing, so tests run
+# directly in the execroot with full source tree access. No runfiles manifest
+# or special path resolution is needed. Tests access repo files via
+# BUILD_WORKSPACE_DIRECTORY or process.cwd().
+
+[js_test(
+    name = test_file.replace(".test.cjs", ""),
+    entry_point = test_file,
+    data = [
+        "//:project_sources",
+        "//integration/helpers:test_helpers",
+    ],
+    size = "large",
+    tags = ["integration", "local", "requires-api-key"],
+    timeout = "long",
+) for test_file in glob(["*.test.cjs"])]
