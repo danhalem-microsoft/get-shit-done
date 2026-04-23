@@ -1,0 +1,10 @@
+# Integration tests need API key and local execution
+test --test_env=ANTHROPIC_API_KEY
+test --test_env=HOME
+test --test_env=PATH
+
+# Show test output for debugging
+test:debug --test_output=all
+
+# Lockfile policy: do not auto-update
+common --lockfile_mode=off

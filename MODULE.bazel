@@ -1,0 +1,11 @@
+module(
+    name = "get-shit-done",
+    version = "0.0.0",
+)
+
+bazel_dep(name = "aspect_rules_js", version = "3.0.3")
+bazel_dep(name = "rules_nodejs", version = "6.7.4")
+
+node = use_extension("@rules_nodejs//nodejs:extensions.bzl", "node")
+# NOTE: Keep in sync with package.json engines.node. See review concern re: version drift.
+node.toolchain(node_version = "22.18.0")
