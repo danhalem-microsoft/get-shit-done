@@ -141,6 +141,10 @@ function createSandbox(name, opts = {}) {
   const userSlug = opts.userSlug || 'test-user';
   const base = process.env.TEST_TMPDIR || fs.mkdtempSync(path.join(os.tmpdir(), 'gsd-sandbox-'));
   const dir = path.join(base, name);
+  // Clean up any stale sandbox from a previous run (Bazel reuses TEST_TMPDIR)
+  if (fs.existsSync(dir)) {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
   fs.mkdirSync(dir, { recursive: true });
 
   // 1. Git init
