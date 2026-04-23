@@ -9,7 +9,6 @@ load("@aspect_rules_js//js:defs.bzl", "js_test")
     name = test_file.replace(".test.cjs", ""),
     entry_point = test_file,
     data = [
-        "//:project_sources",
         "//integration/helpers:test_helpers",
     ],
     size = "large",

@@ -124,7 +124,20 @@ function createTestProject(name, opts = {}) {
  * Outside Bazel, process.cwd() is the repo root.
  */
 function getRepoRoot() {
-  return process.env.BUILD_WORKSPACE_DIRECTORY || process.cwd();
+  if (process.env.BUILD_WORKSPACE_DIRECTORY) {
+    return process.env.BUILD_WORKSPACE_DIRECTORY;
+  }
+  // Under Bazel js_test, cwd is the runfiles tree. Resolve the real repo root
+  // by walking up from this file's location to find the git root.
+  try {
+    const root = execFileSync('git', ['rev-parse', '--show-toplevel'], {
+      cwd: path.resolve(__dirname, '..', '..'),
+      encoding: 'utf-8',
+      stdio: ['pipe', 'pipe', 'pipe'],
+    }).trim();
+    if (root) return root;
+  } catch { /* fall through */ }
+  return process.cwd();
 }
 
 module.exports = { runClaude, createTestProject, getRepoRoot, CLAUDE_BIN, DEFAULT_TIMEOUT };

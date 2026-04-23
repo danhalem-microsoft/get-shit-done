@@ -18,8 +18,8 @@ const FORK_FEATURES = [
   { name: 'Code-Search Integration', agentFile: 'agents/gsd-codebase-mapper.md' },
   { name: 'Critic Agents', pattern: 'agents/gsd-critic-*.md', dir: 'agents', prefix: 'gsd-critic-', minCount: 6 },
   { name: 'Dynamic Researchers', dir: 'get-shit-done/researchers', minCount: 11 },
-  { name: 'Adaptive Synthesizer', agentFile: 'agents/gsd-synthesizer.md' },
-  { name: 'Mistake Registry', commandFile: 'commands/gsd-tools.cjs' },
+  { name: 'Adaptive Synthesizer', agentFile: 'agents/gsd-research-synthesizer.md' },
+  { name: 'Mistake Registry', commandFile: 'commands/gsd/add-mistake.md' },
   { name: 'Taste Library', file: 'get-shit-done/bin/lib/taste.cjs' },
 ];
 
@@ -80,17 +80,28 @@ describe('Fork feature validation', () => {
   });
 
   test('claude can describe fork features and mentions specific feature names', () => {
-    const result = runClaude(
-      ['--print', 'Read FORK.md and list the 6 fork feature areas by name. Just list them, one per line.'],
-      { cwd: repoRoot, timeout: 180_000 }
-    );
-    assert.ok(result.output.length > 0, 'Expected output from Claude');
-    // Must mention at least 3 of the 6 feature names (allows for LLM paraphrasing)
-    const output = result.output.toLowerCase();
-    const matches = FORK_FEATURES.filter(f => output.includes(f.name.toLowerCase()));
+    // Feed FORK.md content via stdin pipe — too large for a CLI argument
+    const { execFileSync } = require('node:child_process');
+    const forkContent = fs.readFileSync(path.join(repoRoot, 'FORK.md'), 'utf-8').slice(0, 2000);
+    const prompt = `Here is FORK.md:\n\n${forkContent}\n\nList the 6 fork feature areas by name, one per line.`;
+    let output = '';
+    try {
+      output = execFileSync('claude', ['--print', '-'], {
+        cwd: repoRoot,
+        timeout: 180_000,
+        encoding: 'utf-8',
+        input: prompt,
+        stdio: ['pipe', 'pipe', 'pipe'],
+      }).trim();
+    } catch (err) {
+      output = err.stdout?.toString().trim() || '';
+    }
+    assert.ok(output.length > 0, 'Expected output from Claude');
+    const lower = output.toLowerCase();
+    const matches = FORK_FEATURES.filter(f => lower.includes(f.name.toLowerCase()));
     assert.ok(
       matches.length >= 3,
-      `Claude only mentioned ${matches.length}/6 fork features. Output: ${result.output.slice(0, 300)}`
+      `Claude only mentioned ${matches.length}/6 fork features. Output: ${output.slice(0, 300)}`
     );
   });
 });
