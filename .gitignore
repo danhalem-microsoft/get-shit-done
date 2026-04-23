@@ -32,3 +32,8 @@ philosophy.md
 
 # GSD runtime temp files
 .gsd-autopilot-active
+
+# Bazel
+/bazel-*
+MODULE.bazel.lock
+.bazel/
