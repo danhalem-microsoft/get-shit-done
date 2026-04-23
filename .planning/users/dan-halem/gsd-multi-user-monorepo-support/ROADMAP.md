@@ -56,7 +56,7 @@ Plans:
 - [x] 07-01-PLAN.md — Bazel infrastructure bootstrap (MODULE.bazel, .bazelversion, .bazelrc, BUILD.bazel, .gitignore)
 - [x] 07-02-PLAN.md — Test helpers and integration BUILD targets (claude-runner.cjs, BUILD files)
 - [x] 07-03-PLAN.md — Integration test files (workflow, multi-user, fork-features)
-- [ ] 07-04-PLAN.md — CI pipeline — Bazel integration test job in GitHub Actions
+- [x] 07-04-PLAN.md — CI pipeline — Bazel integration test job in GitHub Actions
 
 ---
 *Roadmap created: 2026-03-17*
