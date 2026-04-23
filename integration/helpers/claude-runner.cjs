@@ -140,4 +140,38 @@ function getRepoRoot() {
   return process.cwd();
 }
 
-module.exports = { runClaude, createTestProject, getRepoRoot, CLAUDE_BIN, DEFAULT_TIMEOUT };
+/**
+ * Run gsd-tools.cjs with given arguments.
+ * Returns { success, output, error, json } — json is parsed JSON if output is valid JSON, null otherwise.
+ */
+function runGsdTools(args, opts = {}) {
+  const repoRoot = getRepoRoot();
+  const toolsPath = path.join(repoRoot, 'get-shit-done', 'bin', 'gsd-tools.cjs');
+  const cwd = opts.cwd || process.cwd();
+  const timeout = opts.timeout || 30_000;
+  try {
+    const result = execFileSync('node', [toolsPath, ...args], {
+      cwd,
+      timeout,
+      encoding: 'utf-8',
+      env: { ...process.env, ...opts.env },
+      stdio: ['pipe', 'pipe', 'pipe'],
+    });
+    const trimmed = result.trim();
+    let json = null;
+    try { json = JSON.parse(trimmed); } catch {}
+    return { success: true, output: trimmed, error: '', json };
+  } catch (err) {
+    const stdout = err.stdout?.toString().trim() || '';
+    let json = null;
+    try { json = JSON.parse(stdout); } catch {}
+    return {
+      success: false,
+      output: stdout,
+      error: err.stderr?.toString().trim() || err.message,
+      json,
+    };
+  }
+}
+
+module.exports = { runClaude, runGsdTools, createTestProject, getRepoRoot, CLAUDE_BIN, DEFAULT_TIMEOUT };
