@@ -1,0 +1,12 @@
+filegroup(
+    name = "project_sources",
+    srcs = glob([
+        "get-shit-done/**",
+        "commands/**",
+        "agents/**",
+        "hooks/**",
+        "scripts/**",
+        "sdk/**",
+    ]),
+    visibility = ["//visibility:public"],
+)
