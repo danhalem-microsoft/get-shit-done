@@ -2,79 +2,90 @@
 phase: 07-bazel-invoked-claude-code-integration-test-suite
 plan: 03
 subsystem: testing
-tags: [integration-tests, claude-code, workflow, multi-user, fork-features]
+tags: [integration-tests, gsd-tools, multi-user, fork-preservation]
 
 requires:
   - phase: 07-02
-    provides: Claude CLI runner helper, integration BUILD targets
+    provides: claude-runner.cjs helper with createTestProject and getRepoRoot
 provides:
-  - Three integration test suites covering GSD workflow, multi-user isolation, and fork feature validation
+  - runGsdTools helper for direct gsd-tools.cjs subprocess testing
+  - gsd-tools workflow integration tests (init, phase-plan-index, find-phase, state)
+  - Multi-user resolution tests (alice/bob isolation, GSD_PROJECT override)
+  - Fork preservation tests (6 feature areas, patch survival, installed-vs-repo drift)
 affects: [07-04]
 
 tech-stack:
   added: []
-  patterns: [FORK_FEATURES array as assertion source, getRepoRoot() for Bazel-safe repo access]
+  patterns: [subprocess JSON assertion pattern via runGsdTools, multi-user fixture creation]
 
 key-files:
-  created: [integration/gsd-workflow.test.cjs, integration/multi-user.test.cjs, integration/fork-features.test.cjs]
-  modified: []
+  created: [integration/gsd-tools-workflow.test.cjs, integration/multi-user-resolution.test.cjs, integration/fork-preservation.test.cjs]
+  modified: [integration/helpers/claude-runner.cjs]
 
 key-decisions:
-  - "None - followed plan as specified"
+  - "runGsdTools calls node directly (not claude CLI) to test tooling layer without API dependency"
+  - "Wrong-CWD test uses mkdtemp instead of /tmp to avoid cross-platform issues"
 
 patterns-established:
-  - "Integration test pattern: runClaude with --print flag, tightened assertions checking for failure indicators and specific content"
-  - "Fork feature validation pattern: FORK_FEATURES array as single source of truth for existence checks and output assertions"
+  - "Integration test pattern: runGsdTools returns {success, output, error, json} for structured assertions"
+  - "Multi-user fixture pattern: createTestProject + manual bob user setup for two-user scenarios"
 
-requirements-completed: [D-03, D-04, D-06, D-07, D-08]
+requirements-completed: [D-03, D-06, D-07, D-08]
 
-duration: 1 min
+duration: 3min
 completed: 2026-04-23
 ---
 
-# Phase 07 Plan 03: Integration Test Files Summary
+# Phase 07 Plan 03: Integration Test Files (v2) Summary
 
-**Three integration test suites covering GSD workflow commands, multi-user isolation, and fork feature validation via Claude CLI**
+**Real gsd-tools.cjs integration tests replacing weak claude --print smoke tests, covering workflow commands, multi-user resolution, and fork patch preservation**
 
 ## Performance
 
-- **Duration:** 1 min
-- **Tasks:** 3
-- **Files modified:** 3
+- **Duration:** 3 min
+- **Started:** 2026-04-23T17:00:00Z
+- **Completed:** 2026-04-23T17:03:00Z
+- **Tasks:** 4
+- **Files modified:** 4
 
 ## Accomplishments
-- gsd-workflow.test.cjs with 3 tests: /gsd-init invocation, gsd-tools.cjs progress, and .planning directory reading
-- multi-user.test.cjs with 3 tests: two-user directory setup, Claude multi-user visibility, team-status command
-- fork-features.test.cjs with 6 tests: FORK.md validation, file existence, critic/researcher counts, taste library loading, Claude fork feature recognition
+- Added `runGsdTools` helper that calls gsd-tools.cjs as subprocess and returns parsed JSON
+- Created workflow integration tests exercising init execute-phase, phase-plan-index, find-phase, state begin-phase
+- Created multi-user resolution tests proving alice/bob isolation and GSD_PROJECT env var override
+- Created fork preservation tests validating all 6 fork feature areas and installed-vs-repo drift detection
 
 ## Task Commits
 
 Each task was committed atomically:
 
-1. **Task 1: Create integration/gsd-workflow.test.cjs** - `d6b17a8` (feat)
-2. **Task 2: Create integration/multi-user.test.cjs** - `d16d519` (feat)
-3. **Task 3: Create integration/fork-features.test.cjs** - `fe33983` (feat)
+1. **Task 1: Add runGsdTools helper** - `a2eb4c9` (feat)
+2. **Task 2: gsd-tools-workflow.test.cjs** - `9c54d4e` (test)
+3. **Task 3: multi-user-resolution.test.cjs** - `051ea28` (test)
+4. **Task 4: fork-preservation.test.cjs** - `54f68de` (test)
 
 ## Files Created/Modified
-- `integration/gsd-workflow.test.cjs` - GSD workflow command tests via Claude CLI
-- `integration/multi-user.test.cjs` - Multi-user isolation tests with two-user setup
-- `integration/fork-features.test.cjs` - Fork feature validation using FORK_FEATURES array
+- `integration/helpers/claude-runner.cjs` - Added runGsdTools helper with JSON parsing
+- `integration/gsd-tools-workflow.test.cjs` - 6 tests for gsd-tools CLI commands
+- `integration/multi-user-resolution.test.cjs` - 5 tests for multi-user path isolation
+- `integration/fork-preservation.test.cjs` - 10 tests for fork feature survival
 
 ## Decisions Made
-None - followed plan as specified.
+- Used `runGsdTools` (node subprocess) instead of `runClaude` for all core assertions — tests the tooling layer directly
+- Wrong-CWD test uses mkdtemp instead of hardcoded /tmp for cross-platform safety
 
 ## Deviations from Plan
+
 None - plan executed exactly as written.
 
 ## Issues Encountered
 None
 
 ## User Setup Required
-None
+None - no external service configuration required.
 
 ## Next Phase Readiness
-- All three test files ready for Plan 07-04 (GitHub Actions CI integration)
-- Tests auto-discovered by Bazel BUILD glob from Plan 07-02
+- All 3 integration test files created and syntax-verified
+- Ready for CI pipeline integration (plan 07-04)
 
 ---
 *Phase: 07-bazel-invoked-claude-code-integration-test-suite*

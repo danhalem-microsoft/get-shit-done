@@ -114,7 +114,7 @@ See: .planning/PROJECT.md (updated 2026-04-08)
 | 2026-04-07 | Plan 04-03 executed | Commit attribution + legacy migration flow + PATH-13 fix — 7 min, 3 tasks, 10 files. Phase 4 complete |
 | 2026-04-23 | Plan 07-01 executed | Bazel infrastructure bootstrap — MODULE.bazel, .bazelversion, .bazelrc, root BUILD.bazel — 1 min, 3 tasks, 5 files |
 | 2026-04-23 | Plan 07-02 executed | Claude CLI runner helper + integration BUILD targets — 1 min, 2 tasks, 3 files |
-| 2026-04-23 | Plan 07-03 executed | Integration test files: workflow, multi-user, fork-features — 1 min, 3 tasks, 3 files |
+| 2026-04-23 | Plan 07-03 v2 executed | Integration test rewrite: runGsdTools helper, gsd-tools-workflow, multi-user-resolution, fork-preservation — 3 min, 4 tasks, 4 files |
 | 2026-04-23 | Plan 07-04 executed | CI pipeline: bazel-integration-tests job in GitHub Actions — 1 min, 1 task, 1 file |
 
 ---
