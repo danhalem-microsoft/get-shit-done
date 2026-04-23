@@ -174,4 +174,68 @@ function runGsdTools(args, opts = {}) {
   }
 }
 
-module.exports = { runClaude, runGsdTools, createTestProject, getRepoRoot, CLAUDE_BIN, DEFAULT_TIMEOUT };
+/**
+ * Run claude CLI with tool use enabled (non-interactive).
+ * Uses --dangerously-skip-permissions so Claude can execute tools (Bash, Read, etc.)
+ * without interactive prompts. Returns structured JSON output.
+ *
+ * Returns { success, result, turns, cost, duration_ms, raw }
+ *   - result: Claude's final text output
+ *   - turns: number of tool-use turns (shows Claude actually used tools)
+ *   - cost: total API cost in USD
+ *   - raw: full parsed JSON response
+ */
+function runClaudeWithTools(prompt, opts = {}) {
+  ensureClaudeBinary();
+  const cwd = opts.cwd || process.cwd();
+  const timeout = opts.timeout || 300_000; // 5 min default — skills take time
+  const maxBudget = opts.maxBudget || 5;
+  const args = [
+    '--print',
+    '--dangerously-skip-permissions',
+    '--output-format', 'json',
+    '--max-budget-usd', String(maxBudget),
+  ];
+  if (opts.allowedTools) {
+    args.push('--allowedTools', ...opts.allowedTools);
+  }
+  try {
+    const result = execFileSync(CLAUDE_BIN, args, {
+      cwd,
+      timeout,
+      encoding: 'utf-8',
+      input: prompt,
+      env: { ...process.env, ...opts.env },
+      stdio: ['pipe', 'pipe', 'pipe'],
+    });
+    const trimmed = result.trim();
+    let parsed = null;
+    try { parsed = JSON.parse(trimmed); } catch {}
+    if (parsed) {
+      return {
+        success: parsed.subtype === 'success',
+        result: parsed.result || '',
+        turns: parsed.num_turns || 0,
+        cost: parsed.total_cost_usd || 0,
+        duration_ms: parsed.duration_ms || 0,
+        raw: parsed,
+      };
+    }
+    return { success: true, result: trimmed, turns: 0, cost: 0, duration_ms: 0, raw: null };
+  } catch (err) {
+    const stdout = err.stdout?.toString().trim() || '';
+    let parsed = null;
+    try { parsed = JSON.parse(stdout); } catch {}
+    return {
+      success: false,
+      result: parsed?.result || stdout,
+      turns: parsed?.num_turns || 0,
+      cost: parsed?.total_cost_usd || 0,
+      duration_ms: parsed?.duration_ms || 0,
+      raw: parsed,
+      error: err.stderr?.toString().trim() || err.message,
+    };
+  }
+}
+
+module.exports = { runClaude, runClaudeWithTools, runGsdTools, createTestProject, getRepoRoot, CLAUDE_BIN, DEFAULT_TIMEOUT };
