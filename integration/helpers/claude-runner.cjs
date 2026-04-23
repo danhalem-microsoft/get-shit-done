@@ -118,6 +118,84 @@ function createTestProject(name, opts = {}) {
 }
 
 /**
+ * Create a self-contained GSD sandbox with the repo's tooling installed locally.
+ * No dependency on ~/.claude/ for skills/agents/commands — everything is in the sandbox.
+ *
+ * Structure:
+ *   {sandbox}/.claude/get-shit-done/  ← repo's get-shit-done/
+ *   {sandbox}/.claude/agents/         ← repo's agents/
+ *   {sandbox}/.claude/commands/       ← repo's commands/
+ *   {sandbox}/.claude/hooks/          ← repo's hooks/
+ *   {sandbox}/.claude/settings.json   ← from ~/.claude/ (known limitation)
+ *   {sandbox}/.planning/users/{user}/ ← multi-user structure
+ *   {sandbox}/src/index.js            ← dummy source
+ *   {sandbox}/package.json
+ *   {sandbox}/CLAUDE.md
+ *
+ * @param {string} name - sandbox directory name
+ * @param {object} [opts] - { userSlug: 'test-user' }
+ * @returns {string} absolute path to sandbox
+ */
+function createSandbox(name, opts = {}) {
+  const repoRoot = getRepoRoot();
+  const userSlug = opts.userSlug || 'test-user';
+  const base = process.env.TEST_TMPDIR || fs.mkdtempSync(path.join(os.tmpdir(), 'gsd-sandbox-'));
+  const dir = path.join(base, name);
+  fs.mkdirSync(dir, { recursive: true });
+
+  // 1. Git init
+  execFileSync('git', ['init'], { cwd: dir, stdio: 'pipe' });
+  execFileSync('git', ['config', 'user.email', 'test@test.com'], { cwd: dir, stdio: 'pipe' });
+  execFileSync('git', ['config', 'user.name', 'Test User'], { cwd: dir, stdio: 'pipe' });
+
+  // 2. Copy GSD tooling into .claude/
+  const claudeDir = path.join(dir, '.claude');
+  fs.mkdirSync(claudeDir, { recursive: true });
+
+  const copyDirs = [
+    ['get-shit-done', 'get-shit-done'],
+    ['agents', 'agents'],
+    ['commands', 'commands'],
+    ['hooks', 'hooks'],
+  ];
+  for (const [src, dst] of copyDirs) {
+    const srcPath = path.join(repoRoot, src);
+    const dstPath = path.join(claudeDir, dst);
+    if (fs.existsSync(srcPath)) {
+      execFileSync('cp', ['-r', srcPath, dstPath], { stdio: 'pipe' });
+    }
+  }
+
+  // 3. Copy settings.json from ~/.claude/ (known limitation — inherits host config)
+  const hostSettings = path.join(process.env.HOME, '.claude', 'settings.json');
+  if (fs.existsSync(hostSettings)) {
+    fs.copyFileSync(hostSettings, path.join(claudeDir, 'settings.json'));
+  } else {
+    fs.writeFileSync(path.join(claudeDir, 'settings.json'), '{}');
+  }
+
+  // 4. Multi-user structure (no active project yet — /gsd-new-project will set it)
+  const planningDir = path.join(dir, '.planning');
+  fs.mkdirSync(path.join(planningDir, 'users', userSlug), { recursive: true });
+  fs.writeFileSync(
+    path.join(planningDir, 'user-map.json'),
+    JSON.stringify({ _schema: 1, 'test@test.com': userSlug })
+  );
+
+  // 5. Dummy project files
+  fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify({ name: 'test-sandbox', version: '1.0.0' }));
+  fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'src', 'index.js'), "'use strict';\nmodule.exports = {};\n");
+  fs.writeFileSync(path.join(dir, 'CLAUDE.md'), '# Test Sandbox\n\nThis is a test project for GSD integration testing.\n');
+
+  // 6. Initial commit
+  execFileSync('git', ['add', '-A'], { cwd: dir, stdio: 'pipe' });
+  execFileSync('git', ['commit', '-m', 'init: test sandbox'], { cwd: dir, stdio: 'pipe' });
+
+  return dir;
+}
+
+/**
  * Get the repo root directory. Under Bazel with tags=["local"], tests run
  * in the execroot which symlinks to the source tree, so process.cwd() or
  * BUILD_WORKSPACE_DIRECTORY gives access to repo sources.
@@ -199,6 +277,11 @@ function runClaudeWithTools(prompt, opts = {}) {
   if (opts.allowedTools) {
     args.push('--allowedTools', ...opts.allowedTools);
   }
+  if (opts.addDirs) {
+    for (const d of opts.addDirs) {
+      args.push('--add-dir', d);
+    }
+  }
   try {
     const result = execFileSync(CLAUDE_BIN, args, {
       cwd,
@@ -238,4 +321,4 @@ function runClaudeWithTools(prompt, opts = {}) {
   }
 }
 
-module.exports = { runClaude, runClaudeWithTools, runGsdTools, createTestProject, getRepoRoot, CLAUDE_BIN, DEFAULT_TIMEOUT };
+module.exports = { runClaude, runClaudeWithTools, runGsdTools, createTestProject, createSandbox, getRepoRoot, CLAUDE_BIN, DEFAULT_TIMEOUT };
