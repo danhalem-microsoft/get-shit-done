@@ -1,10 +1,22 @@
 load("@aspect_rules_js//js:defs.bzl", "js_test")
 
-# Runfiles strategy: tags=["local"] disables Bazel sandboxing, so tests run
-# directly in the execroot with full source tree access. No runfiles manifest
-# or special path resolution is needed. Tests access repo files via
-# BUILD_WORKSPACE_DIRECTORY or process.cwd().
+# Fast integration tests — tooling layer, no Claude API calls or cheap calls
+[js_test(
+    name = test_file.replace(".test.cjs", ""),
+    entry_point = test_file,
+    data = [
+        "//integration/helpers:test_helpers",
+    ],
+    size = "large",
+    tags = ["integration", "local"],
+    timeout = "long",
+) for test_file in [
+    "fork-preservation.test.cjs",
+    "gsd-tools-workflow.test.cjs",
+    "multi-user-resolution.test.cjs",
+]]
 
+# Moderate integration tests — individual skill execution, real API calls
 [js_test(
     name = test_file.replace(".test.cjs", ""),
     entry_point = test_file,
@@ -14,4 +26,18 @@ load("@aspect_rules_js//js:defs.bzl", "js_test")
     size = "large",
     tags = ["integration", "local", "requires-api-key"],
     timeout = "long",
-) for test_file in glob(["*.test.cjs"])]
+) for test_file in [
+    "skill-execution.test.cjs",
+]]
+
+# Lifecycle pipeline — full GSD lifecycle, expensive, long-running
+js_test(
+    name = "gsd-lifecycle",
+    entry_point = "gsd-lifecycle.test.cjs",
+    data = [
+        "//integration/helpers:test_helpers",
+    ],
+    size = "enormous",
+    tags = ["integration", "local", "requires-api-key", "lifecycle"],
+    timeout = "eternal",
+)
