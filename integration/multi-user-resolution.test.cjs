@@ -48,42 +48,52 @@ describe('Multi-user path resolution via gsd-tools', () => {
       fs.writeFileSync(path.join(base, 'config.json'), '{}');
     }
 
-    // Update user-map
+    // Update user-map and set git email to match alice's entry
     fs.writeFileSync(
       path.join(projectDir, '.planning', 'user-map.json'),
       JSON.stringify({ _schema: 1, 'alice@test.com': 'alice', 'bob@test.com': 'bob' })
     );
+    execFileSync('git', ['config', 'user.email', 'alice@test.com'], { cwd: projectDir, stdio: 'pipe' });
 
     // Git commit
     execFileSync('git', ['add', '-A'], { cwd: projectDir, stdio: 'pipe' });
     execFileSync('git', ['commit', '-m', 'init'], { cwd: projectDir, stdio: 'pipe' });
   });
 
+  // All tests pass GSD_USER to bypass identity slug derivation (lockIdentity adds
+  // collision suffixes that won't match the fixture's directory names)
+  const aliceEnv = { GSD_USER: 'alice' };
+
   test('active user resolves to alice (the .active file owner)', () => {
-    const result = runGsdTools(['init', 'execute-phase', '1'], { cwd: projectDir });
+    const result = runGsdTools(['init', 'execute-phase', '1'], { cwd: projectDir, env: aliceEnv });
     assert.ok(result.json, `Expected JSON, got: ${result.output}`);
     assert.strictEqual(result.json.active_user, 'alice');
     assert.strictEqual(result.json.active_project, 'project-alpha');
   });
 
-  test('GSD_PROJECT env var overrides active project', () => {
+  test('GSD_USER switches to bob and resolves his active project', () => {
+    // In multi-user fork, GSD_USER switches the user context — each user's
+    // .active file determines their project. GSD_PROJECT does NOT work with
+    // the multi-user layout (it uses the upstream flat .planning/{project}/ path).
+    const bobEnv = { GSD_USER: 'bob' };
     const result = runGsdTools(['init', 'execute-phase', '1'], {
       cwd: projectDir,
-      env: { GSD_PROJECT: 'project-beta' },
+      env: bobEnv,
     });
     assert.ok(result.json, `Expected JSON, got: ${result.output}`);
+    assert.strictEqual(result.json.active_user, 'bob');
     assert.strictEqual(result.json.active_project, 'project-beta');
   });
 
   test('alice and bob phase dirs are distinct paths', () => {
-    const aliceResult = runGsdTools(['init', 'execute-phase', '1'], { cwd: projectDir });
-    assert.ok(aliceResult.json?.phase_dir, 'alice phase_dir missing');
+    const aliceResult = runGsdTools(['init', 'execute-phase', '1'], { cwd: projectDir, env: aliceEnv });
+    assert.ok(aliceResult.json?.phase_dir, `alice phase_dir missing, got: ${JSON.stringify(aliceResult.json, null, 2)}`);
 
     const bobResult = runGsdTools(['init', 'execute-phase', '1'], {
       cwd: projectDir,
-      env: { GSD_PROJECT: 'project-beta' },
+      env: { GSD_USER: 'bob' },
     });
-    assert.ok(bobResult.json?.phase_dir, 'bob phase_dir missing');
+    assert.ok(bobResult.json?.phase_dir, `bob phase_dir missing, got: ${JSON.stringify(bobResult.json, null, 2)}`);
 
     assert.notStrictEqual(aliceResult.json.phase_dir, bobResult.json.phase_dir,
       'alice and bob should have different phase directories');
@@ -92,7 +102,7 @@ describe('Multi-user path resolution via gsd-tools', () => {
   });
 
   test('planning_root is user-scoped, not global .planning/', () => {
-    const result = runGsdTools(['init', 'execute-phase', '1'], { cwd: projectDir });
+    const result = runGsdTools(['init', 'execute-phase', '1'], { cwd: projectDir, env: aliceEnv });
     assert.ok(result.json?.planning_root, 'planning_root missing');
     assert.ok(result.json.planning_root.startsWith('.planning/users/'),
       `planning_root should start with .planning/users/, got: ${result.json.planning_root}`);
@@ -105,7 +115,7 @@ describe('Multi-user path resolution via gsd-tools', () => {
     assert.ok(!fs.existsSync(flatPhases),
       'Flat .planning/phases/ should not exist in multi-user project');
 
-    const result = runGsdTools(['init', 'execute-phase', '1'], { cwd: projectDir });
+    const result = runGsdTools(['init', 'execute-phase', '1'], { cwd: projectDir, env: aliceEnv });
     assert.ok(result.json?.phase_dir?.includes('users/'),
       `phase_dir should route through users/, got: ${result.json?.phase_dir}`);
   });

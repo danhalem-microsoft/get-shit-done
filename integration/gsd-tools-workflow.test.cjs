@@ -84,8 +84,12 @@ describe('gsd-tools.cjs workflow integration', () => {
     execFileSync('git', ['commit', '-m', 'init'], { cwd: projectDir, stdio: 'pipe' });
   });
 
+  // All tests pass GSD_USER to bypass identity slug derivation (lockIdentity adds
+  // collision suffixes that won't match the fixture's directory names)
+  const gsdEnv = { GSD_USER: userSlug };
+
   test('init execute-phase returns phase_found:true with correct planning_root', () => {
-    const result = runGsdTools(['init', 'execute-phase', '1'], { cwd: projectDir });
+    const result = runGsdTools(['init', 'execute-phase', '1'], { cwd: projectDir, env: gsdEnv });
     assert.ok(result.json, `Expected JSON output, got: ${result.output}`);
     assert.strictEqual(result.json.phase_found, true, 'phase_found should be true');
     assert.strictEqual(result.json.active_project, projectName);
@@ -98,7 +102,7 @@ describe('gsd-tools.cjs workflow integration', () => {
   });
 
   test('init execute-phase returns phase_found:false for nonexistent phase', () => {
-    const result = runGsdTools(['init', 'execute-phase', '99'], { cwd: projectDir });
+    const result = runGsdTools(['init', 'execute-phase', '99'], { cwd: projectDir, env: gsdEnv });
     assert.ok(result.json, `Expected JSON output, got: ${result.output}`);
     assert.strictEqual(result.json.phase_found, false);
   });
@@ -106,7 +110,7 @@ describe('gsd-tools.cjs workflow integration', () => {
   test('init execute-phase from wrong CWD returns null active_project', () => {
     // This is the exact bug that broke us — running from ~ instead of project root
     const tmpDir = fs.mkdtempSync(path.join(require('os').tmpdir(), 'gsd-cwd-test-'));
-    const result = runGsdTools(['init', 'execute-phase', '1'], { cwd: tmpDir });
+    const result = runGsdTools(['init', 'execute-phase', '1'], { cwd: tmpDir, env: gsdEnv });
     assert.ok(result.json, `Expected JSON output, got: ${result.output}`);
     assert.strictEqual(result.json.active_project, null,
       'Should return null active_project when not in a project directory');
@@ -115,7 +119,7 @@ describe('gsd-tools.cjs workflow integration', () => {
   });
 
   test('phase-plan-index returns wave grouping for valid phase', () => {
-    const result = runGsdTools(['phase-plan-index', '01'], { cwd: projectDir });
+    const result = runGsdTools(['phase-plan-index', '01'], { cwd: projectDir, env: gsdEnv });
     assert.ok(result.json, `Expected JSON output, got: ${result.output}`);
     assert.strictEqual(result.json.phase, '01');
     assert.ok(Array.isArray(result.json.plans), 'plans should be an array');
@@ -128,7 +132,7 @@ describe('gsd-tools.cjs workflow integration', () => {
   });
 
   test('find-phase resolves to multi-user path', () => {
-    const result = runGsdTools(['find-phase', '1', '--raw'], { cwd: projectDir });
+    const result = runGsdTools(['find-phase', '1', '--raw'], { cwd: projectDir, env: gsdEnv });
     assert.ok(result.json || result.output.includes('01-test-phase'),
       `find-phase should resolve phase, got: ${result.output}`);
   });
@@ -136,7 +140,7 @@ describe('gsd-tools.cjs workflow integration', () => {
   test('state begin-phase updates STATE.md', () => {
     const result = runGsdTools(
       ['state', 'begin-phase', '--phase', '01', '--name', 'test-phase', '--plans', '1'],
-      { cwd: projectDir }
+      { cwd: projectDir, env: gsdEnv }
     );
     assert.ok(result.json, `Expected JSON output, got: ${result.output}`);
     assert.ok(result.json.updated, 'Should report updated fields');
