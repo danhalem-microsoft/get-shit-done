@@ -17,6 +17,7 @@ Check which AI CLIs are available on the system:
 # Check each CLI
 command -v gemini >/dev/null 2>&1 && echo "gemini:available" || echo "gemini:missing"
 command -v claude >/dev/null 2>&1 && echo "claude:available" || echo "claude:missing"
+command -v copilot >/dev/null 2>&1 && echo "copilot:available" || echo "copilot:missing"
 command -v codex >/dev/null 2>&1 && echo "codex:available" || echo "codex:missing"
 command -v coderabbit >/dev/null 2>&1 && echo "coderabbit:available" || echo "coderabbit:missing"
 command -v opencode >/dev/null 2>&1 && echo "opencode:available" || echo "opencode:missing"
@@ -27,6 +28,7 @@ command -v cursor >/dev/null 2>&1 && echo "cursor:available" || echo "cursor:mis
 Parse flags from `$ARGUMENTS`:
 - `--gemini` → include Gemini
 - `--claude` → include Claude
+- `--copilot` → include Copilot CLI
 - `--codex` → include Codex
 - `--coderabbit` → include CodeRabbit
 - `--opencode` → include OpenCode
@@ -39,6 +41,7 @@ If no CLIs are available:
 ```
 No external AI CLIs found. Install at least one:
 - gemini: https://github.com/google-gemini/gemini-cli
+- copilot: https://docs.github.com/en/copilot/github-copilot-in-the-cli
 - codex: https://github.com/openai/codex
 - claude: https://github.com/anthropics/claude-code
 - opencode: https://opencode.ai (leverages GitHub Copilot subscription models)
@@ -59,6 +62,9 @@ if [ "$ANTIGRAVITY_AGENT" = "1" ]; then
 elif [ -n "$CURSOR_SESSION_ID" ]; then
   # Running inside Cursor agent — skip cursor for independence
   SELF_CLI="cursor"
+elif [ -n "$COPILOT_CLI_ENTRYPOINT" ]; then
+  # Running inside Copilot CLI — skip copilot for independence
+  SELF_CLI="copilot"
 elif [ -n "$CLAUDE_CODE_ENTRYPOINT" ]; then
   # Running inside Claude Code CLI — skip claude for independence
   SELF_CLI="claude"
@@ -71,7 +77,8 @@ fi
 
 Rules:
 - If `SELF_CLI="none"` → invoke ALL available CLIs (no skip)
-- If `SELF_CLI="claude"` → skip claude, use gemini/codex
+- If `SELF_CLI="claude"` → skip claude, use gemini/copilot/codex
+- If `SELF_CLI="copilot"` → skip copilot, use gemini/claude/codex
 - If `SELF_CLI="auto"` → the executing AI identifies itself and skips its own CLI
 - At least one DIFFERENT CLI must be available for the review to proceed.
 </step>
@@ -154,6 +161,7 @@ Read model preferences from planning config. Null/missing values fall back to CL
 # JSON scalars from gsd-sdk query; use jq -r to strip JSON string quotes (install jq if missing)
 GEMINI_MODEL=$(gsd-sdk query config-get review.models.gemini 2>/dev/null | jq -r '.' 2>/dev/null || true)
 CLAUDE_MODEL=$(gsd-sdk query config-get review.models.claude 2>/dev/null | jq -r '.' 2>/dev/null || true)
+COPILOT_MODEL=$(gsd-sdk query config-get review.models.copilot 2>/dev/null | jq -r '.' 2>/dev/null || true)
 CODEX_MODEL=$(gsd-sdk query config-get review.models.codex 2>/dev/null | jq -r '.' 2>/dev/null || true)
 OPENCODE_MODEL=$(gsd-sdk query config-get review.models.opencode 2>/dev/null | jq -r '.' 2>/dev/null || true)
 ```
@@ -175,6 +183,18 @@ if [ -n "$CLAUDE_MODEL" ] && [ "$CLAUDE_MODEL" != "null" ]; then
   cat /tmp/gsd-review-prompt-{phase}.md | claude --model "$CLAUDE_MODEL" -p - 2>/dev/null > /tmp/gsd-review-claude-{phase}.md
 else
   cat /tmp/gsd-review-prompt-{phase}.md | claude -p - 2>/dev/null > /tmp/gsd-review-claude-{phase}.md
+fi
+```
+
+**Copilot CLI (GitHub Copilot):**
+```bash
+if [ -n "$COPILOT_MODEL" ] && [ "$COPILOT_MODEL" != "null" ]; then
+  cat /tmp/gsd-review-prompt-{phase}.md | copilot --model "$COPILOT_MODEL" -p - 2>/dev/null > /tmp/gsd-review-copilot-{phase}.md
+else
+  cat /tmp/gsd-review-prompt-{phase}.md | copilot -p - 2>/dev/null > /tmp/gsd-review-copilot-{phase}.md
+fi
+if [ ! -s /tmp/gsd-review-copilot-{phase}.md ]; then
+  echo "Copilot review failed or returned empty output." > /tmp/gsd-review-copilot-{phase}.md
 fi
 ```
 
@@ -242,7 +262,7 @@ Combine all review responses into `{phase_dir}/{padded_phase}-REVIEWS.md`:
 ```markdown
 ---
 phase: {N}
-reviewers: [gemini, claude, codex, coderabbit, opencode, qwen, cursor]
+reviewers: [gemini, claude, copilot, codex, coderabbit, opencode, qwen, cursor]
 reviewed_at: {ISO timestamp}
 plans_reviewed: [{list of PLAN.md files}]
 ---
@@ -258,6 +278,12 @@ plans_reviewed: [{list of PLAN.md files}]
 ## Claude Review
 
 {claude review content}
+
+---
+
+## Copilot Review
+
+{copilot review content}
 
 ---
 
