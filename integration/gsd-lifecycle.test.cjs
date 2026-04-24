@@ -209,7 +209,8 @@ describe('GSD lifecycle pipeline', () => {
 
   // ── Step 2: /gsd-discuss-phase --auto ───────────────────────────
 
-  test('step 2: /gsd-discuss-phase --auto creates CONTEXT.md', { skip: !findPhaseDir() && 'Step 1 prerequisite missing' }, () => {
+  test('step 2: /gsd-discuss-phase --auto creates CONTEXT.md', (t) => {
+    if (!findPhaseDir()) return t.skip('Step 1 prerequisite missing — no phases dir');
     const result = runSkill(
       'Run /gsd-discuss-phase 1 --auto to discuss the first phase with auto-defaults.'
     );
@@ -227,7 +228,8 @@ describe('GSD lifecycle pipeline', () => {
 
   // ── Step 3: /gsd-plan-phase ─────────────────────────────────────
 
-  test('step 3: /gsd-plan-phase creates plans with frontmatter', { skip: !findPhaseDir() && 'Step 1 prerequisite missing' }, () => {
+  test('step 3: /gsd-plan-phase creates plans with frontmatter', (t) => {
+    if (!findPhaseDir()) return t.skip('Step 1 prerequisite missing — no phases dir');
     const result = runSkill(
       'Run /gsd-plan-phase 1 to create the implementation plan for phase 1.'
     );
@@ -258,7 +260,8 @@ describe('GSD lifecycle pipeline', () => {
 
   // ── Step 4: /gsd-critique ───────────────────────────────────────
 
-  test('step 4: /gsd-critique produces severity-classified findings', { skip: !findPlans() && 'Step 3 prerequisite missing (no plans)' }, () => {
+  test('step 4: /gsd-critique produces severity-classified findings', (t) => {
+    if (!findPlans()) return t.skip('Step 3 prerequisite missing — no plans');
     const result = runSkill(
       'Run /gsd-critique 1 to review the phase 1 plans.'
     );
@@ -279,7 +282,8 @@ describe('GSD lifecycle pipeline', () => {
 
   // ── Step 5: /gsd-execute-phase ──────────────────────────────────
 
-  test('step 5: /gsd-execute-phase creates summaries and commits', { skip: !findPlans() && 'Step 3 prerequisite missing (no plans)' }, () => {
+  test('step 5: /gsd-execute-phase creates summaries and commits', (t) => {
+    if (!findPlans()) return t.skip('Step 3 prerequisite missing — no plans');
     const result = runSkill(
       'Run /gsd-execute-phase 1 to execute all plans in phase 1.'
     );
@@ -357,7 +361,8 @@ describe('GSD lifecycle pipeline', () => {
 
   // ── Step 8: /gsd-verify-work ────────────────────────────────────
 
-  test('step 8: /gsd-verify-work creates VERIFICATION.md', { skip: !findSummaries() && 'Step 5 prerequisite missing (no summaries)' }, () => {
+  test('step 8: /gsd-verify-work creates VERIFICATION.md', (t) => {
+    if (!findSummaries()) return t.skip('Step 5 prerequisite missing — no summaries');
     const result = runSkill(
       'Run /gsd-verify-work 1 to verify phase 1. Approve any human verification items.'
     );
