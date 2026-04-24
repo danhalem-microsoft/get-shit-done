@@ -273,8 +273,11 @@ describe('GSD lifecycle pipeline', () => {
       }
     }
 
+    // Re-find plans after rename (original paths are stale)
+    const renamedPlans = findFiles(phaseDir, /PLAN.*\.md$|.*-PLAN\.md$/i);
+
     // Check first plan has content (frontmatter format varies)
-    const planContent = fs.readFileSync(plans[0], 'utf-8');
+    const planContent = fs.readFileSync(renamedPlans[0], 'utf-8');
     assert.ok(planContent.length > 200, `Plan ${plans[0]} has minimal content (${planContent.length} chars)`);
     assert.ok(
       planContent.includes('## Tasks') || planContent.includes('<task') ||
