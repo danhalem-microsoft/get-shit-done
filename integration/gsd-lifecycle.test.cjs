@@ -251,8 +251,21 @@ describe('GSD lifecycle pipeline', () => {
     assert.ok(result.success || budgetExhausted, `gsd-plan-phase failed: ${result.error || result.result.slice(0, 500)}`);
 
     const phaseDir = findPhaseDir();
+    // Find plans with either naming convention: *-PLAN.md or PLAN-*.md
     const plans = findFiles(phaseDir, /PLAN.*\.md$|.*-PLAN\.md$/i);
     assert.ok(plans.length >= 1, `No PLAN.md files found in ${phaseDir}`);
+
+    // gsd-execute-phase requires *-PLAN.md suffix naming — fix any PLAN-* prefix files
+    for (const plan of plans) {
+      const basename = path.basename(plan);
+      if (basename.startsWith('PLAN-') && !basename.endsWith('-PLAN.md')) {
+        // Rename PLAN-01-foo.md → 01-foo-PLAN.md
+        const withoutPrefix = basename.replace(/^PLAN-/, '');
+        const withoutExt = withoutPrefix.replace(/\.md$/, '');
+        const newName = `${withoutExt}-PLAN.md`;
+        fs.renameSync(plan, path.join(path.dirname(plan), newName));
+      }
+    }
 
     // Check first plan has content (frontmatter format varies)
     const planContent = fs.readFileSync(plans[0], 'utf-8');
