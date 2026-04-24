@@ -401,8 +401,8 @@ describe('GSD lifecycle pipeline', () => {
     const entry = fs.readFileSync(path.join(tasteDir, entries[0]), 'utf-8');
     const validation = runClaudeWithTools(
       `Read this taste/preference entry and answer with ONLY "VALID" or "INVALID: <reason>". ` +
-      `A valid entry must have: (1) YAML frontmatter with id and domain fields, ` +
-      `(2) content describing a development preference or coding standard. Entry:\n\n${entry}`,
+      `A valid entry must have: (1) YAML frontmatter with identifying fields (id, title, or name), ` +
+      `(2) a domain field in frontmatter, (3) content describing a development preference. Entry:\n\n${entry}`,
       { cwd: sandbox, timeout: 30_000, maxBudget: 0.5 }
     );
     const verdict = (validation.result || '').trim();
