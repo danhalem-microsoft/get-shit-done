@@ -1458,6 +1458,27 @@ Use AskUserQuestion:
 node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs: create roadmap ([N] phases)" --files ${planning_root}/ROADMAP.md ${planning_root}/STATE.md ${planning_root}/REQUIREMENTS.md
 ```
 
+## 8.5. Generate Instruction File
+
+Generate CLAUDE.md (or AGENTS.md for Codex) using the generate-claude-md command:
+
+```bash
+INSTRUCTION_FILE=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" generate-claude-md 2>/dev/null | jq -r '.claude_md_path // "CLAUDE.md"')
+```
+
+Commit the instruction file alongside planning artifacts:
+
+```bash
+node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs: generate project instruction file" --files .planning/ROADMAP.md .planning/STATE.md .planning/REQUIREMENTS.md "$INSTRUCTION_FILE"
+```
+
+| Artifact       | Location                    |
+|----------------|-----------------------------|
+| Project guide  | `$INSTRUCTION_FILE`         |
+
+Artifacts include:
+- `$INSTRUCTION_FILE`
+
 ## 9. Done
 
 Present completion summary:

@@ -225,4 +225,6 @@ Agents only diagnose—plan-phase --gaps handles fixes (no fix application).
 - [ ] UAT.md gaps updated with artifacts and missing
 - [ ] Debug sessions saved to ${DEBUG_DIR}/
 - [ ] Hand off to verify-work for automatic planning
+
+**worktree_branch_check:** When spawning debug agents in worktree isolation, include worktree_branch_check instructions. Agents must verify they are on the correct base branch and use `git reset --hard` (not --soft) to correct any base mismatch.
 </success_criteria>

@@ -793,6 +793,7 @@ Heuristic: "Is this deployed/usable/shipped?" If yes → milestone. If no → ke
 
 Milestone completion is successful when:
 
+- [ ] Pre-close audit gate: all phases verified, no unresolved critical issues (#2158)
 - [ ] MILESTONES.md entry created with stats and accomplishments
 - [ ] PROJECT.md full evolution review completed
 - [ ] All shipped requirements moved to Validated in PROJECT.md

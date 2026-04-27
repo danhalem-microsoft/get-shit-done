@@ -335,12 +335,34 @@ Present summary:
 **If issues > 0:** Proceed to `diagnose_issues`
 
 **If issues == 0:**
+
+**Phase artifact check:** Verify VERIFICATION.md exists for this phase before offering transition options.
+
+**Security gate check for auto-transition:**
+```bash
+SECURITY_CFG=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" config-get workflow.security_enforcement 2>/dev/null || echo "false")
+```
+
+If SECURITY_CFG is "true":
+  - Check for SECURITY_FILE in the phase directory
+  - If SECURITY_FILE exists, check `threats_open` count
+  - If threats_open == 0 or SECURITY_CFG is "false": security gate cleared
+
+If security gate cleared and issues == 0:
+  Read and execute `~/.claude/get-shit-done/workflows/transition.md` to mark the phase complete.
+
+If security enforcement is enabled but no SECURITY.md exists:
+  Suggest `/gsd-secure-phase` before transitioning.
+
 ```
 All tests passed. Ready to continue.
 
 - `/gsd-plan-phase {next}` — Plan next phase
 - `/gsd-execute-phase {next}` — Execute next phase
+- `/gsd-secure-phase` — Run security audit (if available)
 ```
+
+**Automated UI verification:** When Playwright-MCP is available, automated UI screenshots can supplement manual verification. If Playwright is not available, fall back to manual UI testing. This is conditional — if available, use it; otherwise proceed with standard manual verification.
 </step>
 
 <step name="diagnose_issues">
@@ -587,4 +609,7 @@ Default to **major** if unclear. User can correct if needed.
 - [ ] If issues: gsd-plan-checker verifies fix plans
 - [ ] If issues: revision loop until plans pass (max 3 iterations)
 - [ ] Ready for `/gsd-execute-phase --gaps-only` when complete
+- [ ] Phase artifact check: verify VERIFICATION.md exists before offering transition
+- [ ] Auto-transition after UAT: when all issues == 0 and security gate cleared, invoke transition.md
+</success_criteria>
 </success_criteria>

@@ -231,6 +231,20 @@ After (Phase 2 shipped JWT auth, discovered rate limiting needed):
 
 </step>
 
+<step name="graduation_scan">
+**Graduation scan (always non-blocking — transition continues regardless):**
+
+Check if the graduation feature is enabled and delegate to graduation.md helper workflow:
+
+```bash
+GRADUATION_ENABLED=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" config-get features.graduation 2>/dev/null || echo "false")
+```
+
+If `GRADUATION_ENABLED` is "true", read and execute `~/.claude/get-shit-done/workflows/graduation.md` to scan LEARNINGS.md files for graduation candidates.
+
+This step is non-blocking — if it fails or finds no candidates, the transition proceeds normally.
+</step>
+
 <step name="update_current_position_after_transition">
 
 **Note:** Basic position updates (Current Phase, Status, Current Plan, Last Activity) were already handled by `gsd-tools phase complete` in the update_roadmap_and_state step.

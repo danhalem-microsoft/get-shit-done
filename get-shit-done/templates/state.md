@@ -66,6 +66,12 @@ None yet.
 
 None yet.
 
+### Deferred Items
+
+[Items deferred from earlier phases — tracked for future resolution]
+
+None yet.
+
 ## Session Continuity
 
 Last session: [YYYY-MM-DD HH:MM]

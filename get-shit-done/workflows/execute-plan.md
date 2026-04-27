@@ -442,6 +442,40 @@ ls -1 ${planning_root}/phases/[current-phase-dir]/*-SUMMARY.md 2>/dev/null | wc 
 All routes: `/clear` first for fresh context.
 </step>
 
+<step name="inline_routing">
+**Inline plan routing (#1979):**
+
+For small plans, execute inline instead of spawning a subagent:
+
+```bash
+INLINE_THRESHOLD=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" config-get workflow.inline_plan_threshold 2>/dev/null || echo "3")
+TASK_COUNT=$(grep -cE '^\s*<task' "$PLAN_PATH" || echo "0")
+```
+
+If `INLINE_THRESHOLD` > 0 AND `TASK_COUNT` <= `INLINE_THRESHOLD`:
+  Execute the plan inline (current context) instead of spawning a subagent.
+
+If `INLINE_THRESHOLD` == 0: inline routing is disabled, always use subagent.
+</step>
+
+<worktree_branch_check>
+**Worktree branch base verification (affects all platforms — cross-platform fix):**
+
+After creating a worktree, verify it was created from the correct base branch.
+If the worktree HEAD does not match the expected base, reset:
+
+```bash
+EXPECTED_BASE=$(git rev-parse HEAD)
+WT_HEAD=$(git -C "$WT_PATH" rev-parse HEAD)
+if [ "$EXPECTED_BASE" != "$WT_HEAD" ]; then
+  echo "⚠ Worktree created from wrong base. Resetting to expected base..."
+  git -C "$WT_PATH" reset --hard "$EXPECTED_BASE"
+fi
+```
+
+Do NOT use `reset --soft` — it moves HEAD but leaves working tree files unchanged.
+</worktree_branch_check>
+
 </process>
 
 <success_criteria>

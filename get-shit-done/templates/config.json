@@ -1,12 +1,24 @@
 {
   "mode": "interactive",
   "granularity": "standard",
+  "claude_md_path": "./CLAUDE.md",
   "workflow": {
     "research": true,
     "plan_check": true,
     "verifier": true,
     "auto_advance": false,
     "nyquist_validation": true,
+    "tdd_mode": false,
+    "discuss_mode": "discuss",
+    "code_review_command": null,
+    "pattern_mapper": true,
+    "plan_bounce": false,
+    "plan_bounce_script": null,
+    "plan_bounce_passes": 2,
+    "subagent_timeout": 300000,
+    "security_enforcement": false,
+    "security_asvs_level": 1,
+    "security_block_on": "critical",
     "critics": {
       "auto_spawn": true
     }
