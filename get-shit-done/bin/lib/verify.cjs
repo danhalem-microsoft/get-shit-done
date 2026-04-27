@@ -547,14 +547,15 @@ function cmdValidateHealth(cwd, options, raw) {
   // ─── Check 1: planning directory exists ──────────────────────────────────
   if (!fs.existsSync(planningDir)) {
     addIssue('error', 'E001', `${planningRoot}/ directory not found`, 'Run /gsd-new-project to initialize');
-    output({
+    const result = {
       status: 'broken',
       errors,
       warnings,
       info,
       repairable_count: 0,
-    }, raw);
-    return;
+    };
+    output(result, raw);
+    return result;
   }
 
   // ─── Check 2: PROJECT.md exists and has required sections ─────────────────
@@ -600,8 +601,7 @@ function cmdValidateHealth(cwd, options, raw) {
       if (!diskPhases.has(ref) && !diskPhases.has(normalizedRef) && !diskPhases.has(String(parseInt(ref, 10)))) {
         // Only warn if phases dir has any content (not just an empty project)
         if (diskPhases.size > 0) {
-          addIssue('warning', 'W002', `STATE.md references phase ${ref}, but only phases ${[...diskPhases].sort().join(', ')} exist`, 'Run /gsd-health --repair to regenerate STATE.md', true);
-          if (!repairs.includes('regenerateState')) repairs.push('regenerateState');
+          addIssue('warning', 'W002', `STATE.md references phase ${ref}, but only phases ${[...diskPhases].sort().join(', ')} exist`, 'Update STATE.md to reference an existing phase');
         }
       }
     }
@@ -613,12 +613,46 @@ function cmdValidateHealth(cwd, options, raw) {
     repairs.push('createConfig');
   } else {
     try {
-      const raw = fs.readFileSync(configPath, 'utf-8');
-      const parsed = JSON.parse(raw);
+      const rawConfig = fs.readFileSync(configPath, 'utf-8');
+      const parsed = JSON.parse(rawConfig);
       // Validate known fields
-      const validProfiles = ['quality', 'balanced', 'budget'];
+      const validProfiles = ['quality', 'balanced', 'budget', 'inherit'];
       if (parsed.model_profile && !validProfiles.includes(parsed.model_profile)) {
         addIssue('warning', 'W004', `config.json: invalid model_profile "${parsed.model_profile}"`, `Valid values: ${validProfiles.join(', ')}`);
+      }
+
+      // ─── W012: branching_strategy validation ────────────────────────────
+      const bs = parsed.branching_strategy || (parsed.git && parsed.git.branching_strategy);
+      if (bs !== undefined) {
+        const validStrategies = ['none', 'phase', 'milestone', 'quick'];
+        if (!validStrategies.includes(bs)) {
+          addIssue('warning', 'W012', `config.json: invalid branching_strategy "${bs}"`, `Valid values: ${validStrategies.join(', ')}`);
+        }
+      }
+
+      // ─── W013: context_window validation ────────────────────────────────
+      if (parsed.context_window !== undefined) {
+        if (typeof parsed.context_window !== 'number' || parsed.context_window <= 0) {
+          addIssue('warning', 'W013', `config.json: invalid context_window "${parsed.context_window}" (must be a positive number)`, 'Set context_window to a positive integer (e.g. 200000)');
+        }
+      }
+
+      // ─── W014: phase_branch_template placeholder validation ─────────────
+      const pbt = parsed.phase_branch_template || (parsed.git && parsed.git.phase_branch_template);
+      if (pbt !== undefined && !pbt.includes('{phase}')) {
+        addIssue('warning', 'W014', `config.json: phase_branch_template "${pbt}" missing {phase} placeholder`, 'Add {phase} placeholder to phase_branch_template');
+      }
+
+      // ─── W015: milestone_branch_template placeholder validation ─────────
+      const mbt = parsed.milestone_branch_template || (parsed.git && parsed.git.milestone_branch_template);
+      if (mbt !== undefined && !mbt.includes('{milestone}')) {
+        addIssue('warning', 'W015', `config.json: milestone_branch_template "${mbt}" missing {milestone} placeholder`, 'Add {milestone} placeholder to milestone_branch_template');
+      }
+
+      // ─── W016: workflow.ai_integration_phase absent ─────────────────────
+      if (parsed.workflow && parsed.workflow.ai_integration_phase === undefined) {
+        addIssue('warning', 'W016', 'config.json: workflow.ai_integration_phase absent (defaults to enabled but agents may skip)', 'Run /gsd-health --repair to add key', true);
+        if (!repairs.includes('addAiIntegrationPhaseKey')) repairs.push('addAiIntegrationPhaseKey');
       }
     } catch (err) {
       addIssue('error', 'E005', `config.json: JSON parse error - ${err.message}`, 'Run /gsd-health --repair to reset to defaults', true);
@@ -686,7 +720,6 @@ function cmdValidateHealth(cwd, options, raw) {
   } catch {}
 
   // ─── Check 8: Run existing consistency checks ─────────────────────────────
-  // Inline subset of cmdValidateConsistency
   if (fs.existsSync(roadmapPath)) {
     const roadmapContent = fs.readFileSync(roadmapPath, 'utf-8');
     const roadmapPhases = new Set();
@@ -694,6 +727,15 @@ function cmdValidateHealth(cwd, options, raw) {
     let m;
     while ((m = phasePattern.exec(roadmapContent)) !== null) {
       roadmapPhases.add(m[1]);
+    }
+
+    // Extract unchecked (not started) phases from the ROADMAP summary list
+    // e.g., "- [ ] **Phase 2: Build**" means Phase 2 is not started
+    const uncheckedPhases = new Set();
+    const uncheckedPattern = /- \[ \]\s+\*?\*?Phase\s+(\d+[A-Z]?(?:\.\d+)*)/gi;
+    let um;
+    while ((um = uncheckedPattern.exec(roadmapContent)) !== null) {
+      uncheckedPhases.add(um[1]);
     }
 
     const diskPhases = new Set();
@@ -711,7 +753,10 @@ function cmdValidateHealth(cwd, options, raw) {
     for (const p of roadmapPhases) {
       const padded = String(parseInt(p, 10)).padStart(2, '0');
       if (!diskPhases.has(p) && !diskPhases.has(padded)) {
-        addIssue('warning', 'W006', `Phase ${p} in ROADMAP.md but no directory on disk`, 'Create phase directory or remove from roadmap');
+        // Suppress W006 for phases that are unchecked (not started) in the ROADMAP summary
+        if (!uncheckedPhases.has(p)) {
+          addIssue('warning', 'W006', `Phase ${p} in ROADMAP.md but no directory on disk`, 'Create phase directory or remove from roadmap');
+        }
       }
     }
 
@@ -722,7 +767,48 @@ function cmdValidateHealth(cwd, options, raw) {
         addIssue('warning', 'W007', `Phase ${p} exists on disk but not in ROADMAP.md`, 'Add to roadmap or remove directory');
       }
     }
+
+    // ─── W011: STATE/ROADMAP cross-validation ───────────────────────────────
+    if (fs.existsSync(statePath)) {
+      const stateContent = fs.readFileSync(statePath, 'utf-8');
+      // Extract current phase from STATE.md
+      const currentPhaseMatch = stateContent.match(/\*\*Current\s+Phase:\*\*\s*(\d+)/i)
+        || stateContent.match(/Current\s+Phase[:\s]+(\d+)/i);
+      if (currentPhaseMatch) {
+        const currentPhase = currentPhaseMatch[1];
+        // Check if ROADMAP marks this phase as completed (checked off)
+        // Handle both zero-padded (03) and unpadded (3) phase numbers
+        const unpadded = String(parseInt(currentPhase, 10));
+        const padded = unpadded.padStart(2, '0');
+        const checkedPattern = new RegExp(`- \\[x\\]\\s+.*Phase\\s+(?:${padded}|${unpadded})\\b`, 'i');
+        if (checkedPattern.test(roadmapContent)) {
+          addIssue('warning', 'W011', `STATE.md says current phase is ${currentPhase} but ROADMAP.md shows it as complete`, 'Update STATE.md to the next active phase or uncheck the ROADMAP entry');
+        }
+      }
+    }
   }
+
+  // ─── Check W018: MILESTONES.md drift ──────────────────────────────────────
+  const milestonesDir = path.join(planningDir, 'milestones');
+  const milestonesPath = path.join(planningDir, 'MILESTONES.md');
+  try {
+    if (fs.existsSync(milestonesDir)) {
+      const snapshots = fs.readdirSync(milestonesDir).filter(f => f.match(/^v[\d.]+-ROADMAP\.md$/));
+      if (snapshots.length > 0) {
+        let milestonesContent = '';
+        if (fs.existsSync(milestonesPath)) {
+          milestonesContent = fs.readFileSync(milestonesPath, 'utf-8');
+        }
+        for (const snap of snapshots) {
+          const version = snap.replace(/-ROADMAP\.md$/, '');
+          if (!milestonesContent.includes(`## ${version}`)) {
+            addIssue('warning', 'W018', `Archived milestone snapshot "${snap}" has no entry in MILESTONES.md for ${version}`, 'Run /gsd-health --repair --backfill to synthesize entry', true);
+            if (!repairs.includes('backfillMilestones')) repairs.push('backfillMilestones');
+          }
+        }
+      }
+    }
+  } catch {}
 
   // ─── Perform repairs if requested ─────────────────────────────────────────
   const repairActions = [];
@@ -737,9 +823,14 @@ function cmdValidateHealth(cwd, options, raw) {
               commit_docs: true,
               search_gitignored: false,
               branching_strategy: 'none',
-              research: true,
-              plan_checker: true,
-              verifier: true,
+              phase_branch_template: 'gsd/phase-{phase}-{slug}',
+              milestone_branch_template: 'gsd/{milestone}-{slug}',
+              workflow: {
+                research: true,
+                plan_check: true,
+                verifier: true,
+                nyquist_validation: true,
+              },
               parallelization: true,
             };
             fs.writeFileSync(configPath, JSON.stringify(defaults, null, 2), 'utf-8');
@@ -786,6 +877,49 @@ function cmdValidateHealth(cwd, options, raw) {
             }
             break;
           }
+          case 'addAiIntegrationPhaseKey': {
+            if (fs.existsSync(configPath)) {
+              try {
+                const configRaw = fs.readFileSync(configPath, 'utf-8');
+                const configParsed = JSON.parse(configRaw);
+                if (!configParsed.workflow) configParsed.workflow = {};
+                if (configParsed.workflow.ai_integration_phase === undefined) {
+                  configParsed.workflow.ai_integration_phase = true;
+                  fs.writeFileSync(configPath, JSON.stringify(configParsed, null, 2), 'utf-8');
+                }
+                repairActions.push({ action: repair, success: true, path: 'config.json' });
+              } catch (err) {
+                repairActions.push({ action: repair, success: false, error: err.message });
+              }
+            }
+            break;
+          }
+          case 'backfillMilestones': {
+            if (options.backfill) {
+              try {
+                const snapshots = fs.readdirSync(milestonesDir).filter(f => f.match(/^v[\d.]+-ROADMAP\.md$/));
+                let existing = '';
+                if (fs.existsSync(milestonesPath)) {
+                  existing = fs.readFileSync(milestonesPath, 'utf-8');
+                }
+                let content = existing || '# Milestones\n\n';
+                for (const snap of snapshots) {
+                  const version = snap.replace(/-ROADMAP\.md$/, '');
+                  if (!content.includes(`## ${version}`)) {
+                    const snapContent = fs.readFileSync(path.join(milestonesDir, snap), 'utf-8');
+                    const titleMatch = snapContent.match(/^#\s+(.+)/m);
+                    const title = titleMatch ? titleMatch[1] : version;
+                    content += `## ${version} (Backfilled)\n\n${title}\n\n---\n\n`;
+                  }
+                }
+                fs.writeFileSync(milestonesPath, content, 'utf-8');
+                repairActions.push({ action: repair, success: true, path: 'MILESTONES.md' });
+              } catch (err) {
+                repairActions.push({ action: repair, success: false, error: err.message });
+              }
+            }
+            break;
+          }
         }
       } catch (err) {
         repairActions.push({ action: repair, success: false, error: err.message });
@@ -806,14 +940,16 @@ function cmdValidateHealth(cwd, options, raw) {
   const repairableCount = errors.filter(e => e.repairable).length +
                          warnings.filter(w => w.repairable).length;
 
-  output({
+  const result = {
     status,
     errors,
     warnings,
     info,
     repairable_count: repairableCount,
     repairs_performed: repairActions.length > 0 ? repairActions : undefined,
-  }, raw);
+  };
+  output(result, raw);
+  return result;
 }
 
 module.exports = {
