@@ -326,7 +326,7 @@ function loadConfig(cwd) {
     // Derived from config-set's VALID_CONFIG_KEYS (canonical source) plus internal-only
     // keys that loadConfig handles but config-set doesn't expose. This avoids maintaining
     // a hardcoded duplicate that drifts when new config keys are added.
-    const { VALID_CONFIG_KEYS } = require('./config.cjs');
+    const { VALID_CONFIG_KEYS } = require('./config-schema.cjs');
     const KNOWN_TOP_LEVEL = new Set([
       // Extract top-level key names from dot-notation paths (e.g., 'workflow.research' → 'workflow')
       ...[...VALID_CONFIG_KEYS].map(k => k.split('.')[0]),
