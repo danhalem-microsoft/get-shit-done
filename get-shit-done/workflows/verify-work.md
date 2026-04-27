@@ -25,6 +25,8 @@ No Pass/Fail buttons. No severity questions. Just: "Here's what should happen. D
 
 <process>
 
+**TEXT_MODE fallback:** When text_mode is active (--text flag or config), replace AskUserQuestion calls with plain-text numbered lists.
+
 <step name="initialize" priority="first">
 If $ARGUMENTS contains a phase number, load context:
 

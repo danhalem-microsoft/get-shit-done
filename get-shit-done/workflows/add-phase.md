@@ -89,7 +89,7 @@ Roadmap updated: ${planning_root}/ROADMAP.md
 
 `/gsd-plan-phase {N}`
 
-<sub>`/clear` first → fresh context window</sub>
+`/clear` then:
 
 ---
 

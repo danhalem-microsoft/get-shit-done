@@ -86,7 +86,7 @@ git remote add upstream https://github.com/glittercowboy/get-shit-done.git
 Use the built-in command:
 
 ```
-/gsd:sync-upstream
+/gsd-sync-upstream
 ```
 
 Or manually:

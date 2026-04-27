@@ -218,7 +218,7 @@ Based on user selection, route to appropriate workflow:
 
   `/gsd-execute-phase {phase}`
 
-  <sub>`/clear` first → fresh context window</sub>
+  `/clear` then:
 
   ---
   ```
@@ -232,7 +232,7 @@ Based on user selection, route to appropriate workflow:
 
   `/gsd-plan-phase [phase-number]`
 
-  <sub>`/clear` first → fresh context window</sub>
+  `/clear` then:
 
   ---
 

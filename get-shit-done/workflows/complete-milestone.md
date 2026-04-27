@@ -35,6 +35,8 @@ When a milestone completes:
 
 <process>
 
+**TEXT_MODE fallback:** When text_mode is active (--text flag or config), replace AskUserQuestion calls with plain-text numbered lists.
+
 <step name="verify_readiness">
 
 **Use `roadmap analyze` for comprehensive readiness check:**
@@ -80,7 +82,7 @@ Requirements: {N}/{M} v1 requirements checked off
 
 MUST present 3 options:
 1. **Proceed anyway** — mark milestone complete with known gaps
-2. **Run audit first** — `/gsd:audit-milestone` to assess gap severity
+2. **Run audit first** — `/gsd-audit-milestone` to assess gap severity
 3. **Abort** — return to development
 
 If user selects "Proceed anyway": note incomplete requirements in MILESTONES.md under `### Known Gaps` with REQ-IDs and descriptions.
@@ -343,7 +345,7 @@ You have ${COUNT} unprocessed decision log(s). Extract taste patterns from decis
 ```
 
 **If user selects "Yes, extract now":**
-- Invoke `/gsd:extract-taste` directly
+- Invoke `/gsd-extract-taste` directly
 - Full interactive extraction flow runs (init -> load logs -> identify candidates -> preview -> confirm -> write)
 - User reviews each candidate taste entry before it's written
 - Rejected candidates are not written to `${planning_root}/taste/`
@@ -442,7 +444,7 @@ mv ${planning_root}/phases/{phase-dir} ${planning_root}/milestones/v[X.Y]-phases
 ```
 Verify: `✅ Phase directories archived to ${planning_root}/milestones/v[X.Y]-phases/`
 
-If "Skip": Phase directories remain in `${planning_root}/phases/` as raw execution history. Use `/gsd:cleanup` later to archive retroactively.
+If "Skip": Phase directories remain in `${planning_root}/phases/` as raw execution history. Use `/gsd-cleanup` later to archive retroactively.
 
 After archival, the AI still handles:
 - Reorganizing ROADMAP.md with milestone grouping (requires judgment)
@@ -757,7 +759,7 @@ Tag: v[X.Y]
 
 `/gsd-new-milestone`
 
-<sub>`/clear` first → fresh context window</sub>
+`/clear` then:
 
 ---
 ```

@@ -139,6 +139,10 @@ This understanding check ensures that lessons from previous sessions are not los
 <step name="initialize" priority="first">
 Phase number from argument (required).
 
+Parse `--all` flag from $ARGUMENTS. The --all flag auto-selects all gray areas (skips the interactive selection AskUserQuestion) but does NOT trigger auto-advance. --all is NOT an auto-advance trigger — it only affects area selection.
+
+Parse `--power` flag from $ARGUMENTS. If present, route to discuss-phase-power.md workflow instead of continuing this workflow. The --power flag enables power user mode with bulk question generation.
+
 ```bash
 INIT=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" init phase-op "${PHASE}")
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
@@ -179,11 +183,16 @@ All logging calls use `2>/dev/null || true` — logging NEVER breaks the workflo
 <step name="check_existing">
 Check if CONTEXT.md already exists using `has_context` from init.
 
+**Incremental checkpoint resume:** Also check for DISCUSS-CHECKPOINT.json in the phase directory. If found, Resume from where the previous session left off — load areas_completed and areas_remaining from the checkpoint and skip already-completed areas.
+
 ```bash
 ls ${phase_dir}/*-CONTEXT.md 2>/dev/null
+ls ${phase_dir}/DISCUSS-CHECKPOINT.json 2>/dev/null
 ```
 
-**If exists:**
+If DISCUSS-CHECKPOINT.json exists: Resume discussion from checkpoint. Load `areas_completed`, `areas_remaining`, and `"decisions"` from the JSON. Skip already-completed areas.
+
+**If CONTEXT.md exists:**
 Use AskUserQuestion:
 - header: "Context"
 - question: "Phase [X] already has context. What do you want to do?"
@@ -383,6 +392,8 @@ Gray areas:
 <step name="present_gray_areas">
 Present the domain boundary, prior decisions, and gray areas to user.
 
+**--all flag handling:** If `--all` flag is present, Auto-select all gray areas — skip the interactive AskUserQuestion below and proceed directly to discuss_areas with all areas selected. Note: --all does not trigger auto-advance (--all is NOT an auto-advance trigger).
+
 **First, state the boundary and any prior decisions that apply:**
 ```
 Phase [X]: [Name]
@@ -528,10 +539,28 @@ Back to [current area]: [return to current question]"
 ```
 
 Track deferred ideas internally.
+
+**Incremental checkpoint save:** After each area completes (in both interactive and --auto modes where it auto-resolves), write DISCUSS-CHECKPOINT.json to the phase directory:
+
+```json
+{
+  "areas_completed": ["area1", "area2"],
+  "areas_remaining": ["area3"],
+  "decisions": { "area1": "decision text", "area2": "decision text" },
+  "timestamp": "ISO-8601"
+}
+```
+
+This prevents answer loss on session interruption.
 </step>
 
 <step name="write_context">
 Create CONTEXT.md capturing decisions made.
+
+**Checkpoint cleanup:** After successful CONTEXT.md write, remove the checkpoint file:
+```bash
+rm -f ${phase_dir}/DISCUSS-CHECKPOINT.json
+```
 
 **Find or create phase directory:**
 
@@ -921,4 +950,5 @@ Route to `confirm_creation` step (existing behavior — show manual next steps).
 - STATE.md updated with session info
 - User knows next steps
 - DISCUSSION-LOG.md written alongside CONTEXT.md. Audit trail only — not consumed by downstream agents
+- Incremental checkpoint saves: DISCUSS-CHECKPOINT.json written after each area completes for session resume capability
 </success_criteria>

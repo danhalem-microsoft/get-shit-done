@@ -1815,7 +1815,7 @@ function getPlanningRoot(cwd) {
   // 2. Old flat structure detection (actionable migration instructions)
   if (fs.existsSync(path.join(cwd, '.planning', 'PROJECT.md')) &&
       !fs.existsSync(path.join(cwd, '.planning', 'users'))) {
-    error('GSD Error: Legacy .planning/ structure detected.\n\nRun: /gsd:migrate to auto-migrate your project to the multi-user structure.\nOr run: gsd-tools.cjs migrate --auto to migrate from the command line.\n\nThis will move your files to .planning/users/<your-user>/<project-name>/ and set up the active project context.');
+    error('GSD Error: Legacy .planning/ structure detected.\n\nRun: /gsd-migrate to auto-migrate your project to the multi-user structure.\nOr run: gsd-tools.cjs migrate --auto to migrate from the command line.\n\nThis will move your files to .planning/users/<your-user>/<project-name>/ and set up the active project context.');
   }
 
   // 3. Delegate to context.cjs (lazy require — avoids circular dep).
@@ -1832,7 +1832,7 @@ function getPlanningRoot(cwd) {
       _planningRootCache[cwd] = flatPlanning;
       return flatPlanning;
     }
-    error('GSD Error: No active project. Run /gsd:new-project to create one, or /gsd:switch to select one.');
+    error('GSD Error: No active project. Run /gsd-new-project to create one, or /gsd-switch to select one.');
   }
 
   _planningRootCache[cwd] = ctx.planning_root;

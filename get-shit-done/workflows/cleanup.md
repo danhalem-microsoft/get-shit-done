@@ -14,6 +14,8 @@ Archive accumulated phase directories from completed milestones into `${planning
 
 <process>
 
+**TEXT_MODE fallback:** When text_mode is active (--text flag or config), replace AskUserQuestion calls with plain-text numbered lists.
+
 <step name="identify_completed_milestones">
 
 Read `${planning_root}/MILESTONES.md` to identify completed milestones and their versions.

@@ -47,6 +47,8 @@ The document should describe what you want to build.
 
 <process>
 
+**TEXT_MODE fallback:** When text_mode is active (--text flag or config), replace AskUserQuestion calls with plain-text numbered lists.
+
 ## 1. Setup (Two-Step Bootstrap)
 
 **MANDATORY FIRST STEP — Execute pre-init bootstrap before ANY user interaction.**
@@ -99,7 +101,7 @@ SLUG=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" generate-slug "${USE
 
 **Check for duplicates:** If `SLUG` exists in `projects` array (match against `project.name`):
 ```
-Error: Project "${SLUG}" already exists. Use /gsd:switch ${SLUG} to work on it.
+Error: Project "${SLUG}" already exists. Use /gsd-switch ${SLUG} to work on it.
 ```
 Stop execution.
 
@@ -606,7 +608,7 @@ Create `${planning_root}/config.json` with all settings:
 node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "chore: add project config" --files ${planning_root}/config.json
 ```
 
-**Note:** Run `/gsd:settings` anytime to update these preferences.
+**Note:** Run `/gsd-settings` anytime to update these preferences.
 
 ## 5.5. Resolve Model Profile
 
@@ -1499,7 +1501,7 @@ Exit skill and invoke SlashCommand("/gsd-discuss-phase 1 --auto")
 
 /gsd-discuss-phase 1 — gather context and clarify approach
 
-<sub>/clear first → fresh context window</sub>
+`/clear` then:
 
 ---
 
@@ -1531,9 +1533,9 @@ Exit skill and invoke SlashCommand("/gsd-discuss-phase 1 --auto")
 
 - [ ] Project name asked FIRST (before any context gathering)
 - [ ] Name slugified and confirmed with user
-- [ ] Duplicate names blocked with clear error directing to /gsd:switch
+- [ ] Duplicate names blocked with clear error directing to /gsd-switch
 - [ ] ${planning_root}/ directory created under `${BOOTSTRAP_PATH}/<project>/`
-- [ ] Active context set to new project via /gsd:switch
+- [ ] Active context set to new project via /gsd-switch
 - [ ] config.json seeded from global config defaults
 - [ ] Scope path asked and stored in config.json (if provided)
 - [ ] Git repo initialized

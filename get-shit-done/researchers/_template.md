@@ -11,7 +11,7 @@
 #   triggers: keyword list for AI relevance matching (recommended for discoverability)
 #
 # Save to: ~/.claude/get-shit-done/researchers/custom/your-type.md
-# It will be automatically discovered on next /gsd:new-project or /gsd:new-milestone.
+# It will be automatically discovered on next /gsd-new-project or /gsd-new-milestone.
 
 name: my-custom-research
 output_file: MY-RESEARCH.md

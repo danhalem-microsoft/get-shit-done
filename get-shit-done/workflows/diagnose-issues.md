@@ -27,6 +27,11 @@ With diagnosis: "Comment doesn't refresh" → "useEffect missing dependency" →
 
 <process>
 
+
+**Worktree config:** Read USE_WORKTREES from config:
+```bash
+USE_WORKTREES=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" config-get workflow.use_worktrees 2>/dev/null || echo "true")
+```
 <step name="parse_gaps">
 **Extract gaps from UAT.md:**
 

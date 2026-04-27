@@ -13,6 +13,8 @@ Read all files referenced by the invoking prompt's execution_context before star
 
 <process>
 
+**TEXT_MODE fallback:** When text_mode is active (--text flag or config), replace AskUserQuestion calls with plain-text numbered lists.
+
 <step name="init_context">
 Load taste context and existing entries:
 
@@ -141,14 +143,14 @@ Taste entry created: ${planning_root}/taste/${SLUG}.md
   Confidence: HIGH (manual entry)
   Tags: ${tags}
 
-This taste will be consulted during future /gsd:discuss-phase sessions.
+This taste will be consulted during future /gsd-discuss-phase sessions.
 
 ---
 
 Would you like to:
 1. Continue with current work
-2. Add another taste (/gsd:add-taste)
-3. Extract tastes from decision logs (/gsd:extract-taste)
+2. Add another taste (/gsd-add-taste)
+3. Extract tastes from decision logs (/gsd-extract-taste)
 ```
 </step>
 

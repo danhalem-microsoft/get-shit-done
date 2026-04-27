@@ -226,6 +226,25 @@ If human_needed: list items requiring human testing.
 Orchestrator routes: `passed` → update_roadmap | `gaps_found` → create/execute fixes, re-verify | `human_needed` → present to user.
 </step>
 
+<step name="run_tests">
+**Test command detection** — check config first, then Makefile, then language sniff:
+
+```bash
+VERIFY_TEST_CMD=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" config-get workflow.test_command 2>/dev/null || echo "")
+if [ -z "$VERIFY_TEST_CMD" ]; then
+  if [ -f "Makefile" ] && grep -q "^test:" Makefile; then
+    VERIFY_TEST_CMD="make test"
+  elif [ -f "package.json" ]; then
+    VERIFY_TEST_CMD="npm test"
+  elif [ -f "Cargo.toml" ]; then
+    VERIFY_TEST_CMD="cargo test"
+  elif [ -f "go.mod" ]; then
+    VERIFY_TEST_CMD="go test ./..."
+  fi
+fi
+```
+</step>
+
 </process>
 
 <success_criteria>

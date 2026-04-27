@@ -65,7 +65,8 @@ function cmdRoadmapGetPhase(cwd, phaseNum, raw) {
     const section = content.slice(headerIndex, sectionEnd).trim();
 
     // Extract goal if present
-    const goalMatch = section.match(/\*\*Goal:\*\*\s*([^\n]+)/i);
+    // Extract goal if present — handles both **Goal:** and **Goal**: formats
+    const goalMatch = section.match(/\*\*Goal:\*\*\s*([^\n]+)/i) || section.match(/\*\*Goal\*\*:\s*([^\n]+)/i);
     const goal = goalMatch ? goalMatch[1].trim() : null;
 
     // Extract success criteria as structured array
@@ -119,10 +120,11 @@ function cmdRoadmapAnalyze(cwd, raw) {
     const sectionEnd = nextHeader ? sectionStart + nextHeader.index : content.length;
     const section = content.slice(sectionStart, sectionEnd);
 
-    const goalMatch = section.match(/\*\*Goal:\*\*\s*([^\n]+)/i);
+    // Extract goal if present — handles both **Goal:** and **Goal**: formats
+    const goalMatch = section.match(/\*\*Goal:\*\*\s*([^\n]+)/i) || section.match(/\*\*Goal\*\*:\s*([^\n]+)/i);
     const goal = goalMatch ? goalMatch[1].trim() : null;
 
-    const dependsMatch = section.match(/\*\*Depends on:\*\*\s*([^\n]+)/i);
+    const dependsMatch = section.match(/\*\*Depends on:\*\*\s*([^\n]+)/i) || section.match(/\*\*Depends on\*\*:\s*([^\n]+)/i);
     const depends_on = dependsMatch ? dependsMatch[1].trim() : null;
 
     // Check completion on disk
@@ -252,16 +254,37 @@ function cmdRoadmapUpdatePlanProgress(cwd, phaseNum, raw) {
   let roadmapContent = fs.readFileSync(roadmapPath, 'utf-8');
   const phaseEscaped = escapeRegex(phaseNum);
 
-  // Progress table row: update Plans column (summaries/plans) and Status column
-  const tablePattern = new RegExp(
-    `(\\|\\s*${phaseEscaped}\\.?\\s[^|]*\\|)[^|]*(\\|)\\s*[^|]*(\\|)\\s*[^|]*(\\|)`,
-    'i'
+  // Progress table row: handle both 4-col and 5-col tables
+  const tableRowPattern = new RegExp(
+    `^(\\|\\s*${phaseEscaped}\\.?\\s[^|]*(?:\\|[^\\n]*))$`,
+    'im'
   );
   const dateField = isComplete ? ` ${today} ` : '  ';
-  roadmapContent = roadmapContent.replace(
-    tablePattern,
-    `$1 ${summaryCount}/${planCount} $2 ${status.padEnd(11)}$3${dateField}$4`
-  );
+  roadmapContent = roadmapContent.replace(tableRowPattern, (fullRow) => {
+    const cells = fullRow.split('|').slice(1, -1);
+    if (cells.length === 5) {
+      cells[2] = ` ${summaryCount}/${planCount} `;
+      cells[3] = ` ${status.padEnd(11)}`;
+      cells[4] = dateField;
+    } else if (cells.length === 4) {
+      cells[1] = ` ${summaryCount}/${planCount} `;
+      cells[2] = ` ${status.padEnd(11)}`;
+      cells[3] = dateField;
+    }
+    return '|' + cells.join('|') + '|';
+  });
+
+  // Mark completed plan checkboxes
+  for (const summaryFile of phaseInfo.summaries) {
+    const planId = summaryFile.replace('-SUMMARY.md', '').replace('SUMMARY.md', '');
+    if (!planId) continue;
+    const planEscaped = escapeRegex(planId);
+    const planCheckboxPattern = new RegExp(
+      `(-\\s*\\[) (\\]\\s*(?:\\*\\*)?${planEscaped}(?:\\*\\*)?)`,
+      'i'
+    );
+    roadmapContent = roadmapContent.replace(planCheckboxPattern, '$1x$2');
+  }
 
   // Update plan count in phase detail section
   const planCountPattern = new RegExp(

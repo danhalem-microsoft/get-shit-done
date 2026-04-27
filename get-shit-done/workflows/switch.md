@@ -4,6 +4,8 @@ Switch the active project context. With an argument, switches directly. Without 
 
 <process>
 
+**TEXT_MODE fallback:** When text_mode is active (--text flag or config), replace AskUserQuestion calls with plain-text numbered lists.
+
 <step name="parse_argument">
 Check if a project name argument was provided in $ARGUMENTS.
 
@@ -68,7 +70,7 @@ Your projects:
 
 **If projects array is empty:**
 ```
-No projects found. Run /gsd:new-project to create one.
+No projects found. Run /gsd-new-project to create one.
 ```
 Exit workflow.
 
@@ -97,6 +99,6 @@ Planning root: ${planning_root}
 <success_criteria>
 - [ ] With argument: project switched or clear error with suggestions
 - [ ] Without argument: numbered project list displayed, user picks, switch executed
-- [ ] Empty project list handled with /gsd:new-project suggestion
+- [ ] Empty project list handled with /gsd-new-project suggestion
 - [ ] Result displayed with project name and planning root
 </success_criteria>

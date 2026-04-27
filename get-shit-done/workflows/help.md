@@ -112,10 +112,12 @@ Execute all plans in a phase.
 
 - Groups plans by wave (from frontmatter), executes waves sequentially
 - Plans within each wave run in parallel via Task tool
+- Optional `--wave N` flag executes only Wave `N` for pacing or staged rollout
 - Verifies phase goal after all plans complete
 - Updates REQUIREMENTS.md, ROADMAP.md, STATE.md
 
 Usage: `/gsd-execute-phase 5`
+Usage: `/gsd-execute-phase 5 --wave 2`
 
 ### Quick Mode
 

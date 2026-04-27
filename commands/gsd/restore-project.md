@@ -9,7 +9,7 @@ allowed-tools:
 ---
 <context>
 **Usage:**
-- `/gsd:restore-project my-api` — Restore project "my-api" from `_archived/`
+- `/gsd-restore-project my-api` — Restore project "my-api" from `_archived/`
 
 **Effect:** Moves the project directory from `.planning/users/<user>/_archived/<project>/` back to `.planning/users/<user>/<project>/` and sets it as the active project.
 </context>

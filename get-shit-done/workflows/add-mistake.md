@@ -10,6 +10,8 @@ Read all files referenced by the invoking prompt's execution_context before star
 
 <process>
 
+**TEXT_MODE fallback:** When text_mode is active (--text flag or config), replace AskUserQuestion calls with plain-text numbered lists.
+
 <step name="init_context">
 Load mistake registry context:
 
@@ -230,8 +232,8 @@ Mistake captured: ${planning_root}/mistakes/${slug}.md
 
 Would you like to:
 1. Continue with current work
-2. Add another mistake (/gsd:add-mistake)
-3. View all mistakes (/gsd:mistakes)
+2. Add another mistake (/gsd-add-mistake)
+3. View all mistakes (/gsd-mistakes)
 ```
 </step>
 

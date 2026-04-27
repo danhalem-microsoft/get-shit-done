@@ -8,6 +8,8 @@ Read all files referenced by the invoking prompt's execution_context before star
 
 <process>
 
+**TEXT_MODE fallback:** When text_mode is active (--text flag or config), replace AskUserQuestion calls with plain-text numbered lists.
+
 <step name="ensure_and_load_config">
 Ensure config exists and load current state:
 

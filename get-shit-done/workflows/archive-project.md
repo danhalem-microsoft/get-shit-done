@@ -4,6 +4,8 @@ Archive a completed project by moving it to the _archived/ subdirectory. Confirm
 
 <process>
 
+**TEXT_MODE fallback:** When text_mode is active (--text flag or config), replace AskUserQuestion calls with plain-text numbered lists.
+
 <step name="parse_argument">
 Extract project name from $ARGUMENTS.
 
@@ -15,9 +17,9 @@ PROJECT_NAME=$(echo "$ARGUMENTS" | xargs)
 ```
 Error: Project name required.
 
-Usage: /gsd:archive-project <project-name>
+Usage: /gsd-archive-project <project-name>
 
-Use /gsd:switch to see your projects.
+Use /gsd-switch to see your projects.
 ```
 Exit workflow.
 </step>
@@ -51,7 +53,7 @@ Display:
 ```
 Archived: ${project}
 
-${new_active ? "Active project is now: ${new_active}" : "No active project. Use /gsd:switch or /gsd:new-project."}
+${new_active ? "Active project is now: ${new_active}" : "No active project. Use /gsd-switch or /gsd-new-project."}
 ```
 
 **If failed** (non-zero exit or error):

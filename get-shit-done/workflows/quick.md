@@ -5,7 +5,9 @@ With `--discuss` flag: lightweight discussion phase before planning. Surfaces as
 
 With `--full` flag: enables plan-checking (max 2 iterations) and post-execution verification for quality guarantees without full milestone ceremony.
 
-Flags are composable: `--discuss --full` gives discussion + plan-checking + verification.
+With `--research` flag: spawns gsd-phase-researcher before planning to gather technical context. Research output stored in task directory and fed to planner. $RESEARCH_MODE variable controls this behavior.
+
+Flags are composable: `--discuss --full --research` gives discussion + research + plan-checking + verification.
 </purpose>
 
 <required_reading>
@@ -20,11 +22,19 @@ Read all files referenced by the invoking prompt's execution_context before star
 </available_agent_types>
 
 <process>
+
+**TEXT_MODE fallback:** When text_mode is active (--text flag or config), replace AskUserQuestion calls with plain-text numbered lists.
+
+**Worktree config:** Read USE_WORKTREES from config:
+```bash
+USE_WORKTREES=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" config-get workflow.use_worktrees 2>/dev/null || echo "true")
+```
 **Step 1: Parse arguments and get task description**
 
 Parse `$ARGUMENTS` for:
 - `--full` flag → store as `$FULL_MODE` (true/false)
 - `--discuss` flag → store as `$DISCUSS_MODE` (true/false)
+- `--research` flag → store as `$RESEARCH_MODE` (true/false)
 - Remaining text → use as `$DESCRIPTION` if non-empty
 
 If `$DESCRIPTION` is empty after parsing, prompt user interactively:
@@ -43,6 +53,15 @@ If still empty, re-prompt: "Please provide a task description."
 
 Display banner based on active flags:
 
+If `$DISCUSS_MODE` and `$FULL_MODE` and `$RESEARCH_MODE`:
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ GSD ► QUICK TASK (DISCUSS + RESEARCH + FULL)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+◆ Discussion + research + plan checking + verification enabled
+```
+
 If `$DISCUSS_MODE` and `$FULL_MODE`:
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -50,6 +69,15 @@ If `$DISCUSS_MODE` and `$FULL_MODE`:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ◆ Discussion + plan checking + verification enabled
+```
+
+If `$RESEARCH_MODE` and `$FULL_MODE`:
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ GSD ► QUICK TASK (RESEARCH + FULL)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+◆ Research + plan checking + verification enabled
 ```
 
 If `$DISCUSS_MODE` only:
@@ -74,16 +102,37 @@ If `$FULL_MODE` only:
 
 **Step 2: Initialize**
 
+**gsd-sdk pre-flight check:**
+```bash
+if ! command -v gsd-sdk >/dev/null 2>&1; then
+  echo "Error: gsd-sdk not found in PATH."
+  echo "Install with: npm install -g @gsd-build/sdk"
+  echo "Or run /gsd-update to install all dependencies."
+  exit 1
+fi
+```
+
 ```bash
 INIT=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" init quick "$DESCRIPTION")
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 ```
 
-Parse JSON for: `planner_model`, `executor_model`, `checker_model`, `verifier_model`, `commit_docs`, `next_num`, `slug`, `date`, `timestamp`, `quick_dir`, `task_dir`, `roadmap_exists`, `planning_exists`.
+Parse JSON for: `planner_model`, `executor_model`, `checker_model`, `verifier_model`, `commit_docs`, `next_num`, `slug`, `date`, `timestamp`, `quick_dir`, `task_dir`, `roadmap_exists`, `planning_exists`, `branch_name`.
 
 **If `roadmap_exists` is false:** Error — Quick mode requires an active project with ROADMAP.md. Run `/gsd-new-project` first.
 
 Quick tasks can run mid-phase - validation only checks ROADMAP.md exists, not phase status.
+
+---
+
+**Step 2.5: Handle quick-task branching**
+
+If `branch_name` is non-null from init JSON:
+```bash
+git checkout -b "$branch_name" 2>/dev/null || git checkout "$branch_name"
+```
+
+This step runs before task directory creation to ensure all commits land on the correct branch.
 
 ---
 
@@ -229,6 +278,43 @@ ${any_specific_references_or_examples_from_discussion}
 Note: Quick task CONTEXT.md omits `<code_context>` and `<deferred>` sections (no codebase scouting, no phase scope to defer to). Keep it lean.
 
 Report: `Context captured: ${QUICK_DIR}/${next_num}-CONTEXT.md`
+
+---
+
+**Step 4.75: Research phase (only when `$RESEARCH_MODE`)**
+
+Skip this step entirely if NOT `$RESEARCH_MODE`.
+
+Display banner:
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ GSD ► RESEARCHING QUICK TASK
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+◆ Researching: ${DESCRIPTION}
+```
+
+Spawn gsd-phase-researcher for quick task research:
+
+```
+Task(
+  prompt="First, read $HOME/.claude/agents/gsd-phase-researcher.md for your role and instructions.
+
+  <research_type>
+  Quick Task Research for: ${DESCRIPTION}
+  </research_type>
+
+  <output>
+  Write to: ${QUICK_DIR}/${next_num}-RESEARCH.md
+  </output>
+  ",
+  subagent_type="general-purpose",
+  model="{researcher_model}",
+  description="Research quick task: ${DESCRIPTION}"
+)
+```
+
+After researcher returns, verify output exists at `${QUICK_DIR}/${next_num}-RESEARCH.md`.
 
 ---
 
@@ -392,6 +478,19 @@ Offer: 1) Force proceed, 2) Abort
 
 ---
 
+**Step 5.6: Pre-dispatch PLAN.md commit (worktree mode only)**
+
+If `USE_WORKTREES` is true AND `commit_docs` is not false:
+
+```bash
+git add ${QUICK_DIR}/${next_num}-PLAN.md
+git commit --no-verify -m "docs(quick-${next_num}): pre-dispatch PLAN.md for worktree executor"
+```
+
+This ensures the executor in the worktree can read PLAN.md from the committed tree rather than from the main repo's working directory. Without this commit, the executor's first Read resolves to a main-repo absolute path, priming CC's path cache incorrectly.
+
+---
+
 **Step 6: Spawn executor**
 
 Spawn gsd-executor with plan reference:
@@ -413,6 +512,7 @@ Execute quick task ${next_num}.
 - Commit each task atomically
 - Create summary at: ${QUICK_DIR}/${next_num}-SUMMARY.md
 - Do NOT update ROADMAP.md (quick tasks are separate from planned phases)
+- Do NOT commit docs artifacts (SUMMARY.md, STATE.md, PLAN.md) — orchestrator handles doc commits in Step 8
 </constraints>
 ",
   subagent_type="gsd-executor",
@@ -536,6 +636,8 @@ Use Edit tool to make these changes atomically
 
 **Step 8: Final commit and completion**
 
+This step MUST always run regardless of whether the executor made its own commits. It handles orchestrator-owned doc artifacts.
+
 Stage and commit quick task artifacts:
 
 Build file list:
@@ -544,8 +646,10 @@ Build file list:
 - `${planning_root}/STATE.md`
 - If `$DISCUSS_MODE` and context file exists: `${QUICK_DIR}/${next_num}-CONTEXT.md`
 - If `$FULL_MODE` and verification file exists: `${QUICK_DIR}/${next_num}-VERIFICATION.md`
+- If `$RESEARCH_MODE` and research file exists: `${QUICK_DIR}/${next_num}-RESEARCH.md`
 
 ```bash
+git add ${file_list}
 node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs(quick-${next_num}): ${DESCRIPTION}" --files ${file_list}
 ```
 
@@ -588,6 +692,48 @@ Commit: ${commit_hash}
 
 Ready for next task: /gsd-quick
 ```
+
+**Worktree cleanup (when USE_WORKTREES is true):**
+
+After executor completes, merge and clean up the worktree branch:
+
+```bash
+# Pre-merge deletion check
+DELETED_FILES=$(git diff --diff-filter=D --name-only HEAD...$WT_BRANCH)
+if [ -n "$DELETED_FILES" ]; then
+  echo "⚠ Worktree branch contains file deletions — review before merge"
+fi
+
+git merge --no-ff "$WT_BRANCH" -m "merge: quick-${next_num}"
+```
+
+Lock-aware worktree removal:
+```bash
+if [ -f ".git/worktrees/${WT_NAME}/locked" ]; then
+  echo "⚠ Worktree is locked, attempting unlock..."
+  git worktree unlock "$WT_PATH" 2>/dev/null
+fi
+git worktree remove "$WT_PATH" --force
+if [ $? -ne 0 ]; then
+  echo "⚠ Residual worktree: $WT_PATH could not be removed. Run manual cleanup:"
+  echo "  git worktree remove $WT_PATH --force"
+fi
+git branch -D "$WT_BRANCH"
+```
+
+<worktree_branch_check>
+**Worktree branch base verification (affects all platforms — cross-platform fix):**
+
+After creating a worktree, verify it was created from the correct base branch:
+```bash
+EXPECTED_BASE=$(git rev-parse HEAD)
+WT_HEAD=$(git -C "$WT_PATH" rev-parse HEAD)
+if [ "$EXPECTED_BASE" != "$WT_HEAD" ]; then
+  echo "⚠ Worktree created from wrong base. Resetting..."
+  git -C "$WT_PATH" reset --hard "$EXPECTED_BASE"
+fi
+```
+</worktree_branch_check>
 
 </process>
 

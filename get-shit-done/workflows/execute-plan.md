@@ -15,6 +15,10 @@ Read config.json for planning behavior settings.
 
 <process>
 
+**Worktree config:** Check `workflow.use_worktrees` config for execution isolation mode.
+
+**TEXT_MODE fallback:** When text_mode is active (--text flag or config), replace AskUserQuestion calls with plain-text numbered lists.
+
 <step name="init_context" priority="first">
 Load execution context (paths only to minimize orchestrator context):
 

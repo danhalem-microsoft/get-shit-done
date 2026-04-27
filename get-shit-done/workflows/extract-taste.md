@@ -3,7 +3,7 @@ Extract taste patterns from unprocessed decision logs. Analyzes decision exchang
 across multiple sessions to identify recurring preferences, cross-references against
 existing taste entries, and creates confirmed entries in ${planning_root}/taste/.
 
-This is the primary automated taste discovery mechanism. Manual entry via /gsd:add-taste
+This is the primary automated taste discovery mechanism. Manual entry via /gsd-add-taste
 handles explicit preferences; this workflow discovers implicit patterns from actual decisions.
 </purpose>
 
@@ -40,7 +40,7 @@ LOGS=$(echo "$UNPROCESSED" | jq -r '.unprocessed_logs[]')
 ```
 No unprocessed decision logs found.
 
-Decision logs are created during /gsd:discuss-phase sessions.
+Decision logs are created during /gsd-discuss-phase sessions.
 Run at least 3 discuss-phase sessions before extracting taste patterns.
 ```
 </step>
@@ -53,7 +53,7 @@ If `COUNT < 3`:
 Only ${COUNT} unprocessed decision log(s) found. Minimum 3 required for pattern extraction.
 
 Taste extraction needs enough data points to identify recurring patterns.
-Continue with /gsd:discuss-phase to build up more decision history.
+Continue with /gsd-discuss-phase to build up more decision history.
 ```
 Exit workflow.
 
@@ -242,7 +242,7 @@ New taste entries:
   - ${planning_root}/taste/${slug1}.md -- ${title1}
   - ${planning_root}/taste/${slug2}.md -- ${title2}
 
-These tastes will be consulted during future /gsd:discuss-phase sessions.
+These tastes will be consulted during future /gsd-discuss-phase sessions.
 ```
 </step>
 

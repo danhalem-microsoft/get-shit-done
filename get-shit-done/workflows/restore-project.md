@@ -15,7 +15,7 @@ PROJECT_NAME=$(echo "$ARGUMENTS" | xargs)
 ```
 Error: Project name required.
 
-Usage: /gsd:restore-project <project-name>
+Usage: /gsd-restore-project <project-name>
 ```
 Exit workflow.
 </step>
@@ -37,7 +37,7 @@ Display:
 Restored: ${project}
 Project is now active.
 
-Use /gsd:progress to check project status.
+Use /gsd-progress to check project status.
 ```
 
 **If failed** (non-zero exit or error):

@@ -25,7 +25,7 @@ If `mistake_count` is 0 OR `mistakes_dir_exists` is false:
 ```
 No mistake entries yet.
 
-Capture patterns with /gsd:add-mistake during work sessions.
+Capture patterns with /gsd-add-mistake during work sessions.
 Entries help critics catch recurring issues.
 ```
 

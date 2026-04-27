@@ -6,6 +6,7 @@ Create executable phase prompts (PLAN.md files) for a roadmap phase with integra
 Read all files referenced by the invoking prompt's execution_context before starting.
 
 @~/.claude/get-shit-done/references/ui-brand.md
+@~/.claude/get-shit-done/references/gates.md
 </required_reading>
 
 <available_agent_types>
@@ -55,7 +56,18 @@ All logging calls use `2>/dev/null || true` — logging NEVER breaks the workflo
 
 Extract from $ARGUMENTS: phase number (integer or decimal like `2.1`), flags (`--research`, `--skip-research`, `--gaps`, `--skip-verify`, `--prd <filepath>`).
 
+Parse `--auto` and `--chain` flags from $ARGUMENTS.
+
 Extract `--prd <filepath>` from $ARGUMENTS. If present, set PRD_FILE to the filepath.
+
+**Read context window configuration:**
+```bash
+CONTEXT_WINDOW=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" config-get context_window 2>/dev/null || echo "200000")
+```
+
+**TEXT_MODE fallback:** If `--text` is present in $ARGUMENTS OR `text_mode` from init JSON is true, set TEXT_MODE=true. When TEXT_MODE is active, replace every AskUserQuestion call with a plain-text numbered list and ask the user to type their choice number.
+
+**IMPORTANT — do not create, rename, or switch git branches.** The branch name is set at project creation time and does not change even if the phase_slug changes during planning. A phase rename in ROADMAP.md is plan-level, not git-level — the branch identity is fixed.
 
 **If no phase number:** Detect next unplanned phase from roadmap.
 
@@ -952,16 +964,112 @@ Failure to execute the plan-critic spawn check (step 9.5) is a workflow violatio
 
 ## 13. Present Final Status
 
+**AI nudge:** If user has not yet used `/gsd-ai-integration-phase`, suggest it as an option for AI-specific optimization.
+
 Route to `<offer_next>` OR `auto_advance` depending on flags/config.
+
+## 12.5 Plan Bounce (optional external review)
+
+**Skip if:** `--gaps` flag is present (--gaps disables bounce).
+
+Read plan bounce config:
+```bash
+PLAN_BOUNCE=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" config-get workflow.plan_bounce 2>/dev/null || echo "false")
+PLAN_BOUNCE_SCRIPT=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" config-get workflow.plan_bounce_script 2>/dev/null || echo "")
+PLAN_BOUNCE_PASSES=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" config-get workflow.plan_bounce_passes 2>/dev/null || echo "2")
+```
+
+If `PLAN_BOUNCE` is "true" AND `PLAN_BOUNCE_SCRIPT` is non-empty (or `--bounce` flag present), AND `--skip-bounce` flag is NOT present:
+
+1. Backup current plans: `cp ${PHASE_DIR}/*-PLAN.md ${PHASE_DIR}/pre-bounce.md`
+2. Run external bounce script for each pass (up to plan_bounce_passes):
+   ```bash
+   for i in $(seq 1 $PLAN_BOUNCE_PASSES); do
+     $PLAN_BOUNCE_SCRIPT < ${PHASE_DIR}/*-PLAN.md > /tmp/bounced-plan.md
+     if [ $? -ne 0 ]; then
+       echo "⚠ Bounce script failed on pass $i — restore original from pre-bounce.md"
+       cp ${PHASE_DIR}/pre-bounce.md ${PHASE_DIR}/*-PLAN.md
+       break
+     fi
+     cp /tmp/bounced-plan.md ${PHASE_DIR}/*-PLAN.md
+   done
+   ```
+3. Validate YAML frontmatter integrity on bounced plans — external scripts may corrupt frontmatter
+4. Re-run plan checker on bounced plans to verify they still pass verification
+
+## 13b. Cross-phase context enrichment
+
+If CONTEXT_WINDOW >= 500000, load Cross-phase context for decision consistency:
+- Read prior phases' CONTEXT.md files for locked decisions
+- Read prior phases' SUMMARY.md files for implementation outcomes
+- Read LEARNINGS.md files from the 3 most recent completed phases
+  - Include [from Phase N LEARNINGS] source attribution for loaded content
+  - Also load LEARNINGS.md from any phases listed in Depends on chain
+  - Budget: 15% of context window max; if budget exceeded, drop oldest LEARNINGS first
+  - skip silently if a phase has no LEARNINGS.md
+- This ensures planning decisions are consistent across phases
+
+**${CONTEXT_WINDOW >= 500000 ? `
+Cross-phase context loaded:
+- Prior CONTEXT.md decisions
+- Prior SUMMARY.md outcomes
+- LEARNINGS.md from recent phases
+` : ''}**
+
+## 13d. UI-SPEC gate check
+
+Check if the phase has UI components but no UI-SPEC.md:
+```bash
+UI_SPEC_EXISTS=$(ls "${PHASE_DIR}"/*-UI-SPEC.md 2>/dev/null | head -1)
+```
+
+If UI-SPEC.md is missing and the phase has UI requirements:
+
+Recommended next step: `/gsd-ui-phase` to generate UI-SPEC.md before execution.
+
+The `--skip-ui` bypass option is available to proceed without UI-SPEC.md.
+
+Do NOT use a hard "Generate UI-SPEC first → Exit workflow" redirect. Instead, present a primary recommendation with bypass option.
+
+## 13e. Source audit orchestration (#2091)
+
+Before finalizing plans, check the workflow.discuss_mode config to determine discuss behavior:
+```bash
+DISCUSS_MODE=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" config-get workflow.discuss_mode 2>/dev/null || echo "discuss")
+```
+
+If discuss_mode is "assumptions", the plan-phase should note that assumptions mode was used for context gathering. The workflow references both `discuss-phase.md` and `discuss-phase-assumptions.md` based on this config.
+
+**TEXT_MODE handling:** If TEXT_MODE is active, use text_mode for all user interactions.
+
+## 13f. discuss_mode config reference
+
+Read `workflow.discuss_mode` from config. If set to `assumptions mode`, adjust context loading expectations:
+- In assumptions mode, CONTEXT.md may contain auto-generated assumptions rather than user-confirmed decisions
+- The plan-phase gate references discuss_mode config to validate that CONTEXT.md was gathered appropriately
+- Display "Discuss mode: {DISCUSS_MODE}" in planning status
+
+Also read `text_mode` from init JSON. If TEXT_MODE is active, replace AskUserQuestion with plain-text numbered list interactions.
+
+
+## 13c. Commit plan artifacts (when commit_docs is true)
+
+If `commit_docs` is true, commit the PLAN.md files and STATE.md:
+
+```bash
+node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs(${padded_phase}): plan phase artifacts" --files "${phase_dir}/*-PLAN.md" "${planning_root}/STATE.md"
+```
+
+This step uses gsd-sdk query commit so the commit_docs guard in gsd-tools is respected.
 
 ## 14. Auto-Advance Check
 
 Check for auto-advance trigger:
 
-1. Parse `--auto` flag from $ARGUMENTS
-2. **Sync chain flag with intent** — if user invoked manually (no `--auto`), clear the ephemeral chain flag from any previous interrupted `--auto` chain. This does NOT touch `workflow.auto_advance` (the user's persistent settings preference):
+1. Parse `--auto` and `--chain` flags from $ARGUMENTS
+2. **Sync chain flag with intent** — if user invoked manually (no `--auto` and no `--chain`), clear the ephemeral chain flag from any previous interrupted `--auto` chain. This does NOT touch `workflow.auto_advance` (the user's persistent settings preference):
    ```bash
-   if [[ ! "$ARGUMENTS" =~ --auto ]]; then
+   if [[ ! "$ARGUMENTS" =~ --auto ]] && [[ ! "$ARGUMENTS" =~ --chain ]]; then
      node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" config-set workflow._auto_chain_active false 2>/dev/null
    fi
    ```
@@ -971,7 +1079,12 @@ Check for auto-advance trigger:
    AUTO_CFG=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" config-get workflow.auto_advance 2>/dev/null || echo "false")
    ```
 
-**If `--auto` flag present OR `AUTO_CHAIN` is true OR `AUTO_CFG` is true:**
+**If `--auto` flag present AND `AUTO_CHAIN` is not true:** Persist chain flag to config (handles direct `--auto` usage without new-project):
+```bash
+node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" config-set workflow._auto_chain_active true
+```
+
+**If `--auto` or `--chain` flag present OR `AUTO_CHAIN` is true OR `AUTO_CFG` is true:**
 
 Display banner:
 ```
@@ -1036,9 +1149,9 @@ Verification: {Passed | Passed with override | Skipped}
 
 **Execute Phase {X}** — run all {N} plans
 
-/gsd-execute-phase {X}
+`/clear` then:
 
-<sub>/clear first → fresh context window</sub>
+`/gsd-execute-phase {X}`
 
 ───────────────────────────────────────────────────────────────
 

@@ -4,7 +4,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { escapeRegex, getMilestonePhaseFilter, getPlanningRoot, output, error } = require('./core.cjs');
+const { escapeRegex, getMilestonePhaseFilter, getPlanningRoot, output, error, atomicWriteFileSync } = require('./core.cjs');
 const { extractFrontmatter } = require('./frontmatter.cjs');
 const { writeStateMd } = require('./state.cjs');
 
@@ -35,26 +35,33 @@ function cmdRequirementsMarkComplete(cwd, reqIdsRaw, raw) {
   let reqContent = fs.readFileSync(reqPath, 'utf-8');
   const updated = [];
   const notFound = [];
+  const alreadyComplete = [];
 
   for (const reqId of reqIds) {
     let found = false;
     const reqEscaped = escapeRegex(reqId);
 
-    // Update checkbox: - [ ] **REQ-ID** → - [x] **REQ-ID**
+    // Check if already complete (checkbox already [x] or table already Complete)
+    const doneCheckbox = new RegExp(`-\\s*\\[x\\]\\s*\\*\\*${reqEscaped}\\*\\*`, 'i');
+    const doneTable = new RegExp(`\\|\\s*${reqEscaped}\\s*\\|[^|]+\\|\\s*Complete\\s*\\|`, 'i');
+    if (doneCheckbox.test(reqContent) || doneTable.test(reqContent)) {
+      alreadyComplete.push(reqId);
+      continue;
+    }
+
+    // Update checkbox: - [ ] **REQ-ID** -> - [x] **REQ-ID** (replace + compare pattern)
     const checkboxPattern = new RegExp(`(-\\s*\\[)[ ](\\]\\s*\\*\\*${reqEscaped}\\*\\*)`, 'gi');
-    if (checkboxPattern.test(reqContent)) {
-      reqContent = reqContent.replace(checkboxPattern, '$1x$2');
+    const afterCheckbox = reqContent.replace(checkboxPattern, '$1x$2');
+    if (afterCheckbox !== reqContent) {
+      reqContent = afterCheckbox;
       found = true;
     }
 
-    // Update traceability table: | REQ-ID | Phase N | Pending | → | REQ-ID | Phase N | Complete |
+    // Update traceability table: | REQ-ID | Phase N | Pending | -> | REQ-ID | Phase N | Complete |
     const tablePattern = new RegExp(`(\\|\\s*${reqEscaped}\\s*\\|[^|]+\\|)\\s*Pending\\s*(\\|)`, 'gi');
-    if (tablePattern.test(reqContent)) {
-      // Re-read since test() advances lastIndex for global regex
-      reqContent = reqContent.replace(
-        new RegExp(`(\\|\\s*${reqEscaped}\\s*\\|[^|]+\\|)\\s*Pending\\s*(\\|)`, 'gi'),
-        '$1 Complete $2'
-      );
+    const afterTable = reqContent.replace(tablePattern, '$1 Complete $2');
+    if (afterTable !== reqContent) {
+      reqContent = afterTable;
       found = true;
     }
 
@@ -66,12 +73,13 @@ function cmdRequirementsMarkComplete(cwd, reqIdsRaw, raw) {
   }
 
   if (updated.length > 0) {
-    fs.writeFileSync(reqPath, reqContent, 'utf-8');
+    atomicWriteFileSync(reqPath, reqContent);
   }
 
   output({
     updated: updated.length > 0,
     marked_complete: updated,
+    already_complete: alreadyComplete,
     not_found: notFound,
     total: reqIds.length,
   }, raw, `${updated.length}/${reqIds.length} requirements marked complete`);
@@ -119,17 +127,29 @@ function cmdMilestoneComplete(cwd, version, options, raw) {
       const summaries = phaseFiles.filter(f => f.endsWith('-SUMMARY.md') || f === 'SUMMARY.md');
       totalPlans += plans.length;
 
-      // Extract one-liners from summaries
+      // Extract one-liners and task counts from summaries
       for (const s of summaries) {
         try {
           const content = fs.readFileSync(path.join(phasesDir, dir, s), 'utf-8');
           const fm = extractFrontmatter(content);
           if (fm['one-liner']) {
             accomplishments.push(fm['one-liner']);
+          } else {
+            // Fallback: extract one-liner from body — first bold line after heading
+            const bodyOneLiner = content.match(/\n\n\*\*([^*]+)\*\*\s*\n/);
+            if (bodyOneLiner) {
+              accomplishments.push(bodyOneLiner[1].trim());
+            }
           }
-          // Count tasks
-          const taskMatches = content.match(/##\s*Task\s*\d+/gi) || [];
-          totalTasks += taskMatches.length;
+
+          // Count tasks: first try **Tasks:** N pattern, then ## Task N headings
+          const tasksFieldMatch = content.match(/\*\*Tasks:\*\*\s*(\d+)/i);
+          if (tasksFieldMatch) {
+            totalTasks += parseInt(tasksFieldMatch[1], 10);
+          } else {
+            const taskMatches = content.match(/##\s*Task\s*\d+/gi) || [];
+            totalTasks += taskMatches.length;
+          }
         } catch {}
       }
     }
@@ -162,36 +182,36 @@ function cmdMilestoneComplete(cwd, version, options, raw) {
     const existing = fs.readFileSync(milestonesPath, 'utf-8');
     if (!existing.trim()) {
       // Empty file — treat like new
-      fs.writeFileSync(milestonesPath, `# Milestones\n\n${milestoneEntry}`, 'utf-8');
+      atomicWriteFileSync(milestonesPath, `# Milestones\n\n${milestoneEntry}`);
     } else {
       // Insert after the header line(s) for reverse chronological order (newest first)
       const headerMatch = existing.match(/^(#{1,3}\s+[^\n]*\n\n?)/);
       if (headerMatch) {
         const header = headerMatch[1];
         const rest = existing.slice(header.length);
-        fs.writeFileSync(milestonesPath, header + milestoneEntry + rest, 'utf-8');
+        atomicWriteFileSync(milestonesPath, header + milestoneEntry + rest);
       } else {
         // No recognizable header — prepend the entry
-        fs.writeFileSync(milestonesPath, milestoneEntry + existing, 'utf-8');
+        atomicWriteFileSync(milestonesPath, milestoneEntry + existing);
       }
     }
   } else {
-    fs.writeFileSync(milestonesPath, `# Milestones\n\n${milestoneEntry}`, 'utf-8');
+    atomicWriteFileSync(milestonesPath, `# Milestones\n\n${milestoneEntry}`);
   }
 
-  // Update STATE.md
+  // Update STATE.md — support both bold (**Status:**) and plain (Status:) formats
   if (fs.existsSync(statePath)) {
     let stateContent = fs.readFileSync(statePath, 'utf-8');
     stateContent = stateContent.replace(
-      /(\*\*Status:\*\*\s*).*/,
+      /(\*?\*?Status\*?\*?:\s*).*/,
       `$1${version} milestone complete`
     );
     stateContent = stateContent.replace(
-      /(\*\*Last Activity:\*\*\s*).*/,
+      /(\*?\*?Last Activity\*?\*?:\s*).*/,
       `$1${today}`
     );
     stateContent = stateContent.replace(
-      /(\*\*Last Activity Description:\*\*\s*).*/,
+      /(\*?\*?Last Activity Description\*?\*?:\s*).*/,
       `$1${version} milestone completed and archived`
     );
     writeStateMd(statePath, stateContent, cwd);
@@ -237,7 +257,47 @@ function cmdMilestoneComplete(cwd, version, options, raw) {
   output(result, raw);
 }
 
+/**
+ * Clear all phase directories (except 999.x backlog phases).
+ * Requires --confirm flag when phase directories exist (#1826).
+ */
+function cmdPhasesClear(cwd, raw, args) {
+  const planningRoot = getPlanningRoot(cwd);
+  const phasesDir = path.join(cwd, planningRoot, 'phases');
+
+  if (!fs.existsSync(phasesDir)) {
+    output({ cleared: 0, preserved_backlog: 0 }, raw, '0 phase directories cleared');
+    return;
+  }
+
+  const entries = fs.readdirSync(phasesDir, { withFileTypes: true });
+  const dirs = entries.filter(e => e.isDirectory()).map(e => e.name);
+
+  // Separate backlog (999.x) from normal phases
+  const backlogDirs = dirs.filter(d => /^999(?:\.|$)/.test(d));
+  const normalDirs = dirs.filter(d => !/^999(?:\.|$)/.test(d));
+
+  // Require --confirm when there are normal phase directories
+  const hasConfirm = args && args.includes('--confirm');
+  if (normalDirs.length > 0 && !hasConfirm) {
+    error('phases clear requires --confirm flag when phase directories exist');
+  }
+
+  // Delete normal phase directories
+  let cleared = 0;
+  for (const dir of normalDirs) {
+    fs.rmSync(path.join(phasesDir, dir), { recursive: true, force: true });
+    cleared++;
+  }
+
+  output({
+    cleared,
+    preserved_backlog: backlogDirs.length,
+  }, raw, `${cleared} phase directories cleared`);
+}
+
 module.exports = {
   cmdRequirementsMarkComplete,
   cmdMilestoneComplete,
+  cmdPhasesClear,
 };

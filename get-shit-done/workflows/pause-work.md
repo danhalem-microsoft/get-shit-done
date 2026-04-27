@@ -16,7 +16,13 @@ Find current phase directory from most recently modified files:
 ls -lt ${planning_root}/phases/*/PLAN.md 2>/dev/null | head -1 | grep -oP 'phases/\K[^/]+'
 ```
 
-If no active phase detected, ask user which phase they're pausing work on.
+If no active phase detected, check for non-phase contexts:
+- **Spike** context: check `${planning_root}/spikes/` for active spike work
+- **Deliberation** or **research** context: check for active deliberation/research sessions outside phase directories
+
+If in a non-phase context (spike, deliberation, research), write handoff to `.planning/.continue-here.md` (root level, not inside a phase directory).
+
+If no active phase or non-phase context detected, ask user which phase they're pausing work on.
 </step>
 
 <step name="gather">
@@ -72,6 +78,36 @@ last_updated: [timestamp from current-timestamp]
 <blockers>
 - [Blocker 1]: [status/workaround]
 </blockers>
+
+<required_reading>
+- [File or reference the resuming agent MUST read before continuing]
+- [Any project-specific guidelines or constraints]
+</required_reading>
+
+<anti_patterns>
+## Critical Anti-Patterns
+
+| Anti-Pattern | Severity | Description |
+|-------------|----------|-------------|
+| [Pattern name] | blocking | [What went wrong and why — blocking anti-patterns trigger an understanding check at resume] |
+| [Pattern name] | advisory | [Informational pattern to avoid — advisory items are noted but do not block] |
+
+When severity is "blocking", the resuming agent must demonstrate understanding of each blocking anti-pattern before proceeding. This understanding check cannot be skipped.
+</anti_patterns>
+
+<infrastructure_state>
+## Infrastructure State
+
+- [Current state of build/test infrastructure]
+- [Any environment-specific setup or teardown needed]
+- [Active services, running processes, or temporary state]
+</infrastructure_state>
+
+<pre_execution_critique>
+## Pre-Execution Critique Gate
+
+If this handoff involves a design→execution transition, the resuming agent should run a design critique before beginning execution to validate that the design is sound.
+</pre_execution_critique>
 
 <context>
 [Mental state, what were you thinking, the plan]

@@ -18,12 +18,14 @@ Read all files referenced by the invoking prompt's execution_context before star
 
 <process>
 
+**TEXT_MODE fallback:** When text_mode is active (--text flag or config), replace AskUserQuestion calls with plain-text numbered lists.
+
 ## 1. Load Context
 
 - Read PROJECT.md (existing project, validated requirements, decisions)
 - Read MILESTONES.md (what shipped previously)
 - Read STATE.md (pending todos, blockers)
-- Check for MILESTONE-CONTEXT.md (from /gsd:discuss-milestone)
+- Check for MILESTONE-CONTEXT.md (from /gsd-discuss-milestone)
 
 ## 2. Gather Milestone Goals
 
@@ -42,6 +44,22 @@ Read all files referenced by the invoking prompt's execution_context before star
 - Parse last version from MILESTONES.md
 - Suggest next version (v1.0 → v1.1, or v2.0 for major)
 - Confirm with user
+
+## 3.5 Verify Milestone Understanding
+
+Before writing any files, re-present the milestone plan to the user for confirmation:
+
+- Milestone version, name, and goal
+- Target features list
+- Scope boundaries
+
+AskUserQuestion([
+  "Looks good — proceed",
+  "Adjust — let me refine"
+])
+
+- If "Adjust": loop back to the relevant step and re-present until user approves
+- Loop until user selects "Looks good"
 
 ## 4. Update PROJECT.md
 
@@ -690,6 +708,43 @@ Success criteria:
 node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs: create milestone v[X.Y] roadmap ([N] phases)" --files ${planning_root}/ROADMAP.md ${planning_root}/STATE.md ${planning_root}/REQUIREMENTS.md
 ```
 
+## 10.5. Link Pending Todos
+
+Scan `.planning/todos/pending` for todo files and attempt best-effort matching to roadmap phases based on content analysis. For each todo file with a confident match to a roadmap phase, add `resolves_phase:` YAML frontmatter.
+
+This step is best-effort — unmatched todos are left unmodified.
+
+```bash
+for TODO_FILE in ${planning_root}/todos/pending/*.md; do
+  # Extract todo content, match against roadmap phase descriptions
+  # Only tag when confident match exists
+  PHASE_MATCH=$(analyze_todo_phase_match "$TODO_FILE")
+  if [ -n "$PHASE_MATCH" ]; then
+    # Add resolves_phase: to frontmatter using awk
+    awk -v phase="$PHASE_MATCH" '/^---$/{c++;if(c==2){print "resolves_phase: "phase}}1' "$TODO_FILE" > tmp && mv tmp "$TODO_FILE"
+  fi
+done
+```
+
+Commit tagged todos:
+```bash
+gsd-sdk query commit "docs: tag resolves_phase after milestone roadmap creation" --files ${planning_root}/todos/pending/
+```
+
+## 10.6. Seed Scanning
+
+Scan `.planning/seeds/` for SEED-*.md files that may be relevant to this milestone's phases.
+
+```bash
+SEED_FILES=$(ls ${planning_root}/seeds/SEED-*.md 2>/dev/null)
+```
+
+If no seed files exist, skip this step.
+
+If seed files exist, present matching seeds to user:
+- In `--auto` mode, auto-select all matching seeds
+- In interactive mode, let user choose which seeds to incorporate
+
 ## 11. Done
 
 ```
@@ -714,7 +769,7 @@ node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs: create milest
 
 `/gsd-discuss-phase [N]` — gather context and clarify approach
 
-<sub>`/clear` first → fresh context window</sub>
+`/clear` then:
 
 Also: `/gsd-plan-phase [N]` — skip discussion, plan directly
 ```
@@ -729,6 +784,7 @@ Also: `/gsd-plan-phase [N]` — skip discussion, plan directly
 - [ ] Requirements gathered and scoped per category
 - [ ] REQUIREMENTS.md created with REQ-IDs
 - [ ] gsd-roadmapper spawned with phase numbering context
+- [ ] Todo linking: resolves_phase: N tagged on matching pending todos
 - [ ] Roadmap files written immediately (not draft)
 - [ ] User feedback incorporated (if any)
 - [ ] ROADMAP.md phases continue from previous milestone

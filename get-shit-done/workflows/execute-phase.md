@@ -8,6 +8,7 @@ Orchestrator coordinates, not executes. Each subagent loads the full execute-pla
 
 <required_reading>
 Read STATE.md before any operation to load project context.
+Read references/gates.md for gate taxonomy (Pre-flight, Revision, Escalation, Abort).
 </required_reading>
 
 <available_agent_types>
@@ -1145,8 +1146,155 @@ Read and follow `~/.claude/get-shit-done/workflows/transition.md`, passing throu
 
 **If neither `--auto` nor `AUTO_CFG` is true:**
 
-The workflow ends. The user runs `/gsd-progress` or invokes the transition workflow manually.
+Check whether CONTEXT.md exists for the next phase to determine the recommended next step:
+
+If CONTEXT.md does not exist for the next phase:
+  - `/gsd-discuss-phase` — **recommended** (create CONTEXT.md first)
+  - `/gsd-plan-phase` — skip discuss, plan directly
+  - `/gsd-verify-work` — manual verification
+
+If CONTEXT.md exists for the next phase:
+  - `/gsd-plan-phase` — **recommended** (CONTEXT.md ready)
+  - `/gsd-verify-work` — manual verification
+  - `/gsd-discuss-phase` — revisit decisions
 </step>
+
+<step name="close_phase_todos">
+**Auto-close todos resolved by this phase (runs after update_roadmap, never blocks phase completion).**
+
+This step is additive and never blocks phase completion — if it fails, phase is still complete.
+
+Scan `.planning/todos/pending` for todo files with `resolves_phase:` matching this phase number.
+
+```bash
+COMPLETED_DIR="${planning_root}/todos/completed"
+mkdir -p "$COMPLETED_DIR"
+for TODO_FILE in ${planning_root}/todos/pending/*.md; do
+  PHASE_TAG=$(awk '/^---$/,/^---$/{if(/^resolves_phase:/){print $2}}' "$TODO_FILE")
+  if [ "$PHASE_TAG" = "${PHASE_NUMBER}" ]; then
+    mv "$TODO_FILE" "$COMPLETED_DIR/"
+  fi
+done
+```
+
+Check `resolves_phase` in todos using awk to extract from YAML frontmatter. The `resolves_phase:` key is set by the new-milestone todo linking step.
+
+```bash
+node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs: auto-close phase ${PHASE_NUMBER} todos" --files ${planning_root}/todos/
+```
+</step>
+
+<step name="intra_wave_overlap_check">
+**Intra-wave files_modified overlap check:**
+
+Before spawning agents for a wave, compare `files_modified` arrays across all plans in the wave. If two plans in the same wave declare overlapping files_modified, warn the orchestrator:
+
+```
+⚠ Overlap detected: plans {A} and {B} both modify {file}
+  Consider moving one to a later wave or merging plans.
+```
+
+This is advisory — overlaps in worktree mode are safe (isolated branches), but sequential mode may produce conflicts.
+</step>
+
+<step name="worktree_sequential_dispatch">
+**Worktree sequential dispatch (git config.lock contention prevention):**
+
+When spawning multiple worktree agents in a wave, dispatch them sequentially using `run_in_background` — do NOT send multiple Task() calls in a single message.
+
+The git config.lock file is shared across all worktrees in a repository. When multiple `git worktree add` commands run simultaneously, they contend on this lock file, causing intermittent failures.
+
+**WRONG — multiple Task() calls in a single message:**
+```
+# DO NOT DO THIS — causes config.lock contention
+Task(agent1...)  # Both try to acquire config.lock simultaneously
+Task(agent2...)
+```
+
+**CORRECT — sequential dispatch with run_in_background:**
+```
+Task(agent1, run_in_background=true)  # Acquires and releases config.lock
+# Wait for worktree creation to complete
+Task(agent2, run_in_background=true)  # Now safe to acquire config.lock
+```
+</step>
+
+<step name="worktree_cleanup_procedure">
+**Worktree cleanup (after each wave completes):**
+
+When `use_worktrees` is true, clean up worktree branches after merging.
+
+**Pre-merge deletion check (defense-in-depth):**
+```bash
+# Check for deletions BEFORE merging — BLOCKED if unexpected deletions found
+DELETED_FILES=$(git diff --diff-filter=D --name-only HEAD...$WT_BRANCH)
+DEL_COUNT=$(echo "$DELETED_FILES" | grep -vc '^\\.planning/' || true)
+if [ "$DEL_COUNT" -gt 0 ]; then
+  echo "⛔ BLOCKED: worktree branch contains $DEL_COUNT file deletion(s)"
+  echo "$DELETED_FILES"
+  echo "Review deletions before merging. Use --force-merge to override."
+fi
+```
+
+**Orchestrator file protection (STATE.md/ROADMAP.md backup):**
+```bash
+# Backup orchestrator-owned files before merge (main always wins)
+STATE_BACKUP=$(git show HEAD:.planning/STATE.md 2>/dev/null || true)
+ROADMAP_BACKUP=$(git show HEAD:.planning/ROADMAP.md 2>/dev/null || true)
+```
+
+**Merge and restore:**
+```bash
+git merge --no-ff "$WT_BRANCH" -m "merge: worktree ${PLAN_ID}"
+
+# Restore orchestrator files from backup (prevents stale overwrite)
+if [ -n "$STATE_BACKUP" ]; then echo "$STATE_BACKUP" > ${planning_root}/STATE.md; fi
+if [ -n "$ROADMAP_BACKUP" ]; then echo "$ROADMAP_BACKUP" > ${planning_root}/ROADMAP.md; fi
+
+# Detect files deleted on main but re-added by worktree (resurrection detection)
+DELETED_ON_MAIN=$(git diff --name-only --diff-filter=D HEAD~1..HEAD~2 2>/dev/null || true)
+```
+
+Handle Merge conflict gracefully — if merge fails, report conflict files and ask user.
+
+**Lock-aware worktree removal:**
+```bash
+# Check for locked worktrees before removal
+if [ -f ".git/worktrees/${WT_NAME}/locked" ]; then
+  echo "⚠ Worktree is locked, attempting unlock..."
+  git worktree unlock "$WT_PATH" 2>/dev/null
+fi
+git worktree remove "$WT_PATH" --force
+if [ $? -ne 0 ]; then
+  echo "⚠ Residual worktree: $WT_PATH could not be removed. Run manual cleanup:"
+  echo "  git worktree remove $WT_PATH --force"
+fi
+git branch -D "$WT_BRANCH"
+```
+
+Discover orphan worktrees:
+```bash
+git worktree list
+```
+</step>
+
+<worktree_branch_check>
+**Worktree branch base verification (affects all platforms — cross-platform fix):**
+
+After creating a worktree, verify it was created from the correct base branch.
+If the worktree HEAD does not match the expected base, reset:
+
+```bash
+EXPECTED_BASE=$(git rev-parse HEAD)
+WT_HEAD=$(git -C "$WT_PATH" rev-parse HEAD)
+if [ "$EXPECTED_BASE" != "$WT_HEAD" ]; then
+  echo "⚠ Worktree created from wrong base. Resetting to expected base..."
+  git -C "$WT_PATH" reset --hard "$EXPECTED_BASE"
+fi
+```
+
+Do NOT use `reset --soft` — it moves HEAD but leaves working tree files from the wrong base unchanged, causing stale code and enormous deletion diffs.
+</worktree_branch_check>
 
 </process>
 

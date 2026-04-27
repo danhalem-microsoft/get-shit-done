@@ -64,7 +64,7 @@ If no --only flag: CRITICS = [plan, code, scope, verify, discuss] (all 5)
 **Report:**
 ```
 ---
-## /gsd:critique -- Phase {N}: {Name}
+## /gsd-critique -- Phase {N}: {Name}
 
 Running {count} critic(s): {critic_list}
 ---
@@ -206,7 +206,7 @@ Task(
   model="{critic_model}",
   prompt="
     <objective>
-    You are being invoked as part of /gsd:critique for Phase {phase_number}: {phase_name}.
+    You are being invoked as part of /gsd-critique for Phase {phase_number}: {phase_name}.
     Review all relevant artifacts in this phase.
     Produce CRITIQUE-{type}.md following ${planning_root}/critique-template.md format.
     </objective>
@@ -376,5 +376,5 @@ Orchestrator: ~15-20% context. Critics: fresh 200k context each via Task(). Orch
 </error_handling>
 
 <resumption>
-Re-running `/gsd:critique {phase}` overwrites the previous CRITIQUE.md (after diff tracking preserves change history).
+Re-running `/gsd-critique {phase}` overwrites the previous CRITIQUE.md (after diff tracking preserves change history).
 </resumption>

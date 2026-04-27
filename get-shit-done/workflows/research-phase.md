@@ -11,6 +11,8 @@ Standalone research command. For most workflows, use `/gsd-plan-phase` which int
 
 <process>
 
+**TEXT_MODE fallback:** When text_mode is active (--text flag or config), replace AskUserQuestion calls with plain-text numbered lists.
+
 ## Step 0: Resolve Model Profile
 
 @~/.claude/get-shit-done/references/model-profile-resolution.md

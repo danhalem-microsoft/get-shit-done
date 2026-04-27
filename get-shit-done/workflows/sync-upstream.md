@@ -7,6 +7,8 @@ the fork and upstream.
 
 <process>
 
+**TEXT_MODE fallback:** When text_mode is active (--text flag or config), replace AskUserQuestion calls with plain-text numbered lists.
+
 <step name="verify_upstream">
 Check if upstream remote exists:
 

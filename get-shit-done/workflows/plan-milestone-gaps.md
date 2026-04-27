@@ -166,7 +166,7 @@ node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs(roadmap): add 
 
 `/gsd-plan-phase {N}`
 
-<sub>`/clear` first → fresh context window</sub>
+`/clear` then:
 
 ---
 

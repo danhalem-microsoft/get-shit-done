@@ -279,7 +279,7 @@ All requirements covered. Cross-phase integration verified. E2E flows complete.
 
 /gsd-complete-milestone {version}
 
-<sub>/clear first → fresh context window</sub>
+`/clear` then:
 
 ───────────────────────────────────────────────────────────────
 
@@ -324,7 +324,7 @@ Phases needing validation: run `/gsd-validate-phase {N}` for each flagged phase.
 
 /gsd-plan-milestone-gaps
 
-<sub>/clear first → fresh context window</sub>
+`/clear` then:
 
 ───────────────────────────────────────────────────────────────
 
@@ -366,7 +366,7 @@ All requirements met. No critical blockers. Accumulated tech debt needs review.
 
 /gsd-plan-milestone-gaps
 
-<sub>/clear first → fresh context window</sub>
+`/clear` then:
 
 ───────────────────────────────────────────────────────────────
 </offer_next>
