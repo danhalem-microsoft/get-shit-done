@@ -114,6 +114,7 @@ fi
 
 ```bash
 INIT=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" init quick "$DESCRIPTION")
+# Alternative SDK path: gsd-sdk query init.quick "$DESCRIPTION"
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 ```
 
@@ -647,6 +648,8 @@ Build file list:
 - If `$DISCUSS_MODE` and context file exists: `${QUICK_DIR}/${next_num}-CONTEXT.md`
 - If `$FULL_MODE` and verification file exists: `${QUICK_DIR}/${next_num}-VERIFICATION.md`
 - If `$RESEARCH_MODE` and research file exists: `${QUICK_DIR}/${next_num}-RESEARCH.md`
+
+Check `config-get commit_docs` — if false, remove any .planning/ paths from file_list before staging.
 
 ```bash
 git add ${file_list}

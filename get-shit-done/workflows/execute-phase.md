@@ -158,6 +158,9 @@ Execute each wave in sequence. Within a wave: parallel if `PARALLELIZATION=true`
    Pass paths only — executors read files themselves with their fresh 200k context.
    This keeps orchestrator context lean (~10-15%).
 
+   **Post-wave orchestrator commands (single-writer pattern):**
+   After all agents in a wave complete, the orchestrator runs `roadmap update-plan-progress` for each completed plan. This avoids last-merge-wins conflicts on shared artifacts.
+
    **Context enrichment for large context models:**
    If CONTEXT_WINDOW >= 500000, include prior_wave_summaries and additional cross-phase context:
    - Read CONTEXT.md from the phase directory for decision context
@@ -211,7 +214,7 @@ Execute each wave in sequence. Within a wave: parallel if `PARALLELIZATION=true`
    After merging each worktree branch, run a post-merge deletion audit:
    ```bash
    MERGE_DELETED=$(git diff --diff-filter=D --name-only HEAD~1 HEAD)
-   MERGE_DEL_COUNT=$(echo "$MERGE_DELETED" | grep -vc '^\\.planning/' || true)
+   MERGE_DEL_COUNT=$(echo "$MERGE_DELETED" | grep -vc '^\.planning/' || true)
    if [ "$MERGE_DEL_COUNT" -gt 5 ] && [ "${ALLOW_BULK_DELETE:-0}" != "1" ]; then
      echo "⛔ Post-merge deletion audit: $MERGE_DEL_COUNT non-.planning files deleted"
      echo "Set ALLOW_BULK_DELETE=1 to override"
@@ -913,6 +916,8 @@ Prompt user with AskUserQuestion:
 If "Retry audit": re-run sub-operation E (spawn auditor again). Only allow ONE retry (total max 2 attempts).
 If "Abort": log to STATE.md, present "Phase verification aborted. Audit required for completion." Return to offer_next without marking phase complete.
 
+<!-- offer_next CONTEXT.md routing: If CONTEXT.md does not exist → gsd-discuss-phase recommended; If CONTEXT.md exists → gsd-plan-phase recommended -->
+
 **If file exists:** Parse results:
 ```bash
 AUDIT_PARSED=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" critique parse "${PHASE_DIR}/CRITIQUE-verify.md")
@@ -1096,6 +1101,18 @@ Failure to evaluate the verification-auditor step is a workflow violation — su
 </completion_gate>
 
 <step name="offer_next">
+
+**CONTEXT.md-aware next step routing:**
+
+Check whether CONTEXT.md exists for the next phase to determine the recommended next step:
+
+If CONTEXT.md does not exist for the next phase:
+  - `/gsd-discuss-phase` — **recommended** (create CONTEXT.md first)
+  - `/gsd-plan-phase` — skip discuss, plan directly
+
+If CONTEXT.md exists for the next phase:
+  - `/gsd-plan-phase` — **recommended** (CONTEXT.md ready)
+  - `/gsd-discuss-phase` — revisit decisions
 
 **Exception:** If `gaps_found`, the `verify_phase_goal` step already presents the gap-closure path (`/gsd-plan-phase {X} --gaps`). No additional routing needed — skip auto-advance.
 
@@ -1293,7 +1310,7 @@ if [ "$EXPECTED_BASE" != "$WT_HEAD" ]; then
 fi
 ```
 
-Do NOT use `reset --soft` — it moves HEAD but leaves working tree files from the wrong base unchanged, causing stale code and enormous deletion diffs.
+Always use the --hard flag for worktree base correction. This resets both HEAD and working tree files to the expected base.
 </worktree_branch_check>
 
 </process>

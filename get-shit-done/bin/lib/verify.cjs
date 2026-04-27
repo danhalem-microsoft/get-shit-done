@@ -4,7 +4,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { safeReadFile, normalizePhaseName, execGit, findPhaseInternal, getMilestoneInfo, getPlanningRoot, tryGetPlanningContext, output, error } = require('./core.cjs');
+const { safeReadFile, normalizePhaseName, execGit, findPhaseInternal, getMilestoneInfo, getPlanningRoot, tryGetPlanningContext, checkAgentsInstalled, output, error } = require('./core.cjs');
 const { extractFrontmatter, parseMustHavesBlock } = require('./frontmatter.cjs');
 const { writeStateMd } = require('./state.cjs');
 
@@ -952,6 +952,19 @@ function cmdValidateHealth(cwd, options, raw) {
   return result;
 }
 
+function cmdValidateAgents(cwd, raw) {
+  const status = checkAgentsInstalled();
+  const result = {
+    agents_dir: status.agents_dir,
+    installed: status.installed_agents,
+    missing: status.missing_agents,
+    expected: status.installed_agents.concat(status.missing_agents),
+    agents_found: status.agents_installed,
+  };
+  output(result, raw);
+  return result;
+}
+
 module.exports = {
   cmdVerifySummary,
   cmdVerifyPlanStructure,
@@ -962,4 +975,5 @@ module.exports = {
   cmdVerifyKeyLinks,
   cmdValidateConsistency,
   cmdValidateHealth,
+  cmdValidateAgents,
 };

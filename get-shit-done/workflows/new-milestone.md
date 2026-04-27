@@ -792,4 +792,7 @@ Also: `/gsd-plan-phase [N]` — skip discussion, plan directly
 - [ ] User knows next step: `/gsd-discuss-phase [N]`
 
 **Atomic commits:** Each phase commits its artifacts immediately.
+
+**Agent availability check:** Parse `agents_installed` from the init JSON. If `agents_installed` is false, warn the user that some agent types are not installed or missing — Task(subagent_type) calls may fall back to general-purpose.
+
 </success_criteria>

@@ -5,7 +5,7 @@
 const fs = require('fs');
 const path = require('path');
 const { output, error, getPlanningRoot } = require('./core.cjs');
-const { isValidConfigKey } = require('./config-schema.cjs');
+const { isValidConfigKey, VALID_CONFIG_KEYS, DYNAMIC_KEY_PATTERNS } = require('./config-schema.cjs');
 const { VALID_PROFILES, getAgentToModelMapForProfile } = require('./model-profiles.cjs');
 
 /**
@@ -90,12 +90,25 @@ function cmdConfigEnsureSection(cwd, raw) {
       skip_discuss: false,
       research_before_questions: false,
       discuss_mode: 'discuss',
+      ai_integration_phase: true,
+      tdd_mode: false,
+      code_review_command: null,
+      pattern_mapper: true,
+      security_enforcement: true,
+      security_asvs_level: 1,
+      security_block_on: 'high',
+      cross_ai_execution: false,
+      cross_ai_command: null,
+      cross_ai_timeout: 120,
+      subagent_timeout: 300000,
     },
     hooks: {
       context_warnings: true,
     },
     parallelization: true,
     brave_search: hasBraveSearch,
+    agent_skills: {},
+    claude_md_path: './CLAUDE.md',
   };
   const defaults = {
     ...hardcoded,
@@ -288,10 +301,23 @@ function cmdConfigNewProject(cwd, choicesJson, raw) {
       skip_discuss: false,
       research_before_questions: false,
       discuss_mode: 'discuss',
+      ai_integration_phase: true,
+      tdd_mode: false,
+      code_review_command: null,
+      pattern_mapper: true,
+      security_enforcement: true,
+      security_asvs_level: 1,
+      security_block_on: 'high',
+      cross_ai_execution: false,
+      cross_ai_command: null,
+      cross_ai_timeout: 120,
+      subagent_timeout: 300000,
     },
     hooks: {
       context_warnings: true,
     },
+    agent_skills: {},
+    claude_md_path: './CLAUDE.md',
   };
 
   // Merge choices over defaults (shallow for top-level, deep for sections)
@@ -377,4 +403,6 @@ module.exports = {
   cmdConfigNewProject,
   cmdConfigSetModelProfile,
   cmdConfigPath,
+  VALID_CONFIG_KEYS,
+  DYNAMIC_KEY_PATTERNS,
 };

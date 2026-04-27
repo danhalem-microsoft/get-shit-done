@@ -1578,4 +1578,6 @@ Exit skill and invoke SlashCommand("/gsd-discuss-phase 1 --auto")
 
 **Atomic commits:** Each phase commits its artifacts immediately. If context is lost, artifacts persist.
 
+**Agent availability check:** Parse `agents_installed` from the init JSON. If `agents_installed` is false, warn the user that some agent types are not installed or missing — Task(subagent_type) calls may fall back to general-purpose.
+
 </success_criteria>
