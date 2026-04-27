@@ -1823,6 +1823,15 @@ function getPlanningRoot(cwd) {
   const ctx = resolveContext(cwd);
 
   if (!ctx.planning_root) {
+    // Fork patch: graceful fallback to flat `.planning` layout when no multi-user
+    // project context exists. This preserves backward compat with upstream tests
+    // that use createTempProject() (flat layout) while still preferring multi-user
+    // paths when available. Only hard-error if `.planning/` itself doesn't exist.
+    const flatPlanning = '.planning';
+    if (fs.existsSync(path.join(cwd, flatPlanning))) {
+      _planningRootCache[cwd] = flatPlanning;
+      return flatPlanning;
+    }
     error('GSD Error: No active project. Run /gsd:new-project to create one, or /gsd:switch to select one.');
   }
 
