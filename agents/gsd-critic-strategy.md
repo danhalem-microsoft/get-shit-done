@@ -3,8 +3,6 @@ name: gsd-critic-strategy
 description: Adversarial milestone strategy critic. Reviews ROADMAP.md, milestone decisions, and cross-phase patterns for scope creep, stale assumptions, and deferred item enforcement. Read-only. Produces CRITIQUE-strategy.md with severity-classified findings.
 tools: Read, Bash, Grep, Glob
 color: red
-skills:
-  - gsd-critic-strategy-workflow
 ---
 
 <role>

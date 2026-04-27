@@ -3,8 +3,6 @@ name: gsd-research-synthesizer
 description: "Synthesizes N research outputs (2-15) into SUMMARY.md. Receives pre-inlined research content via Task() prompt. Spawned by orchestrators after research agents complete."
 tools: Read, Write, Bash
 color: purple
-skills:
-  - gsd-research-synthesizer-workflow
 # hooks:
 #   PostToolUse:
 #     - matcher: "Write|Edit"

@@ -6,6 +6,10 @@ Each agent has fresh context, explores a specific focus area, and **writes docum
 Output: ${planning_root}/codebase/ folder with 7 structured documents about the codebase state.
 </purpose>
 
+<available_agent_types>
+- gsd-codebase-mapper: Explores codebase and writes structured analysis documents
+</available_agent_types>
+
 <philosophy>
 **Why dedicated mapper agents:**
 - Fresh context per domain (no token contamination)

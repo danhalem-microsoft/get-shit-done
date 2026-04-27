@@ -4,6 +4,11 @@ Validate built features through conversational testing with persistent state. Cr
 User tests, Claude records. One test at a time. Plain text responses.
 </purpose>
 
+<available_agent_types>
+- gsd-planner: Creates executable phase plans with task breakdown
+- gsd-plan-checker: Verifies plans will achieve phase goals
+</available_agent_types>
+
 <philosophy>
 **Show expected, ask if reality matches.**
 

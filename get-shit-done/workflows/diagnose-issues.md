@@ -6,6 +6,10 @@ After UAT finds gaps, spawn one debug agent per gap. Each agent investigates aut
 Orchestrator stays lean: parse gaps, spawn agents, collect results, update UAT.
 </purpose>
 
+<available_agent_types>
+- gsd-debugger: Investigates bugs using scientific method with persistent state
+</available_agent_types>
+
 <paths>
 DEBUG_DIR=${planning_root}/debug
 

@@ -12,6 +12,13 @@ Flags are composable: `--discuss --full` gives discussion + plan-checking + veri
 Read all files referenced by the invoking prompt's execution_context before starting.
 </required_reading>
 
+<available_agent_types>
+- gsd-planner: Creates executable phase plans with task breakdown
+- gsd-plan-checker: Verifies plans will achieve phase goals
+- gsd-executor: Executes GSD plans with atomic commits
+- gsd-verifier: Verifies phase goal achievement
+</available_agent_types>
+
 <process>
 **Step 1: Parse arguments and get task description**
 

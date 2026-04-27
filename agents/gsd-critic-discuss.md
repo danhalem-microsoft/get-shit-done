@@ -3,8 +3,6 @@ name: gsd-critic-discuss
 description: Adversarial discussion critic. Reviews CONTEXT.md for blind spots, ambiguous decisions, and missing discussion areas. Read-only. Produces CRITIQUE-discuss.md with severity-classified findings.
 tools: Read, Bash, Grep, Glob
 color: red
-skills:
-  - gsd-critic-discuss-workflow
 ---
 
 <role>

@@ -3,8 +3,6 @@ name: gsd-critic-scope
 description: Adversarial scope critic. Reviews ROADMAP/REQUIREMENTS for scope creep, stale assumptions, deferred item enforcement, roadmap consistency. Read-only. Produces CRITIQUE.md with severity-classified findings.
 tools: Read, Bash, Grep, Glob
 color: red
-skills:
-  - gsd-critic-scope-workflow
 ---
 
 <role>

@@ -20,6 +20,10 @@ You are a thinking partner, not an interviewer. The user is the visionary — yo
 **Not your job:** Figure out HOW to implement. That's what research and planning do with the decisions you capture.
 </downstream_awareness>
 
+<available_agent_types>
+- gsd-critic-discuss: Adversarial discussion critic
+</available_agent_types>
+
 <philosophy>
 **User = founder/visionary. Claude = builder.**
 
@@ -110,6 +114,27 @@ Phase: "API documentation"
 **Express path available:** If you already have a PRD or acceptance criteria document, use `/gsd-plan-phase {phase} --prd path/to/prd.md` to skip this discussion and go straight to planning.
 
 **Process flow:** initialize → check_existing → load_prior_context → load_taste_entries → scout_codebase → analyze_phase → present_gray_areas → discuss_areas → write_context → persist_taste_counters → **discuss_critic** → confirm_creation → git_commit → update_state → auto_advance
+
+**TEXT_MODE fallback:** If `--text` is present in $ARGUMENTS OR `text_mode` from init JSON is true, set TEXT_MODE=true. When TEXT_MODE is active, replace every AskUserQuestion call with a plain-text numbered list and ask the user to type their choice number.
+
+<step name="check_blocking_antipatterns" priority="first">
+**MANDATORY: Check for .continue-here.md with blocking anti-patterns before proceeding.**
+
+```bash
+CONTINUE_HERE=$(ls ${planning_root}/phases/*/.continue-here.md ${planning_root}/.continue-here.md 2>/dev/null | head -1)
+```
+
+If a .continue-here.md file exists and contains anti-patterns with severity "blocking":
+
+1. Parse the `<anti_patterns>` section for any entries marked as `blocking`
+2. For each blocking anti-pattern, the agent MUST demonstrate understanding by answering three questions. This check is MANDATORY and cannot be skipped — it is required before any other work proceeds:
+   - What is this anti-pattern? (describe it in your own words)
+   - How did it manifest in the previous session? (specific evidence)
+   - What structural mechanism or prevention approach will you use to avoid it?
+3. Only after all blocking anti-patterns have been addressed may the workflow continue
+
+This understanding check ensures that lessons from previous sessions are not lost across context boundaries.
+</step>
 
 <step name="initialize" priority="first">
 Phase number from argument (required).
@@ -765,7 +790,7 @@ Created: ${planning_root}/phases/${PADDED_PHASE}-${SLUG}/${PADDED_PHASE}-CONTEXT
 
 `/gsd-plan-phase ${PHASE}`
 
-<sub>`/clear` first → fresh context window</sub>
+`/clear` then:
 
 ---
 
@@ -807,9 +832,9 @@ node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs(state): record
 Check for auto-advance trigger:
 
 1. Parse `--auto` flag from $ARGUMENTS
-2. **Sync chain flag with intent** — if user invoked manually (no `--auto`), clear the ephemeral chain flag from any previous interrupted `--auto` chain. This does NOT touch `workflow.auto_advance` (the user's persistent settings preference):
+2. **Sync chain flag with intent** — if user invoked manually (no `--auto` and no `--chain`), clear the ephemeral chain flag from any previous interrupted `--auto` chain. This does NOT touch `workflow.auto_advance` (the user's persistent settings preference):
    ```bash
-   if [[ ! "$ARGUMENTS" =~ --auto ]]; then
+   if [[ ! "$ARGUMENTS" =~ --auto ]] && [[ ! "$ARGUMENTS" =~ --chain ]]; then
      node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" config-set workflow._auto_chain_active false 2>/dev/null
    fi
    ```
@@ -852,7 +877,7 @@ This keeps the auto-advance chain flat — discuss, plan, and execute all run at
   Auto-advance pipeline finished: discuss → plan → execute
 
   Next: /gsd-discuss-phase ${NEXT_PHASE} --auto
-  <sub>/clear first → fresh context window</sub>
+  `/clear` then:
   ```
 - **PLANNING COMPLETE** → Planning done, execution didn't complete:
   ```
@@ -895,4 +920,5 @@ Route to `confirm_creation` step (existing behavior — show manual next steps).
 - Blind spots presented inline with revisit offer
 - STATE.md updated with session info
 - User knows next steps
+- DISCUSSION-LOG.md written alongside CONTEXT.md. Audit trail only — not consumed by downstream agents
 </success_criteria>

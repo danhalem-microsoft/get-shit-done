@@ -3,8 +3,6 @@ name: gsd-critic-plan
 description: Adversarial plan critic. Reviews GSD plans for gaps, contradictions, missing requirements, and scope issues. Read-only. Produces CRITIQUE.md with severity-classified findings.
 tools: Read, Bash, Grep, Glob
 color: red
-skills:
-  - gsd-critic-plan-workflow
 ---
 
 <role>

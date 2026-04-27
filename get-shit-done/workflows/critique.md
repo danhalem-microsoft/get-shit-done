@@ -11,6 +11,16 @@ Read STATE.md before any operation to load project context.
 Read config.json for commit_docs setting.
 </required_reading>
 
+<available_agent_types>
+- gsd-critic-{type}: Adversarial critic agent (code, discuss, plan, scope, strategy, verify)
+- gsd-critic-code: Adversarial code critic
+- gsd-critic-discuss: Adversarial discussion critic
+- gsd-critic-plan: Adversarial plan critic
+- gsd-critic-scope: Adversarial scope critic
+- gsd-critic-strategy: Adversarial milestone strategy critic
+- gsd-critic-verify: Adversarial verification critic
+</available_agent_types>
+
 <process>
 
 <step name="initialize" priority="first">

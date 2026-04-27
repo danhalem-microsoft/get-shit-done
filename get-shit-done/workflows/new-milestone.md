@@ -10,6 +10,12 @@ Read all files referenced by the invoking prompt's execution_context before star
 
 </required_reading>
 
+<available_agent_types>
+- gsd-project-researcher: Researches domain ecosystem before roadmap creation
+- gsd-research-synthesizer: Combines parallel researcher outputs into unified SUMMARY.md
+- gsd-roadmapper: Creates project roadmaps with phase breakdown and requirement mapping
+</available_agent_types>
+
 <process>
 
 ## 1. Load Context

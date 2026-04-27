@@ -10,7 +10,7 @@
 
 ---
 
-## Agents (33 shipped)
+## Agents (39 shipped)
 
 Full roster at `agents/gsd-*.md`. The "Primary doc" column flags whether [`docs/AGENTS.md`](AGENTS.md) carries a full role card (*primary*), a short stub in the "Advanced and Specialized Agents" section (*advanced stub*), or no coverage (*inventory only*).
 
@@ -49,12 +49,18 @@ Full roster at `agents/gsd-*.md`. The "Primary doc" column flags whether [`docs/
 | gsd-intel-updater | Writes structured intel files (`.planning/intel/*.json`) used as a queryable codebase knowledge base. | `/gsd-intel` | advanced stub |
 | gsd-doc-classifier | Classifies a single planning document as ADR, PRD, SPEC, DOC, or UNKNOWN; spawned in parallel to process the doc corpus. | `/gsd-ingest-docs` | advanced stub |
 | gsd-doc-synthesizer | Synthesizes classified planning docs into a single consolidated context with precedence rules, cycle detection, and three-bucket conflicts report. | `/gsd-ingest-docs` | advanced stub |
+| gsd-critic-code | Adversarial code critic. Reviews implementation quality, security, error handling, test coverage, pattern adherence. | `/gsd-critique` | inventory only |
+| gsd-critic-discuss | Adversarial discussion critic. Reviews CONTEXT.md for blind spots, ambiguous decisions, and missing discussion areas. | `/gsd-critique` | inventory only |
+| gsd-critic-plan | Adversarial plan critic. Reviews GSD plans for gaps, contradictions, missing requirements, and scope issues. | `/gsd-critique` | inventory only |
+| gsd-critic-scope | Adversarial scope critic. Reviews ROADMAP/REQUIREMENTS for scope creep, stale assumptions, deferred item enforcement, roadmap consistency. | `/gsd-critique` | inventory only |
+| gsd-critic-strategy | Adversarial milestone strategy critic. Reviews ROADMAP.md, milestone decisions, and cross-phase patterns for scope creep and stale assumptions. | `/gsd-critique` | inventory only |
+| gsd-critic-verify | Adversarial verification critic. Reviews VERIFICATION.md, test quality, assertion strength, coverage gaps. | `/gsd-critique` | inventory only |
 
 **Coverage note.** `docs/AGENTS.md` gives full role cards for 21 primary agents plus concise stubs for the 12 advanced agents. The Agent Tool Permissions Summary in that file covers only the primary 21 agents; the advanced agents' tool lists are captured in their per-agent frontmatter in `agents/gsd-*.md`.
 
 ---
 
-## Commands (83 shipped)
+## Commands (93 shipped)
 
 Full roster at `commands/gsd/*.md`. The groupings below mirror `docs/COMMANDS.md` section order; each row carries the command name, a one-line role derived from the command's frontmatter `description:`, and a link to the source file. `tests/command-count-sync.test.cjs` locks the count against the filesystem.
 
@@ -86,6 +92,7 @@ Full roster at `commands/gsd/*.md`. The groupings below mirror `docs/COMMANDS.md
 | `/gsd-code-review` | Review source files changed during a phase for bugs, security, and code-quality problems. | [commands/gsd/code-review.md](../commands/gsd/code-review.md) |
 | `/gsd-code-review-fix` | Auto-fix issues found by `/gsd-code-review`, committing each fix atomically. | [commands/gsd/code-review-fix.md](../commands/gsd/code-review-fix.md) |
 | `/gsd-eval-review` | Retroactively audit an executed AI phase's evaluation coverage; produces EVAL-REVIEW.md. | [commands/gsd/eval-review.md](../commands/gsd/eval-review.md) |
+| `/gsd-critique` | Run adversarial critics against phase artifacts. | [commands/gsd/critique.md](../commands/gsd/critique.md) |
 
 ### Phase & Milestone Management
 
@@ -111,6 +118,8 @@ Full roster at `commands/gsd/*.md`. The groupings below mirror `docs/COMMANDS.md
 | `/gsd-workstreams` | Manage parallel workstreams — list, create, switch, status, progress, complete, resume. | [commands/gsd/workstreams.md](../commands/gsd/workstreams.md) |
 | `/gsd-autonomous` | Run all remaining phases autonomously — discuss → plan → execute per phase. | [commands/gsd/autonomous.md](../commands/gsd/autonomous.md) |
 | `/gsd-undo` | Safe git revert — roll back phase or plan commits using the phase manifest. | [commands/gsd/undo.md](../commands/gsd/undo.md) |
+| `/gsd-archive-project` | Archive a completed project. | [commands/gsd/archive-project.md](../commands/gsd/archive-project.md) |
+| `/gsd-restore-project` | Restore an archived project. | [commands/gsd/restore-project.md](../commands/gsd/restore-project.md) |
 
 ### Session & Navigation
 
@@ -129,6 +138,10 @@ Full roster at `commands/gsd/*.md`. The groupings below mirror `docs/COMMANDS.md
 | `/gsd-add-backlog` | Add an idea to the backlog parking lot (999.x numbering). | [commands/gsd/add-backlog.md](../commands/gsd/add-backlog.md) |
 | `/gsd-review-backlog` | Review and promote backlog items to active milestone. | [commands/gsd/review-backlog.md](../commands/gsd/review-backlog.md) |
 | `/gsd-plant-seed` | Capture a forward-looking idea with trigger conditions. | [commands/gsd/plant-seed.md](../commands/gsd/plant-seed.md) |
+| `/gsd-add-mistake` | Capture a mistake pattern as a registry entry for critic review. | [commands/gsd/add-mistake.md](../commands/gsd/add-mistake.md) |
+| `/gsd-mistakes` | List all mistake registry entries. | [commands/gsd/mistakes.md](../commands/gsd/mistakes.md) |
+| `/gsd-add-taste` | Create a taste entry from guided input. | [commands/gsd/add-taste.md](../commands/gsd/add-taste.md) |
+| `/gsd-extract-taste` | Extract taste patterns from decision logs. | [commands/gsd/extract-taste.md](../commands/gsd/extract-taste.md) |
 | `/gsd-thread` | Manage persistent context threads for cross-session work. | [commands/gsd/thread.md](../commands/gsd/thread.md) |
 
 ### Codebase Intelligence
@@ -170,10 +183,12 @@ Full roster at `commands/gsd/*.md`. The groupings below mirror `docs/COMMANDS.md
 | `/gsd-reapply-patches` | Reapply local modifications after a GSD update. | [commands/gsd/reapply-patches.md](../commands/gsd/reapply-patches.md) |
 | `/gsd-help` | Show available GSD commands and usage guide. | [commands/gsd/help.md](../commands/gsd/help.md) |
 | `/gsd-join-discord` | Join the GSD Discord community. | [commands/gsd/join-discord.md](../commands/gsd/join-discord.md) |
+| `/gsd-sync-upstream` | Sync fork with upstream get-shit-done changes. | [commands/gsd/sync-upstream.md](../commands/gsd/sync-upstream.md) |
+| `/gsd-team-status` | Show what each team member is working on across the monorepo. | [commands/gsd/team-status.md](../commands/gsd/team-status.md) |
 
 ---
 
-## Workflows (81 shipped)
+## Workflows (92 shipped)
 
 Full roster at `get-shit-done/workflows/*.md`. Workflows are thin orchestrators that commands reference internally; most are not read directly by end users. Rows below map each workflow file to its role (derived from the `<purpose>` block) and, where applicable, to the command that invokes it.
 
@@ -353,7 +368,7 @@ The `gsd-planner` agent is decomposed into a core agent plus reference modules t
 
 ---
 
-## CLI Modules (26 shipped)
+## CLI Modules (29 shipped)
 
 Full listing: `get-shit-done/bin/lib/*.cjs`.
 
@@ -365,10 +380,12 @@ Full listing: `get-shit-done/bin/lib/*.cjs`.
 | `config-schema.cjs` | Single source of truth for `VALID_CONFIG_KEYS` and dynamic key patterns; imported by both the validator and the config-schema-docs parity test |
 | `config.cjs` | `config.json` read/write, section initialization; imports validator from `config-schema.cjs` |
 | `core.cjs` | Error handling, output formatting, shared utilities, runtime fallbacks |
+| `context.cjs` | Context window tracking and budget management |
 | `docs.cjs` | Docs-update workflow init, Markdown scanning, monorepo detection |
 | `frontmatter.cjs` | YAML frontmatter CRUD operations |
 | `graphify.cjs` | Knowledge-graph build/query/status/diff for `/gsd-graphify` |
 | `gsd2-import.cjs` | External-plan ingest for `/gsd-from-gsd2` |
+| `identity.cjs` | Runtime identity detection and environment fingerprinting |
 | `init.cjs` | Compound context loading for each workflow type |
 | `intel.cjs` | Codebase intel store backing `/gsd-intel` and `gsd-intel-updater` |
 | `learnings.cjs` | Cross-phase learnings extraction for `/gsd-extract-learnings` |
@@ -382,6 +399,7 @@ Full listing: `get-shit-done/bin/lib/*.cjs`.
 | `security.cjs` | Path traversal prevention, prompt injection detection, safe JSON/shell helpers |
 | `state.cjs` | STATE.md parsing, updating, progression, metrics |
 | `template.cjs` | Template selection and filling with variable substitution |
+| `taste.cjs` | Taste profile management and extraction for `/gsd-add-taste` and `/gsd-extract-taste` |
 | `uat.cjs` | UAT file parsing, verification debt tracking, audit-uat support |
 | `verify.cjs` | Plan structure, phase completeness, reference, commit validation |
 | `workstream.cjs` | Workstream CRUD, migration, session-scoped active pointer |

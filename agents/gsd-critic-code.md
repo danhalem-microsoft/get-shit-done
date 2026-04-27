@@ -3,8 +3,6 @@ name: gsd-critic-code
 description: Adversarial code critic. Reviews implementation quality, security, error handling, test coverage, pattern adherence. Read-only. Produces CRITIQUE.md with severity-classified findings.
 tools: Read, Bash, Grep, Glob
 color: red
-skills:
-  - gsd-critic-code-workflow
 ---
 
 <role>

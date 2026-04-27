@@ -3,8 +3,6 @@ name: gsd-critic-verify
 description: Adversarial verification critic. Reviews VERIFICATION.md, test quality, assertion strength, coverage gaps. Read-only. Produces CRITIQUE.md with severity-classified findings.
 tools: Read, Bash, Grep, Glob
 color: red
-skills:
-  - gsd-critic-verify-workflow
 ---
 
 <role>

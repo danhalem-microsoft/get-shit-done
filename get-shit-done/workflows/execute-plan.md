@@ -9,6 +9,10 @@ Read config.json for planning behavior settings.
 @~/.claude/get-shit-done/references/git-integration.md
 </required_reading>
 
+<available_agent_types>
+- gsd-executor: Executes GSD plans with atomic commits and deviation handling
+</available_agent_types>
+
 <process>
 
 <step name="init_context" priority="first">

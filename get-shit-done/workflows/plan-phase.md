@@ -8,6 +8,13 @@ Read all files referenced by the invoking prompt's execution_context before star
 @~/.claude/get-shit-done/references/ui-brand.md
 </required_reading>
 
+<available_agent_types>
+- gsd-planner: Creates executable phase plans with task breakdown and goal-backward verification
+- gsd-plan-checker: Verifies plans will achieve phase goals
+- gsd-critic-plan: Adversarial plan critic
+- gsd-research-synthesizer: Combines parallel researcher outputs into unified SUMMARY.md
+</available_agent_types>
+
 <process>
 
 ## 1. Initialize
