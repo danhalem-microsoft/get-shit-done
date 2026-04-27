@@ -4,19 +4,38 @@
 
 const fs = require('fs');
 const path = require('path');
-const { output, error, getPlanningRoot } = require('./core.cjs');
+const { output, error, planningDir, withPlanningLock, CONFIG_DEFAULTS, atomicWriteFileSync } = require('./core.cjs');
 const { isValidConfigKey, VALID_CONFIG_KEYS, DYNAMIC_KEY_PATTERNS } = require('./config-schema.cjs');
-const { VALID_PROFILES, getAgentToModelMapForProfile } = require('./model-profiles.cjs');
+const { VALID_PROFILES, getAgentToModelMapForProfile, formatAgentToModelMapAsTable } = require('./model-profiles.cjs');
+
+// Also export getPlanningRoot for backward compat within fork
+const getPlanningRoot = (cwd) => '.planning';
 
 /**
  * Known misspellings / aliases → canonical key for helpful error messages.
  */
-const KNOWN_ALIASES = {
+const CONFIG_KEY_SUGGESTIONS = {
   'workflow.nyquist_validation_enabled': 'workflow.nyquist_validation',
+  'agents.nyquist_validation_enabled': 'workflow.nyquist_validation',
+  'nyquist.validation_enabled': 'workflow.nyquist_validation',
   'hooks.research_questions': 'workflow.research_before_questions',
+  'workflow.research_questions': 'workflow.research_before_questions',
+  'workflow.codereview': 'workflow.code_review',
+  'workflow.review_command': 'workflow.code_review_command',
+  'workflow.review': 'workflow.code_review',
+  'workflow.code_review_level': 'workflow.code_review_depth',
+  'workflow.review_depth': 'workflow.code_review_depth',
+  'review.model': 'review.models.<cli-name>',
   'workflow.nyquist': 'workflow.nyquist_validation',
   'workflow.plan_checker': 'workflow.plan_check',
 };
+
+function validateKnownConfigKeyPath(keyPath) {
+  const suggested = CONFIG_KEY_SUGGESTIONS[keyPath];
+  if (suggested) {
+    error(`Unknown config key: ${keyPath}. Did you mean ${suggested}?`);
+  }
+}
 
 /**
  * Context values accepted by config-set context.
@@ -24,14 +43,13 @@ const KNOWN_ALIASES = {
 const VALID_CONTEXTS = ['dev', 'research', 'review'];
 
 function cmdConfigEnsureSection(cwd, raw) {
-  const planningRoot = getPlanningRoot(cwd);
-  const configPath = path.join(cwd, planningRoot, 'config.json');
-  const planningDir = path.join(cwd, planningRoot);
+  const planningBase = planningDir(cwd);
+  const configPath = path.join(planningBase, 'config.json');
 
   // Ensure planning directory exists
   try {
-    if (!fs.existsSync(planningDir)) {
-      fs.mkdirSync(planningDir, { recursive: true });
+    if (!fs.existsSync(planningBase)) {
+      fs.mkdirSync(planningBase, { recursive: true });
     }
   } catch (err) {
     error('Failed to create planning directory: ' + err.message);
@@ -120,78 +138,83 @@ function cmdConfigEnsureSection(cwd, raw) {
 
   try {
     fs.writeFileSync(configPath, JSON.stringify(defaults, null, 2), 'utf-8');
-    const result = { created: true, path: planningRoot + '/config.json' };
+    const result = { created: true, path: '.planning/config.json' };
     output(result, raw, 'created');
   } catch (err) {
     error('Failed to create config.json: ' + err.message);
   }
 }
 
-function cmdConfigSet(cwd, keyPath, value, raw) {
-  const configPath = path.join(cwd, getPlanningRoot(cwd), 'config.json');
+/**
+ * Sets a value in the config file, allowing nested values via dot notation.
+ * Uses withPlanningLock to prevent concurrent write data loss (#1927).
+ */
+function setConfigValue(cwd, keyPath, parsedValue) {
+  const configPath = path.join(planningDir(cwd), 'config.json');
 
+  return withPlanningLock(cwd, () => {
+    let config = {};
+    try {
+      if (fs.existsSync(configPath)) {
+        config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+      }
+    } catch (err) {
+      error('Failed to read config.json: ' + err.message);
+    }
+
+    const keys = keyPath.split('.');
+    let current = config;
+    for (let i = 0; i < keys.length - 1; i++) {
+      const key = keys[i];
+      if (current[key] === undefined || typeof current[key] !== 'object') {
+        current[key] = {};
+      }
+      current = current[key];
+    }
+    const previousValue = current[keys[keys.length - 1]];
+    current[keys[keys.length - 1]] = parsedValue;
+
+    try {
+      const writeFunc = typeof atomicWriteFileSync === 'function' ? atomicWriteFileSync : fs.writeFileSync;
+      writeFunc(configPath, JSON.stringify(config, null, 2), 'utf-8');
+      return { updated: true, key: keyPath, value: parsedValue, previousValue };
+    } catch (err) {
+      error('Failed to write config.json: ' + err.message);
+    }
+  });
+}
+
+function cmdConfigSet(cwd, keyPath, value, raw) {
   if (!keyPath) {
     error('Usage: config-set <key.path> <value>');
   }
 
-  // Validate key
+  validateKnownConfigKeyPath(keyPath);
+
   if (!isValidConfigKey(keyPath)) {
-    const suggestion = KNOWN_ALIASES[keyPath];
-    let msg = `Unknown config key: ${keyPath}`;
-    if (suggestion) {
-      msg += `\nDid you mean: ${suggestion}`;
-    }
-    error(msg);
+    error(`Unknown config key: "${keyPath}". Valid keys: ${[...VALID_CONFIG_KEYS].sort().join(', ')}, agent_skills.<agent-type>, features.<feature_name>`);
   }
 
-  // Validate context values
-  if (keyPath === 'context') {
-    if (!VALID_CONTEXTS.includes(value)) {
-      error(`Invalid context value: "${value}". Valid values: ${VALID_CONTEXTS.join(', ')}`);
-    }
-  }
-
-  // Parse value (handle booleans and numbers)
+  // Parse value (handle booleans, numbers, and JSON arrays/objects)
   let parsedValue = value;
   if (value === 'true') parsedValue = true;
   else if (value === 'false') parsedValue = false;
   else if (!isNaN(value) && value !== '') parsedValue = Number(value);
-
-  // Load existing config or start with empty object
-  let config = {};
-  try {
-    if (fs.existsSync(configPath)) {
-      config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
-    }
-  } catch (err) {
-    error('Failed to read config.json: ' + err.message);
+  else if (typeof value === 'string' && (value.startsWith('[') || value.startsWith('{'))) {
+    try { parsedValue = JSON.parse(value); } catch { /* keep as string */ }
   }
 
-  // Set nested value using dot notation (e.g., "workflow.research")
-  const keys = keyPath.split('.');
-  let current = config;
-  for (let i = 0; i < keys.length - 1; i++) {
-    const key = keys[i];
-    if (current[key] === undefined || typeof current[key] !== 'object') {
-      current[key] = {};
-    }
-    current = current[key];
+  const VALID_CONTEXT_VALUES = ['dev', 'research', 'review'];
+  if (keyPath === 'context' && !VALID_CONTEXT_VALUES.includes(String(parsedValue))) {
+    error(`Invalid context value '${value}'. Valid values: ${VALID_CONTEXT_VALUES.join(', ')}`);
   }
-  current[keys[keys.length - 1]] = parsedValue;
 
-  // Write back
-  try {
-    fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf-8');
-    const result = { updated: true, key: keyPath, value: parsedValue };
-    output(result, raw, `${keyPath}=${parsedValue}`);
-  } catch (err) {
-    error('Failed to write config.json: ' + err.message);
-  }
+  const setConfigValueResult = setConfigValue(cwd, keyPath, parsedValue);
+  output(setConfigValueResult, raw, `${keyPath}=${parsedValue}`);
 }
 
 function cmdConfigGet(cwd, keyPath, raw, defaultValue) {
-  const planningRoot = getPlanningRoot(cwd);
-  const configPath = path.join(cwd, planningRoot, 'config.json');
+  const configPath = path.join(planningDir(cwd), 'config.json');
 
   if (!keyPath) {
     error('Usage: config-get <key.path>');
@@ -239,14 +262,13 @@ function cmdConfigGet(cwd, keyPath, raw, defaultValue) {
 }
 
 function cmdConfigNewProject(cwd, choicesJson, raw) {
-  const planningRoot = getPlanningRoot(cwd);
-  const configPath = path.join(cwd, planningRoot, 'config.json');
-  const planningDir = path.join(cwd, planningRoot);
+  const planBase = planningDir(cwd);
+  const configPath = path.join(planBase, 'config.json');
 
   // Ensure planning directory exists
   try {
-    if (!fs.existsSync(planningDir)) {
-      fs.mkdirSync(planningDir, { recursive: true });
+    if (!fs.existsSync(planBase)) {
+      fs.mkdirSync(planBase, { recursive: true });
     }
   } catch (err) {
     error('Failed to create planning directory: ' + err.message);
@@ -328,7 +350,7 @@ function cmdConfigNewProject(cwd, choicesJson, raw) {
 
   try {
     fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf-8');
-    const result = { created: true, path: planningRoot + '/config.json' };
+    const result = { created: true, path: '.planning/config.json' };
     output(result, raw, 'created');
   } catch (err) {
     error('Failed to create config.json: ' + err.message);
@@ -337,62 +359,45 @@ function cmdConfigNewProject(cwd, choicesJson, raw) {
 
 function cmdConfigSetModelProfile(cwd, profile, raw) {
   if (!profile) {
-    error('Usage: config-set-model-profile <profile>');
+    error(`Usage: config-set-model-profile <${VALID_PROFILES.join('|')}>`);
   }
 
   const normalizedProfile = profile.toLowerCase().trim();
   if (!VALID_PROFILES.includes(normalizedProfile)) {
-    error(`Invalid profile: "${profile}". Valid profiles: ${VALID_PROFILES.join(', ')}`);
+    error(`Invalid profile '${profile}'. Valid profiles: ${VALID_PROFILES.join(', ')}`);
   }
 
-  const planningRoot = getPlanningRoot(cwd);
-  const configPath = path.join(cwd, planningRoot, 'config.json');
-  const planningDir = path.join(cwd, planningRoot);
-
-  // Ensure config exists, creating with defaults if needed
-  let config = {};
-  if (fs.existsSync(configPath)) {
-    try {
-      config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
-    } catch (err) {
-      config = {};
-    }
-  } else {
-    // Create planning dir if needed
-    if (!fs.existsSync(planningDir)) {
-      fs.mkdirSync(planningDir, { recursive: true });
-    }
+  // Ensure config exists
+  const planBase = planningDir(cwd);
+  const configPath = path.join(planBase, 'config.json');
+  if (!fs.existsSync(planBase)) {
+    fs.mkdirSync(planBase, { recursive: true });
   }
 
-  const previousProfile = config.model_profile || 'balanced';
-  config.model_profile = normalizedProfile;
+  // Set the model profile
+  const { previousValue } = setConfigValue(cwd, 'model_profile', normalizedProfile);
+  const previousProfile = previousValue || 'balanced';
 
   const agentToModelMap = getAgentToModelMapForProfile(normalizedProfile);
+  const result = {
+    updated: true,
+    profile: normalizedProfile,
+    previousProfile,
+    agentToModelMap,
+  };
 
-  try {
-    fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf-8');
-    const result = {
-      updated: true,
-      profile: normalizedProfile,
-      previousProfile,
-      agentToModelMap,
-    };
-    output(result, raw, `model_profile=${normalizedProfile}`);
-  } catch (err) {
-    error('Failed to write config.json: ' + err.message);
-  }
+  const agentToModelTable = typeof formatAgentToModelMapAsTable === 'function'
+    ? formatAgentToModelMapAsTable(agentToModelMap)
+    : JSON.stringify(agentToModelMap);
+  const didChange = previousProfile !== normalizedProfile;
+  const rawValue = didChange
+    ? `✓ Model profile set to: ${normalizedProfile} (was: ${previousProfile})\n\nAgents will now use:\n\n${agentToModelTable}\n\nNext spawned agents will use the new profile.`
+    : `✓ Model profile is already set to: ${normalizedProfile}\n\nAgents are using:\n\n${agentToModelTable}`;
+  output(result, raw, rawValue);
 }
 
 function cmdConfigPath(cwd, raw) {
-  const planningRoot = getPlanningRoot(cwd);
-  const wsName = process.env.GSD_WORKSTREAM;
-  let configPath;
-  if (wsName) {
-    configPath = path.join(cwd, planningRoot, 'workstreams', wsName, 'config.json');
-  } else {
-    configPath = path.join(cwd, planningRoot, 'config.json');
-  }
-  // Output raw path string (not JSON-wrapped) so callers can use it directly as a file path
+  const configPath = path.join(planningDir(cwd), 'config.json');
   output(configPath, true, configPath);
 }
 

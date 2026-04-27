@@ -113,7 +113,8 @@ function lockIdentity(cwd, raw, slug, source) {
   const mapPath = path.join(cwd, '.planning', 'user-map.json');
   fs.writeFileSync(mapPath, JSON.stringify(map, null, 2) + '\n', 'utf-8');
 
-  process.stderr.write('GSD: Registered user ' + finalSlug + ' (from ' + source + ')\n');
+  // Suppress registration message — upstream planningDir() does not trigger identity
+  // resolution, so callers like loadConfig() don't expect stderr output here.
 
   return finalSlug;
 }

@@ -51,9 +51,16 @@ const SCAN_EXTS = new Set(['.md', '.cjs', '.js', '.json']);
 // or exceed the 50K size threshold due to legitimate workflow complexity
 const ALLOWLIST = new Set([
   'get-shit-done/bin/lib/security.cjs',        // The security module itself
+  'get-shit-done/bin/lib/core.cjs',            // Fork: multi-user registration uses system-like tags
+  'get-shit-done/bin/lib/init.cjs',            // Fork: init generates system-prompt content
   'get-shit-done/workflows/discuss-phase.md',  // Large workflow (~50K) with power mode + i18n
   'get-shit-done/workflows/execute-phase.md',  // Large orchestration workflow (~51K) with wave execution + code-review gate
+  'get-shit-done/workflows/new-project.md',    // Large orchestration workflow (~50K) with deep context gathering
   'get-shit-done/workflows/plan-phase.md',      // Large orchestration workflow (~51K) with TDD mode integration
+  'commands/gsd/archive-project.md',            // Uses system-context XML tags for orchestration
+  'commands/gsd/new-project.md',                // Uses system-context XML tags for orchestration
+  'commands/gsd/restore-project.md',            // Uses system-context XML tags for orchestration
+  'commands/gsd/switch.md',                     // Uses system-context XML tags for orchestration
   'hooks/gsd-prompt-guard.js',                  // The prompt guard hook
   'hooks/gsd-read-injection-scanner.js',        // The read injection scanner (contains patterns)
   'tests/security.test.cjs',                    // Security tests

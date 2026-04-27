@@ -116,7 +116,7 @@ Before any skill runs, validate the sandbox was built from the fork:
 - Git log shows commits from execution (grep for phase number)
 - At least one source file was created or modified (from `key_files`)
 
-### Step 6: `/gsd:add-mistake`
+### Step 6: `/gsd-add-mistake`
 
 **Prompt:** Record a mistake — "test assertions were too loose, checking only string length instead of structural correctness, which let broken skills pass silently."
 
@@ -126,7 +126,7 @@ Before any skill runs, validate the sandbox was built from the fork:
 - Frontmatter has `id`, `area`, `status: active`
 - Body contains `## What Happened`
 
-### Step 7: `/gsd:add-taste`
+### Step 7: `/gsd-add-taste`
 
 **Prompt:** Add a taste preference — "always use assert.strictEqual over assert.ok for value comparisons. Loose assertions hide bugs."
 

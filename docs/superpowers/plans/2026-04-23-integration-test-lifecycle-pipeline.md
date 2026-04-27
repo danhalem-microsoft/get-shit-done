@@ -459,11 +459,11 @@ describe('GSD lifecycle pipeline', () => {
       `Expected multiple commits from execution, git log shows: ${log.slice(0, 300)}`);
   });
 
-  // ── Step 6: /gsd:add-mistake ────────────────────────────────────
+  // ── Step 6: /gsd-add-mistake ────────────────────────────────────
 
-  test('step 6: /gsd:add-mistake creates entry with correct format', () => {
+  test('step 6: /gsd-add-mistake creates entry with correct format', () => {
     const result = runSkill(
-      'Run /gsd:add-mistake. The mistake: "Test assertions were too loose — checking only string length instead of structural correctness, which let broken skills pass silently." Area: testing. Confirm creation when prompted.'
+      'Run /gsd-add-mistake. The mistake: "Test assertions were too loose — checking only string length instead of structural correctness, which let broken skills pass silently." Area: testing. Confirm creation when prompted.'
     );
     assert.ok(result.success, `gsd:add-mistake failed: ${result.error || result.result.slice(0, 500)}`);
 
@@ -499,11 +499,11 @@ describe('GSD lifecycle pipeline', () => {
       'Mistake entry missing "What Happened" section');
   });
 
-  // ── Step 7: /gsd:add-taste ──────────────────────────────────────
+  // ── Step 7: /gsd-add-taste ──────────────────────────────────────
 
-  test('step 7: /gsd:add-taste creates entry with correct format', () => {
+  test('step 7: /gsd-add-taste creates entry with correct format', () => {
     const result = runSkill(
-      'Run /gsd:add-taste. The preference: "Always use assert.strictEqual over assert.ok for value comparisons. Loose assertions hide bugs and create false confidence." Domain: testing. Confidence: high. Confirm when prompted.'
+      'Run /gsd-add-taste. The preference: "Always use assert.strictEqual over assert.ok for value comparisons. Loose assertions hide bugs and create false confidence." Domain: testing. Confidence: high. Confirm when prompted.'
     );
     assert.ok(result.success, `gsd:add-taste failed: ${result.error || result.result.slice(0, 500)}`);
 

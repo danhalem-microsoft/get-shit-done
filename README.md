@@ -160,13 +160,13 @@ Or use `/gsd-update` from within Claude Code.
 node bin/install.js --claude --global   # Install to ~/.claude/
 node bin/install.js --claude --local    # Install to ./.claude/
 
-# OpenCode (open source, free models)
+# OpenCode
 node bin/install.js --opencode --global # Install to ~/.config/opencode/
 
 # Gemini CLI
 node bin/install.js --gemini --global   # Install to ~/.gemini/
 
-# Codex (skills-first)
+# Codex
 node bin/install.js --codex --global    # Install to ~/.codex/
 node bin/install.js --codex --local     # Install to ./.codex/
 

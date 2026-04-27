@@ -1528,6 +1528,10 @@ Enable with:
 
 ---
 
+### `/gsd-switch`
+
+Switch active project context in a multi-project workspace.
+
 ### `/gsd-join-discord`
 
 Open Discord community invite.

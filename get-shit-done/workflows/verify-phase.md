@@ -37,8 +37,9 @@ Extract from init JSON: `phase_dir`, `phase_number`, `phase_name`, `has_plans`, 
 Then load phase details and list plans/summaries:
 ```bash
 node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" roadmap get-phase "${phase_number}"
-grep -E "^| ${phase_number}" ${planning_root}/REQUIREMENTS.md 2>/dev/null
-ls "$phase_dir"/*-SUMMARY.md "$phase_dir"/*-PLAN.md 2>/dev/null
+node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" roadmap analyze "${planning_root}" 2>/dev/null || true
+grep -E "^| ${phase_number}" ${planning_root}/REQUIREMENTS.md 2>/dev/null || true
+ls "$phase_dir"/*-SUMMARY.md "$phase_dir"/*-PLAN.md 2>/dev/null || true
 ```
 
 Extract **phase goal** from ROADMAP.md (the outcome to verify, not tasks) and **requirements** from REQUIREMENTS.md if it exists.
@@ -160,7 +161,7 @@ Record status and evidence for each key link.
 <step name="verify_requirements">
 If REQUIREMENTS.md exists:
 ```bash
-grep -E "Phase ${PHASE_NUM}" ${planning_root}/REQUIREMENTS.md 2>/dev/null
+grep -E "Phase ${PHASE_NUM}" ${planning_root}/REQUIREMENTS.md 2>/dev/null || true
 ```
 
 For each requirement: parse description → identify supporting truths/artifacts → status: ✓ SATISFIED / ✗ BLOCKED / ? NEEDS HUMAN.
@@ -245,6 +246,12 @@ fi
 ```
 </step>
 
+<step name="filter_deferred_items">
+Cross-reference gaps against later milestone phases. If a gap is addressed by a future phase
+(per roadmap analyze output), mark it as **deferred** rather than a true gap. This prevents
+false-positive gap reports for work intentionally scheduled later.
+</step>
+
 </process>
 
 <success_criteria>
@@ -256,6 +263,7 @@ fi
 - [ ] Anti-patterns scanned and categorized
 - [ ] Human verification items identified
 - [ ] Overall status determined
+- [ ] Deferred items filtered from gap report
 - [ ] Fix plans generated (if gaps_found)
 - [ ] VERIFICATION.md created with complete report
 - [ ] Results returned to orchestrator

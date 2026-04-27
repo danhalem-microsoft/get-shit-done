@@ -25,8 +25,8 @@ Mark current phase complete and advance to next. This is the natural point where
 Before transition, read project state:
 
 ```bash
-cat ${planning_root}/STATE.md 2>/dev/null
-cat ${planning_root}/PROJECT.md 2>/dev/null
+cat ${planning_root}/STATE.md 2>/dev/null || true
+cat ${planning_root}/PROJECT.md 2>/dev/null || true
 ```
 
 Parse current position to verify we're transitioning the right phase.
@@ -53,7 +53,7 @@ ls ${planning_root}/phases/XX-current/*-SUMMARY.md 2>/dev/null | sort
 <config-check>
 
 ```bash
-cat ${planning_root}/config.json 2>/dev/null
+cat ${planning_root}/config.json 2>/dev/null || true
 ```
 
 </config-check>
@@ -111,7 +111,7 @@ Wait for user decision.
 Check for lingering handoffs:
 
 ```bash
-ls ${planning_root}/phases/XX-current/.continue-here*.md 2>/dev/null
+ls ${planning_root}/phases/XX-current/.continue-here*.md 2>/dev/null || true
 ```
 
 If found, delete them — phase is complete, handoffs are stale.
@@ -375,7 +375,7 @@ Read ROADMAP.md to get the next phase's name and goal.
 **Check if next phase has CONTEXT.md:**
 
 ```bash
-ls ${planning_root}/phases/*[X+1]*/*-CONTEXT.md 2>/dev/null
+ls ${planning_root}/phases/*[X+1]*/*-CONTEXT.md 2>/dev/null || true
 ```
 
 **If next phase exists:**
