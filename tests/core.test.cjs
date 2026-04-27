@@ -159,7 +159,7 @@ describe('loadConfig', () => {
     // Verify that loadConfig's unknown-key check uses config-set's VALID_CONFIG_KEYS
     // as its source of truth. If a new key is added to config-set, it should
     // automatically be recognized by loadConfig without a separate update.
-    const { VALID_CONFIG_KEYS } = require('../get-shit-done/bin/lib/config.cjs');
+    const { VALID_CONFIG_KEYS } = require('../get-shit-done/bin/lib/config-schema.cjs');
     // Every top-level key from VALID_CONFIG_KEYS should be recognized
     const topLevelKeys = [...VALID_CONFIG_KEYS].map(k => k.split('.')[0]);
     for (const key of topLevelKeys) {

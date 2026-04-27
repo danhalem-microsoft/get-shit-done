@@ -20,7 +20,7 @@ describe('claude_md_path config key', () => {
   });
 
   test('claude_md_path is in VALID_CONFIG_KEYS', () => {
-    const { VALID_CONFIG_KEYS } = require('../get-shit-done/bin/lib/config.cjs');
+    const { VALID_CONFIG_KEYS } = require('../get-shit-done/bin/lib/config-schema.cjs');
     assert.ok(VALID_CONFIG_KEYS.has('claude_md_path'));
   });
 
