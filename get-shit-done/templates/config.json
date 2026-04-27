@@ -21,7 +21,12 @@
     "security_block_on": "high",
     "critics": {
       "auto_spawn": true
-    }
+    },
+    "cross_ai_execution": false,
+    "cross_ai_command": "",
+    "cross_ai_timeout": 300,
+    "research_before_questions": false,
+    "ai_integration_phase": true
   },
   "planning": {
     "commit_docs": true,
