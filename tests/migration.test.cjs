@@ -123,10 +123,32 @@ describe('getPlanningRoot legacy error message', () => {
   test('legacy structure shows migration instructions', () => {
     tmpDir = createLegacyGitProject();
 
-    // Run any command that calls getPlanningRoot — state load will do
-    const result = runGsdTools('state load', tmpDir);
-    assert.ok(!result.success, 'should fail with error');
-    assert.ok(result.error.includes('migrate'), `Error should mention migration, got: ${result.error}`);
+    // Call getPlanningRoot directly via subprocess — state load uses planningPaths
+    // which soft-falls back, so we need the direct path to test the hard error.
+    const corePath = require.resolve('../get-shit-done/bin/lib/core.cjs').replace(/\\/g, '/');
+    const dir = tmpDir.replace(/\\/g, '/');
+    const script = `const { getPlanningRoot } = require('${corePath}'); getPlanningRoot('${dir}');`;
+
+    const cleanEnv = { ...process.env };
+    delete cleanEnv.CI;
+    delete cleanEnv.GITHUB_ACTIONS;
+    delete cleanEnv.GITLAB_CI;
+    delete cleanEnv.JENKINS_URL;
+    delete cleanEnv.CIRCLECI;
+    delete cleanEnv.TRAVIS;
+    delete cleanEnv.GSD_USER;
+    delete cleanEnv.GSD_PROJECT;
+
+    try {
+      execSync(`node -e "${script.replace(/"/g, '\\"')}"`, {
+        encoding: 'utf-8',
+        stdio: ['pipe', 'pipe', 'pipe'],
+        env: cleanEnv,
+      });
+      assert.fail('Should have thrown');
+    } catch (err) {
+      assert.ok(err.stderr.includes('migrate'), `Error should mention migration, got: ${err.stderr}`);
+    }
   });
 });
 

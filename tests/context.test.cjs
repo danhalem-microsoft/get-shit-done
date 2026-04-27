@@ -463,7 +463,7 @@ describe('getPlanningRoot with null resolveContext', () => {
     clearPlanningRootCache();
   });
 
-  test('hard-errors when resolveContext returns null project (subprocess)', () => {
+  test('falls back to flat .planning when resolveContext returns null project (subprocess)', () => {
     const os = require('os');
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gsd-test-'));
     const userDir = path.join(tmpDir, '.planning', 'users', 'test-user');
@@ -475,7 +475,7 @@ describe('getPlanningRoot with null resolveContext', () => {
 
     const corePath = require.resolve('../get-shit-done/bin/lib/core.cjs').replace(/\\/g, '/');
     const dir = tmpDir.replace(/\\/g, '/');
-    const script = `const { getPlanningRoot } = require('${corePath}'); getPlanningRoot('${dir}');`;
+    const script = `const { getPlanningRoot } = require('${corePath}'); console.log(getPlanningRoot('${dir}'));`;
 
     const cleanEnv = { ...process.env };
     delete cleanEnv.CI;
@@ -488,19 +488,14 @@ describe('getPlanningRoot with null resolveContext', () => {
     delete cleanEnv.GSD_PROJECT;
     cleanEnv.GSD_USER = 'test-user';
 
-    try {
-      execSync(`node -e "${script.replace(/"/g, '\\"')}"`, {
-        encoding: 'utf-8',
-        stdio: ['pipe', 'pipe', 'pipe'],
-        env: cleanEnv,
-      });
-      assert.fail('Should have thrown');
-    } catch (err) {
-      assert.ok(
-        err.stderr.includes('No active project'),
-        `Expected "No active project" in stderr, got: ${err.stderr}`
-      );
-    }
+    // With graceful fallback, getPlanningRoot returns '.planning' when
+    // no multi-user project exists but .planning/ directory is present.
+    const result = execSync(`node -e "${script.replace(/"/g, '\\"')}"`, {
+      encoding: 'utf-8',
+      stdio: ['pipe', 'pipe', 'pipe'],
+      env: cleanEnv,
+    });
+    assert.strictEqual(result.trim(), '.planning');
   });
 });
 

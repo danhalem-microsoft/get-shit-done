@@ -232,15 +232,18 @@ describe('cmdTeamStatus', () => {
       'utf-8'
     );
 
-    // Capture output
-    let captured = null;
-    const originalLog = console.log;
-    console.log = (data) => { captured = data; };
+    // Capture output — core.cjs output() uses fs.writeSync(1, data)
+    let captured = '';
+    const originalWriteSync = fs.writeSync;
+    fs.writeSync = (fd, data) => {
+      if (fd === 1) { captured += data; return Buffer.byteLength(data); }
+      return originalWriteSync.call(fs, fd, data);
+    };
 
     try {
       cmdTeamStatus(tmpDir, false);
     } finally {
-      console.log = originalLog;
+      fs.writeSync = originalWriteSync;
     }
 
     const parsed = JSON.parse(captured);
