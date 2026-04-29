@@ -179,14 +179,17 @@ All logging calls use `2>/dev/null || true` — logging NEVER breaks the workflo
 
 Use AskUserQuestion:
 - header: "Codebase"
-- question: "I detected existing code in this directory. Would you like to map the codebase first?"
+- question: "I detected existing code in this directory. Would you like to scan it first?"
 - options:
-  - "Map codebase first" — Run /gsd-map-codebase to understand existing architecture (Recommended)
+  - "Scan codebase first" — Use Grep + Read on the working tree to understand existing architecture (Recommended)
   - "Skip mapping" — Proceed with project initialization
 
-**If "Map codebase first":**
+**If "Scan codebase first":**
 ```
-Run `/gsd-map-codebase` first, then return to `/gsd-new-project`
+Inspect the existing tree (e.g. `git ls-files | head`, plus targeted Read on
+README, top-level configs, and major source files) BEFORE rerunning
+`/gsd-new-project`. The previous codebase-mapper agent has been retired —
+mapping now runs inline in the orchestrator using Grep + Read directly.
 ```
 Exit command.
 

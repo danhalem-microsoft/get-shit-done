@@ -554,10 +554,10 @@ describe('GSD lifecycle pipeline', () => {
     );
   });
 
-  // ── Step 10: /gsd-stats ─────────────────────────────────────────
+  // ── Step 10: _(retired)_ ─────────────────────────────────────────
 
-  test('step 10: /gsd-stats shows project metrics', () => {
-    const result = runSkill('Run /gsd-stats and show the output.');
+  test('step 10: _(retired)_ shows project metrics', () => {
+    const result = runSkill('Run _(retired)_ and show the output.');
     assert.ok(result.success, `gsd-stats failed: ${result.error || result.result.slice(0, 500)}`);
     assert.ok(result.turns >= 2, `Expected >= 2 tool turns, got ${result.turns}`);
 

@@ -1,10 +1,12 @@
-# Debug Subagent Prompt Template
+# Debug Investigation Prompt Template (legacy)
 
-Template for spawning gsd-debugger agent. The agent contains all debugging expertise - this template provides problem context only.
+This template was originally used to spawn a dedicated debugger subagent. That agent has been retired. The orchestrator now runs the same diagnosis loop inline using Read, Grep, and Bash directly.
+
+If you still want to drive a structured per-issue debug session, copy the placeholder shape below into the orchestrator's main thread and step through it manually:
 
 ---
 
-## Template
+## Inline diagnosis shape
 
 ```markdown
 <objective>
@@ -51,25 +53,13 @@ Create: {planning_root}/debug/{slug}.md
 
 ## Usage
 
-**From /gsd-debug:**
-```python
-Task(
-  prompt=filled_template,
-  subagent_type="gsd-debugger",
-  description="Debug {slug}"
-)
-```
-
-**From diagnose-issues (UAT):**
-```python
-Task(prompt=template, subagent_type="gsd-debugger", description="Debug UAT-001")
-```
+Walk this shape in the orchestrator's main thread — read the suspect files, form hypotheses, and write the resulting evidence to `${planning_root}/debug/{slug}.md` as you go. Use the `DEBUG.md` template for the per-issue file structure.
 
 ---
 
 ## Continuation
 
-For checkpoints, spawn fresh agent with:
+For long sessions split across multiple turns, persist current state to the debug file and resume from it on the next turn:
 
 ```markdown
 <objective>

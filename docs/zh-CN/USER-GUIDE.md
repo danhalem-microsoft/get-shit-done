@@ -50,7 +50,7 @@
              └─────────────┼──────────────┘
                             │
             ┌───────────────▼──────────────┐
-            │  /gsd-audit-milestone        │
+            │  _(retired)_        │
             │  /gsd-complete-milestone     │
             └───────────────┬──────────────┘
                             │
@@ -134,7 +134,7 @@
 
 审计器从不修改实现代码 —— 只修改测试文件和 VALIDATION.md。如果测试发现实现 bug，它会标记为升级让你处理。
 
-**何时使用：** 在启用了 Nyquist 之前规划的阶段执行后，或在 `/gsd-audit-milestone` 发现 Nyquist 合规缺口后。
+**何时使用：** 在启用了 Nyquist 之前规划的阶段执行后，或在 _(retired)_ 发现 Nyquist 合规缺口后。
 
 ### 执行波次协调
 
@@ -160,7 +160,7 @@
 ### 现有代码库工作流
 
 ```
-  /gsd-map-codebase
+  _(retired)_
          │
          ├── 技术栈映射器     -> codebase/STACK.md
          ├── 架构映射器      -> codebase/ARCHITECTURE.md
@@ -186,7 +186,6 @@
 | `/gsd-plan-phase [N]` | 研究 + 规划 + 验证 | 执行阶段前 |
 | `/gsd-execute-phase <N>` | 在并行波次中执行所有计划 | 规划完成后 |
 | `/gsd-verify-work [N]` | 带自动诊断的手动 UAT | 执行完成后 |
-| `/gsd-audit-milestone` | 验证里程碑达到其完成定义 | 完成里程碑前 |
 | `/gsd-complete-milestone` | 归档里程碑，标记发布 | 所有阶段已验证 |
 | `/gsd-new-milestone [name]` | 开始下一个版本周期 | 完成里程碑后 |
 
@@ -208,11 +207,7 @@
 | `/gsd-add-phase` | 向路线图追加新阶段 | 初始规划后范围增长 |
 | `/gsd-insert-phase [N]` | 插入紧急工作（小数编号） | 里程碑中途紧急修复 |
 | `/gsd-remove-phase [N]` | 删除未来阶段并重新编号 | 移除某个功能 |
-| `/gsd-list-phase-assumptions [N]` | 预览 Claude 的预期方法 | 规划前，验证方向 |
-| `/gsd-plan-milestone-gaps` | 为审计缺口创建阶段 | 审计发现缺失项后 |
 | `/gsd-research-phase [N]` | 仅深度生态研究 | 复杂或不熟悉的领域 |
-| `/gsd-autonomous [--from N] [--to N] [--only N]` | 自主执行剩余阶段（`--to N` 到阶段 N 停止） | 批量自动处理 |
-| `/gsd-analyze-dependencies` | 检测阶段间依赖关系 | `/gsd-manager` 前分析 |
 
 ### 状态管理
 
@@ -227,9 +222,7 @@
 
 | 命令 | 用途 | 何时使用 |
 |---------|---------|-------------|
-| `/gsd-map-codebase` | 分析现有代码库 | 在现有代码上运行 `/gsd-new-project` 之前 |
 | `/gsd-quick` | 带 GSD 保证的临时任务 | Bug 修复、小功能、配置更改 |
-| `/gsd-debug [desc] [--diagnose]` | 带持久状态的系统化调试（`--diagnose` 仅诊断） | 出问题时 |
 | `/gsd-add-todo [desc]` | 捕获想法留待后用 | 会话期间想到什么 |
 | `/gsd-check-todos` | 列出待处理事项 | 查看捕获的想法 |
 | `/gsd-settings` | 配置工作流开关和模型配置 | 更改模型、切换代理 |
@@ -323,8 +316,8 @@ GSD 在 `.planning/config.json` 中存储项目设置。在 `/gsd-new-project` �
 | gsd-phase-researcher | Opus | Sonnet | Haiku |
 | gsd-project-researcher | Opus | Sonnet | Haiku |
 | gsd-research-synthesizer | Sonnet | Sonnet | Haiku |
-| gsd-debugger | Opus | Sonnet | Sonnet |
-| gsd-codebase-mapper | Sonnet | Haiku | Haiku |
+| _(retired agent)_ | Opus | Sonnet | Sonnet |
+| _(retired agent)_ | Sonnet | Haiku | Haiku |
 | gsd-verifier | Sonnet | Sonnet | Haiku |
 | gsd-plan-checker | Sonnet | Sonnet | Haiku |
 | gsd-integration-checker | Sonnet | Sonnet | Haiku |
@@ -351,7 +344,7 @@ claude --dangerously-skip-permissions
 /clear
 /gsd-discuss-phase 2        # 对每个阶段重复
 ...
-/gsd-audit-milestone        # 检查所有内容已发布
+_(retired)_        # 检查所有内容已发布
 /gsd-complete-milestone     # 归档，标记，完成
 ```
 
@@ -366,7 +359,7 @@ claude --dangerously-skip-permissions
 ### 现有代码库
 
 ```bash
-/gsd-map-codebase           # 分析现有内容（并行代理）
+_(retired)_           # 分析现有内容（并行代理）
 /gsd-new-project            # 问题聚焦于你正在添加的内容
 # （从这里开始正常阶段工作流）
 ```
@@ -389,8 +382,8 @@ claude --dangerously-skip-permissions
 ### 准备发布
 
 ```bash
-/gsd-audit-milestone        # 检查需求覆盖率，检测存根
-/gsd-plan-milestone-gaps    # 如果审计发现缺口，创建阶段来填补
+_(retired)_        # 检查需求覆盖率，检测存根
+_(retired)_    # 如果审计发现缺口，创建阶段来填补
 /gsd-complete-milestone     # 归档，标记，完成
 ```
 
@@ -426,7 +419,7 @@ claude --dangerously-skip-permissions
 
 ### 计划看起来错误或不一致
 
-在规划前运行 `/gsd-discuss-phase [N]`。大多数计划质量问题来自 Claude 做出了 `CONTEXT.md` 本可以防止的假设。你也可以运行 `/gsd-list-phase-assumptions [N]` 在提交计划前查看 Claude 打算做什么。
+在规划前运行 `/gsd-discuss-phase [N]`。大多数计划质量问题来自 Claude 做出了 `CONTEXT.md` 本可以防止的假设。你也可以运行 _(retired)_ 在提交计划前查看 Claude 打算做什么。
 
 ### 执行失败或产生存根
 
@@ -481,8 +474,8 @@ node gsd-tools.cjs state sync              # 从磁盘重建 STATE.md
 | 丢失上下文 / 新会话 | `/gsd-resume-work` 或 `/gsd-progress` |
 | 阶段出错 | `git revert` 阶段提交，然后重新规划 |
 | 需要更改范围 | `/gsd-add-phase`、`/gsd-insert-phase` 或 `/gsd-remove-phase` |
-| 里程碑审计发现缺口 | `/gsd-plan-milestone-gaps` |
-| 出问题了 | `/gsd-debug "描述"` |
+| 里程碑审计发现缺口 | _(retired)_ |
+| 出问题了 | _(retired)_ "描述"` |
 | STATE.md 不同步 | `state validate` 然后 `state sync` |
 | 快速针对性修复 | `/gsd-quick` |
 | 计划与你的愿景不符 | `/gsd-discuss-phase [N]` 然后重新规划 |
@@ -509,7 +502,7 @@ node gsd-tools.cjs state sync              # 从磁盘重建 STATE.md
     done/                 # 已完成的待办事项
   debug/                  # 活跃调试会话
     resolved/             # 已归档的调试会话
-  codebase/               # 现有代码库映射（来自 /gsd-map-codebase）
+  codebase/               # 现有代码库映射（来自 _(retired)_）
   phases/
     XX-phase-name/
       XX-YY-PLAN.md       # 原子执行计划

@@ -196,7 +196,7 @@ claude --dangerously-skip-permissions
 
 ## 工作原理
 
-> **已有代码？** 先运行 `/gsd-map-codebase`。它会生成并行代理分析你的技术栈、架构、约定和关注点。然后 `/gsd-new-project` 就了解你的代码库了 —— 问题聚焦在你正在**添加**什么，规划会自动加载你的模式。
+> **已有代码？** 先运行 _(retired)_。它会生成并行代理分析你的技术栈、架构、约定和关注点。然后 `/gsd-new-project` 就了解你的代码库了 —— 问题聚焦在你正在**添加**什么，规划会自动加载你的模式。
 
 ### 1. 初始化项目
 
@@ -488,7 +488,6 @@ lmn012o feat(08-02): 创建注册端点
 | `/gsd-plan-phase [N] [--auto]` | 阶段的研究 + 规划 + 验证 |
 | `/gsd-execute-phase <N>` | 在并行波次中执行所有计划，完成后验证 |
 | `/gsd-verify-work [N]` | 手动用户验收测试 ¹ |
-| `/gsd-audit-milestone` | 验证里程碑达到了其完成定义 |
 | `/gsd-complete-milestone` | 归档里程碑，标记发布 |
 | `/gsd-new-milestone [name]` | 开始下一个版本：提问 → 研究 → 需求 → 路线图 |
 
@@ -505,7 +504,6 @@ lmn012o feat(08-02): 创建注册端点
 
 | 命令 | 作用 |
 |---------|--------------|
-| `/gsd-map-codebase` | 在 new-project 之前分析现有代码库 |
 
 ### 阶段管理
 
@@ -514,10 +512,6 @@ lmn012o feat(08-02): 创建注册端点
 | `/gsd-add-phase` | 向路线图追加阶段 |
 | `/gsd-insert-phase [N]` | 在阶段之间插入紧急工作 |
 | `/gsd-remove-phase [N]` | 删除未来阶段，重新编号 |
-| `/gsd-list-phase-assumptions [N]` | 规划前查看 Claude 的预期方法 |
-| `/gsd-plan-milestone-gaps` | 创建阶段以填补审计发现的差距 |
-| `/gsd-autonomous [--from N] [--to N] [--only N]` | 自主执行所有剩余阶段（`--to N` 执行到阶段 N 停止，`--only N` 只执行单个阶段） |
-| `/gsd-analyze-dependencies` | 检测阶段间依赖关系并建议 ROADMAP.md 的 `Depends on` 条目 |
 
 ### 会话
 
@@ -534,9 +528,7 @@ lmn012o feat(08-02): 创建注册端点
 | `/gsd-set-profile <profile>` | 切换模型配置文件（quality/balanced/budget） |
 | `/gsd-add-todo [desc]` | 捕获想法留待后用 |
 | `/gsd-check-todos` | 列出待处理事项 |
-| `/gsd-debug [desc] [--diagnose]` | 带持久状态的系统化调试（`--diagnose` 仅诊断不修复） |
 | `/gsd-quick [--full] [--discuss] [--research]` | 用 GSD 保证执行临时任务（`--full` 启用全部阶段，`--discuss` 先收集上下文，`--research` 规划前调查方法） |
-| `/gsd-health [--repair]` | 验证 `.planning/` 目录完整性，用 `--repair` 自动修复 |
 
 <sup>¹ 由 Reddit 用户 OracleGreyBeard 贡献</sup>
 

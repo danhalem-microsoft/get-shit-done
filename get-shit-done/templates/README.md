@@ -14,20 +14,20 @@ These files live directly at `.planning/` — not inside phase subdirectories.
 |------|----------|-------------|---------|
 | `PROJECT.md` | `project.md` | `/gsd-new-project` | Project identity, goals, requirements summary |
 | `ROADMAP.md` | `roadmap.md` | `/gsd-new-milestone`, `/gsd-new-project` | Phase plan with milestones and progress tracking |
-| `STATE.md` | `state.md` | `/gsd-new-project`, `/gsd-health --repair` | Current session state, active phase, last activity |
+| `STATE.md` | `state.md` | `/gsd-new-project` | Current session state, active phase, last activity |
 | `REQUIREMENTS.md` | `requirements.md` | `/gsd-new-milestone` | Functional requirements with traceability |
 | `MILESTONES.md` | `milestone.md` | `/gsd-complete-milestone` | Log of completed milestones with accomplishments |
-| `BACKLOG.md` | *(inline)* | `/gsd-add-backlog` | Pending ideas and deferred work |
+| `BACKLOG.md` | *(inline)* | manual edit (the dedicated backlog-add command was retired in the Phase 1 cull) | Pending ideas and deferred work |
 | `LEARNINGS.md` | *(inline)* | `/gsd-extract-learnings`, `/gsd-execute-phase` | Phase retrospective learnings for future plans |
-| `THREADS.md` | *(inline)* | `/gsd-thread` | Persistent discussion threads |
-| `config.json` | `config.json` | `/gsd-new-project`, `/gsd-health --repair` | Project-specific GSD configuration |
+| `THREADS.md` | *(inline)* | manual edit (the dedicated thread command was retired in the Phase 1 cull) | Persistent discussion threads |
+| `config.json` | `config.json` | `/gsd-new-project` | Project-specific GSD configuration |
 | `CLAUDE.md` | `claude-md.md` | `/gsd-profile` | Auto-assembled Claude Code context file |
 
 ### Version-stamped artifacts (pattern: `vX.Y-*.md`)
 
 | Pattern | Produced by | Purpose |
 |---------|-------------|---------|
-| `vX.Y-MILESTONE-AUDIT.md` | `/gsd-audit-milestone` | Milestone audit report before archiving |
+| `vX.Y-MILESTONE-AUDIT.md` | manual milestone audit (the dedicated audit-milestone command was retired in the Phase 1 cull) | Milestone audit report before archiving |
 
 These files are archived to `.planning/milestones/` by `/gsd-complete-milestone`. Finding them at the `.planning/` root after completion indicates the archive step was skipped.
 
@@ -46,10 +46,10 @@ These files live inside a phase directory. They are NOT checked by W019 (which o
 | `NN-VALIDATION.md` | `VALIDATION.md` | `/gsd-research-phase` (Nyquist) | Validation architecture (Nyquist method) |
 | `NN-UAT.md` | `UAT.md` | `/gsd-validate-phase` | User acceptance test results |
 | `NN-PATTERNS.md` | *(inline)* | `/gsd-plan-phase` (pattern mapper) | Analog file mapping for the phase |
-| `NN-UI-SPEC.md` | `UI-SPEC.md` | `/gsd-ui-phase` | UI design contract |
+| `NN-UI-SPEC.md` | `UI-SPEC.md` | manual fill (the dedicated UI-phase command was retired in the Phase 1 cull) | UI design contract |
 | `NN-SECURITY.md` | `SECURITY.md` | `/gsd-secure-phase` | Security threat model |
-| `NN-AI-SPEC.md` | `AI-SPEC.md` | `/gsd-ai-integration-phase` | AI integration spec with eval strategy |
-| `NN-DEBUG.md` | `DEBUG.md` | `/gsd-debug` | Debug session log |
+| `NN-AI-SPEC.md` | `AI-SPEC.md` | manual fill (the dedicated AI-integration-phase command was retired in the Phase 1 cull) | AI integration spec with eval strategy |
+| `NN-DEBUG.md` | `DEBUG.md` | inline diagnosis (the dedicated debug command was retired in the Phase 1 cull) | Debug session log |
 | `NN-REVIEWS.md` | *(inline)* | `/gsd-review` | Cross-AI review feedback |
 
 ---

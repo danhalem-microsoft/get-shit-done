@@ -137,12 +137,12 @@ All workflow toggles follow the **absent = enabled** pattern. If a key is missin
 | `workflow.auto_advance` | boolean | `false` | Auto-chain discuss → plan → execute without stopping |
 | `workflow.nyquist_validation` | boolean | `true` | Test coverage mapping during plan-phase research |
 | `workflow.ui_phase` | boolean | `true` | Generate UI design contracts for frontend phases |
-| `workflow.ui_safety_gate` | boolean | `true` | Prompt to run /gsd-ui-phase for frontend phases during plan-phase |
+| `workflow.ui_safety_gate` | boolean | `true` | Legacy gate that asked the user to fill UI-SPEC.md before plan-phase; the dedicated UI-phase command was retired in the Phase 1 cull, so this gate is now a no-op |
 | `workflow.node_repair` | boolean | `true` | Autonomous task repair on verification failure |
 | `workflow.node_repair_budget` | number | `2` | Max repair attempts per failed task |
 | `workflow.research_before_questions` | boolean | `false` | Run research before discussion questions instead of after |
 | `workflow.discuss_mode` | string | `'discuss'` | Controls how `/gsd-discuss-phase` gathers context. `'discuss'` (default) asks questions one-by-one. `'assumptions'` reads the codebase first, generates structured assumptions with confidence levels, and only asks you to correct what's wrong. Added in v1.28 |
-| `workflow.skip_discuss` | boolean | `false` | When `true`, `/gsd-autonomous` bypasses the discuss-phase entirely, writing minimal CONTEXT.md from the ROADMAP phase goal. Useful for projects where developer preferences are fully captured in PROJECT.md/REQUIREMENTS.md. Added in v1.28 |
+| `workflow.skip_discuss` | boolean | `false` | When `true`, automated runners (e.g., wrappers built around `/gsd-execute-phase`) bypass the discuss-phase entirely, writing minimal CONTEXT.md from the ROADMAP phase goal. Useful for projects where developer preferences are fully captured in PROJECT.md/REQUIREMENTS.md. Added in v1.28 |
 | `workflow.text_mode` | boolean | `false` | Replaces AskUserQuestion TUI menus with plain-text numbered lists. Required for Claude Code remote sessions (`/rc` mode) where TUI menus don't render. Can also be set per-session with `--text` flag on discuss-phase. Added in v1.28 |
 | `workflow.use_worktrees` | boolean | `true` | When `false`, disables git worktree isolation for parallel execution. Users who prefer sequential execution or whose environment does not support worktrees can disable this. Added in v1.31 |
 | `workflow.code_review` | boolean | `true` | Enable `/gsd-code-review` and `/gsd-code-review-fix` commands. When `false`, the commands exit with a configuration gate message. Added in v1.34 |
@@ -150,12 +150,12 @@ All workflow toggles follow the **absent = enabled** pattern. If a key is missin
 | `workflow.plan_bounce` | boolean | `false` | Run external validation script against generated plans. When enabled, the plan-phase orchestrator pipes each PLAN.md through the script specified by `plan_bounce_script` and blocks on non-zero exit. Added in v1.36 |
 | `workflow.plan_bounce_script` | string | (none) | Path to the external script invoked for plan bounce validation. Receives the PLAN.md path as its first argument. Required when `plan_bounce` is `true`. Added in v1.36 |
 | `workflow.plan_bounce_passes` | number | `2` | Number of sequential bounce passes to run. Each pass feeds the previous pass's output back into the validator. Higher values increase rigor at the cost of latency. Added in v1.36 |
-| `workflow.code_review_command` | string | (none) | Shell command for external code review integration in `/gsd-ship`. Receives changed file paths via stdin. Non-zero exit blocks the ship workflow. Added in v1.36 |
+| `workflow.code_review_command` | string | (none) | Shell command for external code review integration. Receives changed file paths via stdin. Non-zero exit blocks the ship workflow. Added in v1.36 |
 | `workflow.tdd_mode` | boolean | `false` | Enable TDD pipeline as a first-class execution mode. When `true`, the planner aggressively applies `type: tdd` to eligible tasks (business logic, APIs, validations, algorithms) and the executor enforces RED/GREEN/REFACTOR gate sequence. An end-of-phase collaborative review checkpoint verifies gate compliance. Added in v1.36 |
 | `workflow.cross_ai_execution` | boolean | `false` | Delegate phase execution to an external AI CLI instead of spawning local executor agents. Useful for leveraging a different model's strengths for specific phases. Added in v1.36 |
 | `workflow.cross_ai_command` | string | (none) | Shell command template for cross-AI execution. Receives the phase prompt via stdin. Must produce SUMMARY.md-compatible output. Required when `cross_ai_execution` is `true`. Added in v1.36 |
 | `workflow.cross_ai_timeout` | number | `300` | Timeout in seconds for cross-AI execution commands. Prevents runaway external processes. Added in v1.36 |
-| `workflow.ai_integration_phase` | boolean | `true` | Enable the `/gsd-ai-integration-phase` command. When `false`, the command exits with a configuration gate message |
+| `workflow.ai_integration_phase` | boolean | `true` | Legacy flag — the dedicated AI-integration-phase command was retired in the Phase 1 cull. Setting this has no runtime effect; the field is retained for backward-compatible config files |
 | `workflow.auto_prune_state` | boolean | `false` | When `true`, automatically prune stale entries from STATE.md at phase boundaries instead of prompting |
 | `workflow.pattern_mapper` | boolean | `true` | Run the `gsd-pattern-mapper` agent between research and planning to map new files to existing codebase analogs |
 | `workflow.subagent_timeout` | number | `600` | Timeout in seconds for individual subagent invocations. Increase for long-running research or execution phases |
@@ -190,7 +190,7 @@ If `.planning/` is in `.gitignore`, `commit_docs` is automatically `false` regar
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
 | `hooks.context_warnings` | boolean | `true` | Show context window usage warnings via context monitor hook |
-| `hooks.workflow_guard` | boolean | `false` | Warn when file edits happen outside GSD workflow context (advises using `/gsd-quick` or `/gsd-fast`) |
+| `hooks.workflow_guard` | boolean | `false` | Warn when file edits happen outside GSD workflow context (advises using `/gsd-quick`) |
 
 The prompt injection guard hook (`gsd-prompt-guard.js`) is always active and cannot be disabled — it's a security feature, not a workflow toggle.
 
@@ -238,11 +238,7 @@ Any GSD agent type can receive skills. Common types:
 - `gsd-verifier` -- post-execution verification
 - `gsd-researcher` -- phase research
 - `gsd-project-researcher` -- new-project research
-- `gsd-debugger` -- diagnostic agents
-- `gsd-codebase-mapper` -- codebase analysis
 - `gsd-advisor` -- discuss-phase advisors
-- `gsd-ui-researcher` -- UI design contract creation
-- `gsd-ui-checker` -- UI spec verification
 - `gsd-roadmapper` -- roadmap creation
 - `gsd-synthesizer` -- research synthesis
 
@@ -279,15 +275,15 @@ Toggle optional capabilities via the `features.*` config namespace. Feature flag
 | `features.thinking_partner` | boolean | `false` | Enable thinking partner analysis at workflow decision points |
 | `features.global_learnings` | boolean | `false` | Enable cross-project learnings pipeline (auto-copy at phase completion, planner injection) |
 | `learnings.max_inject` | number | `10` | Maximum number of cross-project learnings injected into each planner prompt. Lower values reduce prompt size; higher values provide broader historical context |
-| `intel.enabled` | boolean | `false` | Enable queryable codebase intelligence system. When `true`, `/gsd-intel` commands build and query a JSON index in `.planning/intel/`. Added in v1.34 |
+| `intel.enabled` | boolean | `false` | Enable queryable codebase intelligence system. When `true`, the CLI tools (`node gsd-tools.cjs intel ...`) build and query a JSON index in `.planning/intel/`. Added in v1.34. The dedicated user-facing intel command was retired in the Phase 1 cull |
 
 <a id="graphify-settings"></a>
 ### Graphify Settings
 
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
-| `graphify.enabled` | boolean | `false` | Enable the project knowledge graph. When `true`, `/gsd-graphify` builds and queries a graph in `.planning/graphs/`. Added in v1.36 |
-| `graphify.build_timeout` | number (seconds) | `300` | Maximum seconds allowed for a `/gsd-graphify build` run before it aborts. Added in v1.36 |
+| `graphify.enabled` | boolean | `false` | Enable the project knowledge graph. When `true`, `node gsd-tools.cjs graphify build` populates a graph in `.planning/graphs/`. Added in v1.36. The dedicated user-facing graphify command was retired in the Phase 1 cull |
+| `graphify.build_timeout` | number (seconds) | `300` | Maximum seconds allowed for a graph build run before it aborts. Added in v1.36 |
 
 ### Usage
 
@@ -437,7 +433,7 @@ Falls back to each CLI's configured default when a key is absent. Added in v1.35
 
 ## Manager Passthrough Flags
 
-Configure per-step flags that `/gsd-manager` appends to each dispatched command. This allows customizing how the manager runs discuss, plan, and execute steps without manual flag entry.
+Legacy passthrough-flag configuration that an external manager-style wrapper (the dedicated manager command was retired in the Phase 1 cull) appends to each dispatched command. Retained for backward-compatible config files only — the values have no runtime effect inside GSD itself.
 
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
@@ -475,20 +471,12 @@ Invalid flag tokens are sanitized and logged as warnings. Only recognized GSD fl
 | gsd-phase-researcher | Opus | Sonnet | Haiku | Inherit |
 | gsd-project-researcher | Opus | Sonnet | Haiku | Inherit |
 | gsd-research-synthesizer | Sonnet | Sonnet | Haiku | Inherit |
-| gsd-debugger | Opus | Sonnet | Sonnet | Inherit |
-| gsd-codebase-mapper | Sonnet | Haiku | Haiku | Inherit |
 | gsd-verifier | Sonnet | Sonnet | Haiku | Inherit |
 | gsd-plan-checker | Sonnet | Sonnet | Haiku | Inherit |
 | gsd-integration-checker | Sonnet | Sonnet | Haiku | Inherit |
-| gsd-nyquist-auditor | Sonnet | Sonnet | Haiku | Inherit |
 | gsd-pattern-mapper | Sonnet | Sonnet | Haiku | Inherit |
-| gsd-ui-researcher | Opus | Sonnet | Haiku | Inherit |
-| gsd-ui-checker | Sonnet | Sonnet | Haiku | Inherit |
-| gsd-ui-auditor | Sonnet | Sonnet | Haiku | Inherit |
-| gsd-doc-writer | Opus | Sonnet | Haiku | Inherit |
-| gsd-doc-verifier | Sonnet | Sonnet | Haiku | Inherit |
 
-> **Fallback semantics for unlisted agents.** The profiles table above covers 18 of 31 shipped agents. Agents without an explicit profile row (`gsd-advisor-researcher`, `gsd-assumptions-analyzer`, `gsd-security-auditor`, `gsd-user-profiler`, and the nine advanced agents — `gsd-ai-researcher`, `gsd-domain-researcher`, `gsd-eval-planner`, `gsd-eval-auditor`, `gsd-framework-selector`, `gsd-code-reviewer`, `gsd-code-fixer`, `gsd-debug-session-manager`, `gsd-intel-updater`) inherit the runtime default model for the selected profile. To pin a specific model for any of these agents, use `model_overrides` (next section) — `model_overrides` accepts any shipped agent name regardless of whether it has a profile row here. The authoritative profile table lives in `get-shit-done/bin/lib/model-profiles.cjs`; the authoritative 31-agent roster lives in [`docs/INVENTORY.md`](INVENTORY.md).
+> **Fallback semantics for unlisted agents.** The profiles table above covers the 10 most heavily exercised agents in the surviving 22-agent roster. Agents without an explicit profile row (`gsd-advisor-researcher`, `gsd-assumptions-analyzer`, `gsd-security-auditor`, `gsd-user-profiler`, the three advanced agents — `gsd-code-reviewer`, `gsd-code-fixer`, plus `gsd-pattern-mapper` already shown — and the six critic agents) inherit the runtime default model for the selected profile. To pin a specific model for any of these agents, use `model_overrides` (next section) — `model_overrides` accepts any shipped agent name regardless of whether it has a profile row here. The authoritative profile table lives in `get-shit-done/bin/lib/model-profiles.cjs`; the authoritative 22-agent roster lives in [`docs/INVENTORY.md`](INVENTORY.md).
 
 ### Per-Agent Overrides
 
@@ -518,8 +506,7 @@ If you want different agents to use different models, use `model_overrides` with
   "model_overrides": {
     "gsd-planner": "o3",
     "gsd-executor": "o4-mini",
-    "gsd-debugger": "o3",
-    "gsd-codebase-mapper": "o4-mini"
+    "gsd-pattern-mapper": "o4-mini"
   }
 }
 ```

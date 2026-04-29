@@ -3613,7 +3613,7 @@ function copyFlattenedCommands(srcDir, destDir, prefix, pathPrefix, runtime) {
 
     if (entry.isDirectory()) {
       // Recurse into subdirectories, adding to prefix
-      // e.g., commands/gsd/debug/start.md -> command/gsd-debug-start.md
+      // e.g., commands/gsd/foo/start.md -> command/gsd-foo-start.md
       copyFlattenedCommands(srcPath, destDir, `${prefix}-${entry.name}`, pathPrefix, runtime);
     } else if (entry.name.endsWith('.md')) {
       // Flatten: help.md -> gsd-help.md
@@ -6316,7 +6316,7 @@ function install(isGlobal, runtime = 'claude') {
 
     // Configure workflow guard hook (opt-in via hooks.workflow_guard: true)
     // Detects file edits outside GSD workflow context and advises using
-    // /gsd-quick or /gsd-fast for state-tracked changes. Advisory only.
+    // /gsd-quick for state-tracked changes. Advisory only.
     const workflowGuardCommand = isGlobal
       ? buildHookCommand(targetDir, 'gsd-workflow-guard.js', hookOpts)
       : 'node ' + localPrefix + '/hooks/gsd-workflow-guard.js';

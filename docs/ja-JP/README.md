@@ -18,7 +18,7 @@ Get Shit Done（GSD）フレームワークの包括的なドキュメントで�
 
 ## クイックリンク
 
-- **v1.32 の新機能:** STATE.md 整合性ゲート、`--to N` 自律モード、リサーチゲート、ベリファイヤーマイルストーンスコープフィルタリング、read-before-edit ガード、コンテキスト削減、新規ランタイム（Trae, Cline, Augment Code）、レスポンス言語設定、`--power`/`--diagnose` フラグ、`/gsd-analyze-dependencies`
+- **v1.32 の新機能:** STATE.md 整合性ゲート、`--to N` 自律モード、リサーチゲート、ベリファイヤーマイルストーンスコープフィルタリング、read-before-edit ガード、コンテキスト削減、新規ランタイム（Trae, Cline, Augment Code）、レスポンス言語設定、`--power`/`--diagnose` フラグ、_(retired)_
 - **はじめに:** [README](../README.md) → インストール → `/gsd-new-project`
 - **ワークフロー完全ガイド:** [ユーザーガイド](USER-GUIDE.md)
 - **コマンド一覧:** [コマンドリファレンス](COMMANDS.md)

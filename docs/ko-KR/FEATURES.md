@@ -150,7 +150,7 @@
 - 연구 에이전트는 현재 생태계 정보를 위한 웹 검색 기능을 갖추고 있습니다.
 - 세분화 설정으로 페이즈 수를 제어합니다. `coarse`(3-5), `standard`(5-8), `fine`(8-12)
 - `--auto` 모드는 대화형 질문 없이 제공된 문서에서 모든 정보를 추출합니다.
-- 기존 코드베이스 컨텍스트(`/gsd-map-codebase`에서)가 있으면 로드됩니다.
+- 기존 코드베이스 컨텍스트(_(retired)_에서)가 있으면 로드됩니다.
 
 ---
 
@@ -183,7 +183,7 @@
 
 ### 3. UI Design Contract
 
-**명령어:** `/gsd-ui-phase [N]`
+**명령어:** _(retired)_
 
 **목적:** 계획 전에 설계 결정을 확정하여 페이즈 내 모든 컴포넌트가 일관된 시각적 기준을 공유하도록 합니다.
 
@@ -226,7 +226,7 @@
 - REQ-PLAN-04: 모든 계획에 `read_first`와 `acceptance_criteria` 섹션을 포함해야 합니다.
 - REQ-PLAN-05: `--skip-verify`가 설정되지 않은 경우 계획 검사기 검증 루프를 실행해야 합니다(최대 3회 반복).
 - REQ-PLAN-06: 연구 단계를 건너뛰는 `--skip-research` 플래그를 지원해야 합니다.
-- REQ-PLAN-07: 프론트엔드 페이즈가 감지되고 UI-SPEC.md가 없는 경우 `/gsd-ui-phase` 실행을 촉구해야 합니다(UI 안전 게이트).
+- REQ-PLAN-07: 프론트엔드 페이즈가 감지되고 UI-SPEC.md가 없는 경우 _(retired)_ 실행을 촉구해야 합니다(UI 안전 게이트).
 - REQ-PLAN-08: `workflow.nyquist_validation`이 활성화된 경우 Nyquist 유효성 검사 매핑을 포함해야 합니다.
 - REQ-PLAN-09: 계획이 완료되기 전에 모든 페이즈 요구사항이 최소 하나의 계획에 포함되어 있는지 확인해야 합니다(요구사항 커버리지 게이트).
 
@@ -327,7 +327,7 @@
 
 ### 6.5. Ship
 
-**명령어:** `/gsd-ship [N] [--draft]`
+**명령어:** _(retired)_ [--draft]`
 
 **목적:** 로컬 완료에서 병합된 PR로의 전환. 검증 통과 후 브랜치를 푸시하고, 계획 산출물에서 자동 생성된 본문으로 PR을 작성하며, 선택적으로 검토를 요청하고 STATE.md에 추적합니다.
 
@@ -346,7 +346,7 @@
 
 ### 7. UI Review
 
-**명령어:** `/gsd-ui-review [N]`
+**명령어:** _(retired)_
 
 **목적:** 구현된 프론트엔드 코드의 소급 6기둥 시각적 감사. 모든 프로젝트에서 독립적으로 작동합니다.
 
@@ -371,7 +371,7 @@
 
 ### 8. Milestone Management
 
-**명령어:** `/gsd-audit-milestone`, `/gsd-complete-milestone`, `/gsd-new-milestone [name]`
+**명령어:** _(retired)_, `/gsd-complete-milestone`, `/gsd-new-milestone [name]`
 
 **목적:** 마일스톤 완료를 검증하고, 보관하고, 릴리스 태그를 지정하며, 다음 개발 주기를 시작합니다.
 
@@ -386,7 +386,7 @@
 - REQ-MILE-08: 새 마일스톤은 new-project와 동일한 흐름을 따라야 합니다(질문 → 연구 → 요구사항 → 로드맵).
 - REQ-MILE-09: 새 마일스톤은 기존 워크플로우 구성을 초기화해서는 안 됩니다.
 
-**갭 해소.** `/gsd-plan-milestone-gaps`는 감사에서 식별된 갭을 해소하는 페이즈를 생성합니다.
+**갭 해소.** _(retired)_는 감사에서 식별된 갭을 해소하는 페이즈를 생성합니다.
 
 ---
 
@@ -428,7 +428,7 @@
 
 ### 11. Autonomous Mode
 
-**명령어:** `/gsd-autonomous [--from N]`
+**명령어:** _(retired)_
 
 **목적:** 나머지 모든 페이즈를 자율적으로 실행합니다 — 페이즈별로 논의 → 계획 → 실행.
 
@@ -443,7 +443,7 @@
 
 ### 12. Freeform Routing
 
-**명령어:** `/gsd-do`
+**명령어:** `_(retired)_`
 
 **목적:** 자유형 텍스트를 분석하고 적절한 GSD 명령어로 라우팅합니다.
 
@@ -457,7 +457,7 @@
 
 ### 13. Note Capture
 
-**명령어:** `/gsd-note`
+**명령어:** _(retired)_
 
 **목적:** 워크플로우를 방해하지 않고 아이디어를 즉시 캡처합니다. 타임스탬프가 있는 노트를 추가하거나, 모든 노트를 나열하거나, 노트를 구조화된 할 일로 승격합니다.
 
@@ -472,7 +472,7 @@
 
 ### 14. Auto-Advance (Next)
 
-**명령어:** `/gsd-next`
+**명령어:** _(retired)_
 
 **목적:** 현재 프로젝트 상태를 자동으로 감지하고 다음 논리적 워크플로우 단계로 진행합니다. 현재 어느 페이즈/단계에 있는지 기억할 필요가 없습니다.
 
@@ -560,7 +560,7 @@
 
 ### 19. Health Validation
 
-**명령어:** `/gsd-health [--repair]`
+**명령어:** _(retired)_
 
 **목적:** `.planning/` 디렉토리 무결성을 검증하고 문제를 자동으로 복구합니다.
 
@@ -642,7 +642,7 @@
 
 ### 24. Session Reporting
 
-**명령어:** `/gsd-session-report`
+**명령어:** _(retired)_
 
 **목적:** 수행된 작업, 달성된 결과, 예상 리소스 사용량을 캡처하는 구조화된 세션 후 요약 문서를 생성합니다.
 
@@ -704,12 +704,12 @@
 | gsd-phase-researcher | Opus | Sonnet | Haiku | Inherit |
 | gsd-project-researcher | Opus | Sonnet | Haiku | Inherit |
 | gsd-research-synthesizer | Sonnet | Sonnet | Haiku | Inherit |
-| gsd-debugger | Opus | Sonnet | Sonnet | Inherit |
-| gsd-codebase-mapper | Sonnet | Haiku | Haiku | Inherit |
+| _(retired agent)_ | Opus | Sonnet | Sonnet | Inherit |
+| _(retired agent)_ | Sonnet | Haiku | Haiku | Inherit |
 | gsd-verifier | Sonnet | Sonnet | Haiku | Inherit |
 | gsd-plan-checker | Sonnet | Sonnet | Haiku | Inherit |
 | gsd-integration-checker | Sonnet | Sonnet | Haiku | Inherit |
-| gsd-nyquist-auditor | Sonnet | Sonnet | Haiku | Inherit |
+| _(retired agent)_ | Sonnet | Sonnet | Haiku | Inherit |
 
 ---
 
@@ -717,7 +717,7 @@
 
 ### 27. Codebase Mapping
 
-**명령어:** `/gsd-map-codebase [area]`
+**명령어:** _(retired)_
 
 **목적:** 새 프로젝트를 시작하기 전에 기존 코드베이스를 분석하여 GSD가 무엇이 존재하는지 이해하도록 합니다.
 
@@ -745,7 +745,7 @@
 
 ### 28. Debug System
 
-**명령어:** `/gsd-debug [description]`
+**명령어:** _(retired)_
 
 **목적:** 컨텍스트 초기화 전반에 걸쳐 영구적인 상태로 체계적인 디버깅을 수행합니다.
 
@@ -777,7 +777,7 @@
 
 ### 30. Statistics Dashboard
 
-**명령어:** `/gsd-stats`
+**명령어:** _(retired)_
 
 **목적:** 프로젝트 지표를 표시합니다 — 페이즈, 계획, 요구사항, git 히스토리, 타임라인.
 
@@ -839,7 +839,7 @@
 
 ### 33. Test Generation
 
-**명령어:** `/gsd-add-tests [N]`
+**명령어:** _(retired)_
 
 **목적:** UAT 기준과 구현을 기반으로 완료된 페이즈에 대한 테스트를 생성합니다.
 
@@ -996,7 +996,7 @@ fix(03-01): correct auth token expiry
 
 ### 40. Verification Debt Tracking
 
-**명령어:** `/gsd-audit-uat`
+**명령어:** _(retired)_
 
 **목적:** 프로젝트가 미결 테스트가 있는 페이즈를 넘어 진행할 때 UAT/검증 항목이 자동으로 누락되는 것을 방지합니다. 모든 이전 페이즈에 걸쳐 검증 부채를 표시하여 항목이 잊히지 않도록 합니다.
 
@@ -1023,7 +1023,7 @@ fix(03-01): correct auth token expiry
 - REQ-DEBT-03: 차단된 테스트를 `blocked_by` 태그로 분류해야 합니다.
 - REQ-DEBT-04: human_needed 검증 항목을 추적 가능한 UAT 파일로 저장해야 합니다.
 - REQ-DEBT-05: 검증 부채가 있을 때 페이즈 완료와 전환 중에 경고해야 합니다(비차단).
-- REQ-DEBT-06: `/gsd-audit-uat`는 모든 페이즈를 스캔하고 테스트 가능성별로 항목을 분류하며 사람 테스트 계획을 생성해야 합니다.
+- REQ-DEBT-06: _(retired)_는 모든 페이즈를 스캔하고 테스트 가능성별로 항목을 분류하며 사람 테스트 계획을 생성해야 합니다.
 
 ---
 
@@ -1031,7 +1031,7 @@ fix(03-01): correct auth token expiry
 
 ### 41. Fast Mode
 
-**명령어:** `/gsd-fast [task description]`
+**명령어:** _(retired)_
 
 **목적:** 하위 에이전트를 생성하거나 PLAN.md 파일을 생성하지 않고 인라인으로 간단한 작업을 실행합니다. 계획 오버헤드를 정당화하기에는 너무 작은 작업에 사용합니다: 오타 수정, 구성 변경, 작은 리팩터링, 잊혀진 커밋, 간단한 추가.
 
@@ -1042,7 +1042,6 @@ fix(03-01): correct auth token expiry
 - REQ-FAST-04: 연구, 다단계 계획, 또는 검증이 필요한 작업에는 사용해서는 안 됩니다.
 
 **`/gsd-quick`과 비교하여 사용 시점.**
-- `/gsd-fast` — 2분 이내에 실행 가능한 한 문장 작업(오타, 구성 변경, 작은 추가)
 - `/gsd-quick` — 연구, 다단계 계획, 또는 검증이 필요한 모든 것
 
 ---
@@ -1066,14 +1065,14 @@ fix(03-01): correct auth token expiry
 
 ### 43. Backlog Parking Lot
 
-**명령어:** `/gsd-add-backlog <description>`, `/gsd-review-backlog`, `/gsd-plant-seed <idea>`
+**명령어:** _(retired)_ <description>`, _(retired)_, _(retired)_ <idea>`
 
 **목적:** 아직 적극적인 계획에 준비되지 않은 아이디어를 캡처합니다. 백로그 항목은 활성 페이즈 순서 밖에 있기 위해 999.x 번호를 사용합니다. 시드는 올바른 마일스톤에서 자동으로 표시되는 트리거 조건이 있는 미래 지향적 아이디어입니다.
 
 **요구사항.**
 - REQ-BACKLOG-01: 백로그 항목은 활성 페이즈 순서 밖에 있기 위해 999.x 번호를 사용해야 합니다.
 - REQ-BACKLOG-02: `/gsd-discuss-phase`와 `/gsd-plan-phase`가 작동할 수 있도록 페이즈 디렉토리를 즉시 생성해야 합니다.
-- REQ-BACKLOG-03: `/gsd-review-backlog`는 항목별로 승격, 유지, 제거 액션을 지원해야 합니다.
+- REQ-BACKLOG-03: _(retired)_는 항목별로 승격, 유지, 제거 액션을 지원해야 합니다.
 - REQ-BACKLOG-04: 승격된 항목은 활성 마일스톤 순서로 번호가 다시 매겨져야 합니다.
 - REQ-SEED-01: 시드는 표시 조건에 대한 전체 이유와 시기를 캡처해야 합니다.
 - REQ-SEED-02: `/gsd-new-milestone`은 시드를 스캔하고 일치하는 항목을 표시해야 합니다.
@@ -1088,7 +1087,7 @@ fix(03-01): correct auth token expiry
 
 ### 44. Persistent Context Threads
 
-**명령어:** `/gsd-thread [name | description]`
+**명령어:** _(retired)_
 
 **목적:** 여러 세션에 걸쳐 있지만 특정 페이즈에 속하지 않는 작업을 위한 가벼운 교차 세션 지식 저장소입니다. `/gsd-pause-work`보다 더 가볍습니다 — 페이즈 상태나 계획 컨텍스트가 없습니다.
 
@@ -1133,7 +1132,7 @@ fix(03-01): correct auth token expiry
 `.planning/`을 대상으로 하는 Write/Edit 호출에서 주입 패턴을 스캔하는 PreToolUse 훅입니다. 정당한 작업을 차단하지 않고 인식을 위해 감지를 기록하는 권고 전용입니다.
 
 **3. 워크플로우 가드 훅** (`gsd-workflow-guard.js`)
-Claude가 GSD 워크플로우 컨텍스트 밖에서 파일 편집을 시도하는 것을 감지하는 PreToolUse 훅입니다. 직접 편집 대신 `/gsd-quick` 또는 `/gsd-fast` 사용을 권고합니다. `hooks.workflow_guard`로 구성 가능합니다(기본값: false).
+Claude가 GSD 워크플로우 컨텍스트 밖에서 파일 편집을 시도하는 것을 감지하는 PreToolUse 훅입니다. 직접 편집 대신 `/gsd-quick` 또는 _(retired)_ 사용을 권고합니다. `hooks.workflow_guard`로 구성 가능합니다(기본값: false).
 
 **4. CI 준비 주입 스캐너** (`prompt-injection-scan.test.cjs`)
 모든 에이전트, 워크플로우, 명령어 파일에서 포함된 주입 벡터를 스캔하는 테스트 스위트입니다.
@@ -1173,7 +1172,7 @@ Claude가 GSD 워크플로우 컨텍스트 밖에서 파일 편집을 시도하�
 
 ### 49. Forensics
 
-**명령어:** `/gsd-forensics [description]`
+**명령어:** _(retired)_
 
 **목적:** 실패하거나 막힌 GSD 워크플로우의 사후 조사.
 
@@ -1199,7 +1198,7 @@ Claude가 GSD 워크플로우 컨텍스트 밖에서 파일 편집을 시도하�
 
 ### 50. Milestone Summary
 
-**명령어:** `/gsd-milestone-summary [version]`
+**명령어:** _(retired)_
 
 **목적:** 팀 온보딩을 위해 마일스톤 산출물에서 포괄적인 프로젝트 요약을 생성합니다.
 
@@ -1245,7 +1244,7 @@ Claude가 GSD 워크플로우 컨텍스트 밖에서 파일 편집을 시도하�
 
 ### 52. Manager Dashboard
 
-**명령어:** `/gsd-manager`
+**명령어:** _(retired)_
 
 **목적:** 하나의 터미널에서 여러 페이즈를 관리하는 대화형 명령 센터.
 
@@ -1293,18 +1292,18 @@ Claude가 GSD 워크플로우 컨텍스트 밖에서 파일 편집을 시도하�
 
 **일부:** `/gsd-new-project` 및 `/gsd-progress`
 
-**목적:** UI 중심 프로젝트를 자동으로 감지하고 `/gsd-ui-phase` 권장사항을 표시합니다.
+**목적:** UI 중심 프로젝트를 자동으로 감지하고 _(retired)_ 권장사항을 표시합니다.
 
 **요구사항.**
 - REQ-UI-DETECT-01: 프로젝트 설명에서 UI 신호를 감지해야 합니다(키워드, 프레임워크 참조).
 - REQ-UI-DETECT-02: 해당하는 경우 ROADMAP.md 페이즈에 `ui_hint`를 주석으로 추가해야 합니다.
-- REQ-UI-DETECT-03: UI 중심 페이즈의 다음 단계에서 `/gsd-ui-phase`를 제안해야 합니다.
-- REQ-UI-DETECT-04: `/gsd-ui-phase`를 필수로 만들어서는 안 됩니다.
+- REQ-UI-DETECT-03: UI 중심 페이즈의 다음 단계에서 _(retired)_를 제안해야 합니다.
+- REQ-UI-DETECT-04: _(retired)_를 필수로 만들어서는 안 됩니다.
 
 **프로세스.**
 1. **감지** — UI 신호(키워드, 프레임워크 참조)에 대한 프로젝트 설명 및 기술 스택 스캔
 2. **주석** — ROADMAP.md의 해당 페이즈에 `ui_hint` 표시 추가
-3. **표시** — UI 중심 페이즈의 다음 단계에 `/gsd-ui-phase` 권장사항 포함
+3. **표시** — UI 중심 페이즈의 다음 단계에 _(retired)_ 권장사항 포함
 
 ---
 
@@ -1438,13 +1437,13 @@ Claude가 GSD 워크플로우 컨텍스트 밖에서 파일 편집을 시도하�
 
 ### 61. 문서 생성
 
-**명령어:** `/gsd-docs-update`
+**명령어:** _(retired)_
 
 **목적:** 정확성 검사가 포함된 프로젝트 문서를 생성하고 검증합니다.
 
 **요구사항.**
-- REQ-DOCS-01: 시스템은 문서 생성을 위해 `gsd-doc-writer` 에이전트를 스폰해야 합니다.
-- REQ-DOCS-02: 시스템은 정확성 검사를 위해 `gsd-doc-verifier` 에이전트를 스폰해야 합니다.
+- REQ-DOCS-01: 시스템은 문서 생성을 위해 _(retired agent)_ 에이전트를 스폰해야 합니다.
+- REQ-DOCS-02: 시스템은 정확성 검사를 위해 _(retired agent)_ 에이전트를 스폰해야 합니다.
 - REQ-DOCS-03: 시스템은 생성된 문서를 실제 구현에 대해 검증해야 합니다.
 
 **생성 산출물.**
@@ -1453,8 +1452,8 @@ Claude가 GSD 워크플로우 컨텍스트 밖에서 파일 편집을 시도하�
 | 업데이트된 프로젝트 문서 | 생성 및 검증된 문서 파일 |
 
 **프로세스.**
-1. **생성** — `gsd-doc-writer`를 스폰하여 구현에서 문서 생성 또는 업데이트
-2. **검증** — `gsd-doc-verifier`를 스폰하여 코드베이스에 대한 문서 정확성 검사
+1. **생성** — _(retired agent)_를 스폰하여 구현에서 문서 생성 또는 업데이트
+2. **검증** — _(retired agent)_를 스폰하여 코드베이스에 대한 문서 정확성 검사
 3. **출력** — 정확성 주석이 포함된 검증된 문서 생성
 
 ---
@@ -1479,7 +1478,7 @@ Claude가 GSD 워크플로우 컨텍스트 밖에서 파일 편집을 시도하�
 
 ### 63. 단일 페이즈 자율 모드
 
-**플래그:** `/gsd-autonomous --only N`
+**플래그:** _(retired)_ --only N`
 
 **목적:** 모든 남은 페이즈가 아닌 하나의 페이즈만 자율적으로 실행합니다.
 
@@ -1615,7 +1614,7 @@ Claude가 GSD 워크플로우 컨텍스트 밖에서 파일 편집을 시도하�
 
 ### 70. 자율 모드 `--to N` 플래그
 
-**플래그:** `/gsd-autonomous --to N`
+**플래그:** _(retired)_ --to N`
 
 **목적:** 특정 페이즈 완료 후 자율 실행을 중단하여 부분적 자율 실행을 가능하게 합니다.
 
@@ -1713,7 +1712,7 @@ Claude가 GSD 워크플로우 컨텍스트 밖에서 파일 편집을 시도하�
 
 ### 76. 디버그 `--diagnose` 플래그
 
-**플래그:** `/gsd-debug --diagnose`
+**플래그:** _(retired)_ --diagnose`
 
 **목적:** 수정을 시도하지 않고 조사만 수행하는 진단 전용 모드.
 
@@ -1726,9 +1725,9 @@ Claude가 GSD 워크플로우 컨텍스트 밖에서 파일 편집을 시도하�
 
 ### 77. 페이즈 의존성 분석
 
-**명령어:** `/gsd-analyze-dependencies`
+**명령어:** _(retired)_
 
-**목적:** 페이즈 의존성을 감지하고 `/gsd-manager` 실행 전 ROADMAP.md에 `Depends on` 항목을 제안합니다.
+**목적:** 페이즈 의존성을 감지하고 _(retired)_ 실행 전 ROADMAP.md에 `Depends on` 항목을 제안합니다.
 
 **요구사항.**
 - REQ-DEP-01: 시스템은 페이즈 간 파일 겹침을 감지해야 합니다.

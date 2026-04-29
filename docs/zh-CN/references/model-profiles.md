@@ -12,12 +12,12 @@
 | gsd-phase-researcher | opus | sonnet | haiku |
 | gsd-project-researcher | opus | sonnet | haiku |
 | gsd-research-synthesizer | sonnet | sonnet | haiku |
-| gsd-debugger | opus | sonnet | sonnet |
-| gsd-codebase-mapper | sonnet | haiku | haiku |
+| _(retired agent)_ | opus | sonnet | sonnet |
+| _(retired agent)_ | sonnet | haiku | haiku |
 | gsd-verifier | sonnet | sonnet | haiku |
 | gsd-plan-checker | sonnet | sonnet | haiku |
 | gsd-integration-checker | sonnet | sonnet | haiku |
-| gsd-nyquist-auditor | sonnet | sonnet | haiku |
+| _(retired agent)_ | sonnet | sonnet | haiku |
 
 ## 配置理念
 
@@ -86,7 +86,7 @@
 **为什么 balanced 中验证器使用 Sonnet（而非 Haiku）？**
 验证需要目标回溯推理 —— 检查代码是否**交付**了阶段承诺的内容，而不仅仅是模式匹配。Sonnet 处理得很好；Haiku 可能会遗漏细微的差距。
 
-**为什么 gsd-codebase-mapper 使用 Haiku？**
+**为什么 _(retired agent)_ 使用 Haiku？**
 只读探索和模式提取。不需要推理，只需从文件内容输出结构化结果。
 
 **为什么用 `inherit` 而不是直接传递 `opus`？**

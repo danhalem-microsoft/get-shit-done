@@ -97,13 +97,13 @@ GSD는 프로젝트 설정을 `.planning/config.json`에 저장합니다. `/gsd-
 | `workflow.auto_advance` | boolean | `false` | discuss → plan → execute를 중단 없이 자동으로 연결 |
 | `workflow.nyquist_validation` | boolean | `true` | plan 단계 리서치 중 테스트 커버리지 매핑 |
 | `workflow.ui_phase` | boolean | `true` | 프론트엔드 단계를 위한 UI 디자인 계약서 생성 |
-| `workflow.ui_safety_gate` | boolean | `true` | plan 단계에서 프론트엔드 단계에 대해 /gsd-ui-phase 실행 여부 확인 |
+| `workflow.ui_safety_gate` | boolean | `true` | plan 단계에서 프론트엔드 단계에 대해 _(retired)_ 실행 여부 확인 |
 | `workflow.node_repair` | boolean | `true` | 검증 실패 시 자율적 태스크 복구 |
 | `workflow.node_repair_budget` | number | `2` | 실패한 태스크당 최대 복구 시도 횟수 |
 | `workflow.research_before_questions` | boolean | `false` | 토론 질문 후가 아닌 전에 리서치 실행 |
 | `workflow.use_worktrees` | boolean | `true` | `false`이면 git worktree 격리 비활성화 (v1.31) |
 | `workflow.discuss_mode` | string | `'discuss'` | `/gsd-discuss-phase`의 컨텍스트 수집 방식을 제어합니다. `'discuss'` (기본값)는 질문을 하나씩 합니다. `'assumptions'`는 코드베이스를 먼저 읽고 신뢰도 수준이 있는 구조화된 가정을 생성하여 틀린 부분만 수정하도록 요청합니다. v1.28에서 추가 |
-| `workflow.skip_discuss` | boolean | `false` | `true`로 설정하면 `/gsd-autonomous`가 discuss 단계를 완전히 건너뛰고 ROADMAP 단계 목표로부터 최소한의 CONTEXT.md를 작성합니다. 개발자 선호사항이 PROJECT.md/REQUIREMENTS.md에 모두 캡처된 프로젝트에 유용합니다. v1.28에서 추가 |
+| `workflow.skip_discuss` | boolean | `false` | `true`로 설정하면 _(retired)_가 discuss 단계를 완전히 건너뛰고 ROADMAP 단계 목표로부터 최소한의 CONTEXT.md를 작성합니다. 개발자 선호사항이 PROJECT.md/REQUIREMENTS.md에 모두 캡처된 프로젝트에 유용합니다. v1.28에서 추가 |
 | `workflow.text_mode` | boolean | `false` | AskUserQuestion TUI 메뉴를 일반 텍스트 번호 목록으로 대체합니다. TUI 메뉴가 렌더링되지 않는 Claude Code 원격 세션 (`/rc` 모드)에 필요합니다. discuss 단계에서 `--text` 플래그로 세션별 설정도 가능합니다. v1.28에서 추가 |
 
 ### 권장 프리셋
@@ -134,7 +134,7 @@ GSD는 프로젝트 설정을 `.planning/config.json`에 저장합니다. `/gsd-
 | 설정 | 타입 | 기본값 | 설명 |
 |------|------|--------|------|
 | `hooks.context_warnings` | boolean | `true` | context monitor 훅을 통해 컨텍스트 윈도우 사용 경고 표시 |
-| `hooks.workflow_guard` | boolean | `false` | GSD 워크플로우 컨텍스트 밖에서 파일 편집이 발생할 때 경고 ((`/gsd-quick` 또는 `/gsd-fast` 사용 권고)) |
+| `hooks.workflow_guard` | boolean | `false` | GSD 워크플로우 컨텍스트 밖에서 파일 편집이 발생할 때 경고 ((`/gsd-quick` 또는 _(retired)_ 사용 권고)) |
 
 프롬프트 주입 방지 훅 (`gsd-prompt-guard.js`)은 항상 활성화되며 비활성화할 수 없습니다. 워크플로우 토글이 아닌 보안 기능입니다.
 
@@ -274,12 +274,12 @@ quick 태스크 브랜칭 예시:
 | gsd-phase-researcher | Opus | Sonnet | Haiku | Inherit |
 | gsd-project-researcher | Opus | Sonnet | Haiku | Inherit |
 | gsd-research-synthesizer | Sonnet | Sonnet | Haiku | Inherit |
-| gsd-debugger | Opus | Sonnet | Sonnet | Inherit |
-| gsd-codebase-mapper | Sonnet | Haiku | Haiku | Inherit |
+| _(retired agent)_ | Opus | Sonnet | Sonnet | Inherit |
+| _(retired agent)_ | Sonnet | Haiku | Haiku | Inherit |
 | gsd-verifier | Sonnet | Sonnet | Haiku | Inherit |
 | gsd-plan-checker | Sonnet | Sonnet | Haiku | Inherit |
 | gsd-integration-checker | Sonnet | Sonnet | Haiku | Inherit |
-| gsd-nyquist-auditor | Sonnet | Sonnet | Haiku | Inherit |
+| _(retired agent)_ | Sonnet | Sonnet | Haiku | Inherit |
 
 ### 에이전트별 재정의
 
@@ -309,8 +309,8 @@ quick 태스크 브랜칭 예시:
   "model_overrides": {
     "gsd-planner": "o3",
     "gsd-executor": "o4-mini",
-    "gsd-debugger": "o3",
-    "gsd-codebase-mapper": "o4-mini"
+    "_(retired agent)_": "o3",
+    "_(retired agent)_": "o4-mini"
   }
 }
 ```

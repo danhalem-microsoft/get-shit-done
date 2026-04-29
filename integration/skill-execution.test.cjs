@@ -51,23 +51,9 @@ describe('Claude Code GSD skill execution', () => {
       `Output should list GSD commands (found: ${found.join(', ')}). Output: ${result.result.slice(0, 500)}`);
   });
 
-  test('/gsd-stats skill executes and returns project metrics', () => {
-    const result = runClaudeWithTools(
-      'Run /gsd-stats and show the output.',
-      { cwd: repoRoot, timeout: 120_000, maxBudget: 5 }
-    );
-
-    assert.ok(result.success, `Claude failed: ${result.error || result.result.slice(0, 300)}`);
-    assert.ok(result.turns >= 2,
-      `Expected >= 2 tool-use turns, got ${result.turns}`);
-
-    // Stats should mention phases, plans, or commits
-    const output = result.result.toLowerCase();
-    const statsMarkers = ['phase', 'plan', 'commit', 'file', 'line'];
-    const found = statsMarkers.filter(m => output.includes(m));
-    assert.ok(found.length >= 2,
-      `Output missing stats markers (found: ${found.join(', ')}). Output: ${result.result.slice(0, 500)}`);
-  });
+  // Note: the legacy stats skill execution test was removed alongside the
+  // dedicated stats command in the Phase 1 cull. Project metrics now surface
+  // via the progress command exercised in the test below.
 
   test('Claude uses multiple tools when executing a skill', () => {
     // /gsd-progress requires reading STATE.md, ROADMAP.md, running gsd-tools.cjs

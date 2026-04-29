@@ -149,7 +149,7 @@ and implemented by workflows/transition.md and workflows/complete-milestone.md.
 
 For existing codebases:
 
-1. **Map codebase first** via `/gsd-map-codebase`
+1. **Scan the codebase first** — use Grep + Read in the orchestrator's main thread (the dedicated codebase-mapper agent has been retired)
 
 2. **Infer Validated requirements** from existing code:
    - What does the codebase actually do?

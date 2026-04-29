@@ -284,23 +284,21 @@ Orchestrator (workflow .md)
 
 ### Primary Agent Spawn Categories
 
-Conceptual spawn-pattern taxonomy for the 21 primary agents. For the authoritative 31-agent roster (including the 10 advanced/specialized agents such as `gsd-pattern-mapper`, `gsd-code-reviewer`, `gsd-code-fixer`, `gsd-ai-researcher`, `gsd-domain-researcher`, `gsd-eval-planner`, `gsd-eval-auditor`, `gsd-framework-selector`, `gsd-debug-session-manager`, `gsd-intel-updater`), see [`docs/INVENTORY.md`](INVENTORY.md#agents-31-shipped).
+Conceptual spawn-pattern taxonomy for the surviving primary agents (post Phase 1 cull). The advanced/specialized agents (`gsd-pattern-mapper`, `gsd-code-reviewer`, `gsd-code-fixer`) appear in the planner pipeline plus `/gsd-review --code` flows. For the authoritative 22-agent roster, see [`docs/INVENTORY.md`](INVENTORY.md).
 
 
-| Category         | Agents                                                                                  | Parallelism                                                                               |
-| ---------------- | --------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| **Researchers**  | gsd-project-researcher, gsd-phase-researcher, gsd-ui-researcher, gsd-advisor-researcher | 4 parallel (stack, features, architecture, pitfalls); advisor spawns during discuss-phase |
-| **Synthesizers** | gsd-research-synthesizer                                                                | Sequential (after researchers complete)                                                   |
-| **Planners**     | gsd-planner, gsd-roadmapper                                                             | Sequential                                                                                |
-| **Checkers**     | gsd-plan-checker, gsd-integration-checker, gsd-ui-checker, gsd-nyquist-auditor          | Sequential (verification loop, max 3 iterations)                                          |
-| **Executors**    | gsd-executor                                                                            | Parallel within waves, sequential across waves                                            |
-| **Verifiers**    | gsd-verifier                                                                            | Sequential (after all executors complete)                                                 |
-| **Mappers**      | gsd-codebase-mapper                                                                     | 4 parallel (tech, arch, quality, concerns)                                                |
-| **Debuggers**    | gsd-debugger                                                                            | Sequential (interactive)                                                                  |
-| **Auditors**     | gsd-ui-auditor, gsd-security-auditor                                                    | Sequential                                                                                |
-| **Doc Writers**  | gsd-doc-writer, gsd-doc-verifier                                                        | Sequential (writer then verifier)                                                         |
-| **Profilers**    | gsd-user-profiler                                                                       | Sequential                                                                                |
-| **Analyzers**    | gsd-assumptions-analyzer                                                                | Sequential (during discuss-phase)                                                         |
+| Category         | Agents                                                                  | Parallelism                                                                               |
+| ---------------- | ----------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| **Researchers**  | gsd-project-researcher, gsd-phase-researcher, gsd-advisor-researcher    | 4 parallel (stack, features, architecture, pitfalls); advisor spawns during discuss-phase |
+| **Synthesizers** | gsd-research-synthesizer                                                | Sequential (after researchers complete)                                                   |
+| **Planners**     | gsd-planner, gsd-roadmapper                                             | Sequential                                                                                |
+| **Checkers**     | gsd-plan-checker, gsd-integration-checker                               | Sequential (verification loop, max 3 iterations)                                          |
+| **Executors**    | gsd-executor                                                            | Parallel within waves, sequential across waves                                            |
+| **Verifiers**    | gsd-verifier                                                            | Sequential (after all executors complete)                                                 |
+| **Auditors**     | gsd-security-auditor                                                    | Sequential                                                                                |
+| **Profilers**    | gsd-user-profiler                                                       | Sequential                                                                                |
+| **Analyzers**    | gsd-assumptions-analyzer                                                | Sequential (during discuss-phase)                                                         |
+| **Critics**      | critic-plan, critic-code, critic-scope, critic-verify, critic-discuss, critic-strategy | Parallel (single-message Task fan-out)                                          |
 
 
 ### Wave Execution Model
@@ -466,7 +464,7 @@ Equivalent paths for other runtimes:
 │   ├── FEATURES.md
 │   ├── ARCHITECTURE.md
 │   └── PITFALLS.md
-├── codebase/               # Brownfield mapping (from /gsd-map-codebase)
+├── codebase/               # Brownfield mapping (legacy artefact; map inline via Grep + Read)
 │   ├── STACK.md
 │   ├── ARCHITECTURE.md
 │   ├── CONVENTIONS.md
@@ -492,13 +490,13 @@ Equivalent paths for other runtimes:
 ├── todos/
 │   ├── pending/            # Captured ideas
 │   └── done/               # Completed todos
-├── threads/               # Persistent context threads (from /gsd-thread)
-├── seeds/                 # Forward-looking ideas (from /gsd-plant-seed)
-├── debug/                  # Active debug sessions
+├── threads/               # Persistent context threads (legacy)
+├── seeds/                 # Forward-looking ideas (legacy)
+├── debug/                  # Active debug sessions (filled inline; the dedicated debug command was retired in the Phase 1 cull)
 │   ├── *.md                # Active sessions
 │   ├── resolved/           # Archived sessions
 │   └── knowledge-base.md   # Persistent debug learnings
-├── ui-reviews/             # Screenshots from /gsd-ui-review (gitignored)
+├── ui-reviews/             # Screenshots from manual UI review (gitignored)
 └── continue-here.md        # Context handoff (from pause-work)
 ```
 
@@ -589,7 +587,7 @@ Debounce: 5 tool uses between repeated warnings. Severity escalation (WARNING→
 
 - Triggers on Write/Edit to non-`.planning/` files
 - Detects edits outside GSD workflow context (no active `/gsd-` command or Task subagent)
-- Advises using `/gsd-quick` or `/gsd-fast` for state-tracked changes
+- Advises using `/gsd-quick` for state-tracked changes
 - Opt-in via `hooks.workflow_guard: true` (default: false)
 
 ---

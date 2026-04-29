@@ -24,11 +24,11 @@ Referência detalhada de workflows, troubleshooting e configuração. Para setup
 Fluxo recomendado por fase:
 
 1. `/gsd-discuss-phase [N]` — trava preferências de implementação
-2. `/gsd-ui-phase [N]` — contrato visual para fases frontend
+2. _(retired)_ — contrato visual para fases frontend
 3. `/gsd-plan-phase [N]` — pesquisa + plano + validação
 4. `/gsd-execute-phase [N]` — execução em ondas paralelas
 5. `/gsd-verify-work [N]` — UAT manual com diagnóstico
-6. `/gsd-ship [N]` — cria PR (opcional)
+6. _(retired)_ — cria PR (opcional)
 
 Para iniciar projeto novo:
 
@@ -39,7 +39,7 @@ Para iniciar projeto novo:
 Para seguir automaticamente o próximo passo:
 
 ```bash
-/gsd-next
+_(retired)_
 ```
 
 ### Nyquist Validation
@@ -68,13 +68,11 @@ Com `workflow.discuss_mode: "assumptions"`, o GSD analisa o código antes de per
 
 | Comando | Descrição |
 |---------|-----------|
-| `/gsd-ui-phase [N]` | Gera contrato de design `UI-SPEC.md` para a fase |
-| `/gsd-ui-review [N]` | Auditoria visual retroativa em 6 pilares |
 
 ### Quando usar
 
-- Rode `/gsd-ui-phase` depois de `/gsd-discuss-phase` e antes de `/gsd-plan-phase`.
-- Rode `/gsd-ui-review` após execução/validação para avaliar qualidade visual e consistência.
+- Rode _(retired)_ depois de `/gsd-discuss-phase` e antes de `/gsd-plan-phase`.
+- Rode _(retired)_ após execução/validação para avaliar qualidade visual e consistência.
 
 ### Configurações relacionadas
 
@@ -92,14 +90,14 @@ Com `workflow.discuss_mode: "assumptions"`, o GSD analisa o código antes de per
 Ideias fora da sequência ativa vão para backlog:
 
 ```bash
-/gsd-add-backlog "Camada GraphQL"
-/gsd-add-backlog "Responsividade mobile"
+_(retired)_ "Camada GraphQL"
+_(retired)_ "Responsividade mobile"
 ```
 
 Promover/revisar:
 
 ```bash
-/gsd-review-backlog
+_(retired)_
 ```
 
 ### Seeds
@@ -107,7 +105,7 @@ Promover/revisar:
 Seeds guardam ideias futuras com condição de gatilho:
 
 ```bash
-/gsd-plant-seed "Adicionar colaboração real-time quando infra de WebSocket estiver pronta"
+_(retired)_ "Adicionar colaboração real-time quando infra de WebSocket estiver pronta"
 ```
 
 ### Threads persistentes
@@ -115,9 +113,9 @@ Seeds guardam ideias futuras com condição de gatilho:
 Threads são contexto leve entre sessões:
 
 ```bash
-/gsd-thread
-/gsd-thread fix-deploy-key-auth
-/gsd-thread "Investigar timeout TCP"
+_(retired)_
+_(retired)_ fix-deploy-key-auth
+_(retired)_ "Investigar timeout TCP"
 ```
 
 ---
@@ -161,8 +159,6 @@ Para arquivos sensíveis, use deny list no Claude Code.
 | `/gsd-plan-phase [N]` | Criar e validar planos |
 | `/gsd-execute-phase [N]` | Executar planos em ondas |
 | `/gsd-verify-work [N]` | UAT manual |
-| `/gsd-ship [N]` | Gerar PR da fase |
-| `/gsd-next` | Próximo passo automático |
 
 ### Gestão e utilidades
 
@@ -171,10 +167,7 @@ Para arquivos sensíveis, use deny list no Claude Code.
 | `/gsd-progress` | Ver status atual |
 | `/gsd-resume-work` | Retomar sessão |
 | `/gsd-pause-work` | Pausar com handoff |
-| `/gsd-session-report` | Resumo da sessão |
 | `/gsd-quick` | Tarefa ad-hoc com garantias GSD |
-| `/gsd-debug [desc]` | Debug sistemático |
-| `/gsd-forensics` | Diagnóstico de workflow quebrado |
 | `/gsd-settings` | Ajustar workflow/modelos |
 | `/gsd-set-profile <profile>` | Troca rápida de perfil |
 
@@ -226,17 +219,17 @@ Detalhes completos: [Configuration Reference](../CONFIGURATION.md).
 claude --dangerously-skip-permissions
 /gsd-new-project
 /gsd-discuss-phase 1
-/gsd-ui-phase 1
+_(retired)_ 1
 /gsd-plan-phase 1
 /gsd-execute-phase 1
 /gsd-verify-work 1
-/gsd-ship 1
+_(retired)_ 1
 ```
 
 ### Código já existente
 
 ```bash
-/gsd-map-codebase
+_(retired)_
 /gsd-new-project
 ```
 
@@ -250,8 +243,8 @@ claude --dangerously-skip-permissions
 ### Preparação para release
 
 ```bash
-/gsd-audit-milestone
-/gsd-plan-milestone-gaps
+_(retired)_
+_(retired)_
 /gsd-complete-milestone
 ```
 
@@ -269,7 +262,7 @@ Use `/clear` entre etapas grandes e retome com `/gsd-resume-work` ou `/gsd-progr
 
 ### Plano desalinhado
 
-Rode `/gsd-discuss-phase [N]` antes do plano e valide suposições com `/gsd-list-phase-assumptions [N]`.
+Rode `/gsd-discuss-phase [N]` antes do plano e valide suposições com _(retired)_.
 
 ### Execução falhou ou saiu com stubs
 
@@ -296,10 +289,10 @@ Use `resolve_model_ids: "omit"` para deixar o runtime resolver modelos padrão.
 | Perdeu contexto | `/gsd-resume-work` ou `/gsd-progress` |
 | Fase deu errado | `git revert` + replanejar |
 | Precisa alterar escopo | `/gsd-add-phase`, `/gsd-insert-phase`, `/gsd-remove-phase` |
-| Bug em workflow | `/gsd-forensics` |
+| Bug em workflow | _(retired)_ |
 | Correção pontual | `/gsd-quick` |
 | Custo alto | `/gsd-set-profile budget` |
-| Não sabe próximo passo | `/gsd-next` |
+| Não sabe próximo passo | _(retired)_ |
 
 ---
 

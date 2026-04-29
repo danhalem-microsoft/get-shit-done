@@ -223,15 +223,15 @@ Orchestrator (workflow .md)
 
 | 카테고리 | 에이전트 | 병렬성 |
 |----------|--------|-------------|
-| **Researchers** | gsd-project-researcher, gsd-phase-researcher, gsd-ui-researcher, gsd-advisor-researcher | 4개 병렬 (stack, features, architecture, pitfalls); advisor는 discuss-phase 중 생성됨 |
+| **Researchers** | gsd-project-researcher, gsd-phase-researcher, _(retired agent)_, gsd-advisor-researcher | 4개 병렬 (stack, features, architecture, pitfalls); advisor는 discuss-phase 중 생성됨 |
 | **Synthesizers** | gsd-research-synthesizer | 순차적 (조사자 완료 후) |
 | **Planners** | gsd-planner, gsd-roadmapper | 순차적 |
-| **Checkers** | gsd-plan-checker, gsd-integration-checker, gsd-ui-checker, gsd-nyquist-auditor | 순차적 (검증 루프, 최대 3회 반복) |
+| **Checkers** | gsd-plan-checker, gsd-integration-checker, _(retired agent)_, _(retired agent)_ | 순차적 (검증 루프, 최대 3회 반복) |
 | **Executors** | gsd-executor | 웨이브 내 병렬, 웨이브 간 순차적 |
 | **Verifiers** | gsd-verifier | 순차적 (모든 executor 완료 후) |
-| **Mappers** | gsd-codebase-mapper | 4개 병렬 (tech, arch, quality, concerns) |
-| **Debuggers** | gsd-debugger | 순차적 (대화형) |
-| **Auditors** | gsd-ui-auditor | 순차적 |
+| **Mappers** | _(retired agent)_ | 4개 병렬 (tech, arch, quality, concerns) |
+| **Debuggers** | _(retired agent)_ | 순차적 (대화형) |
+| **Auditors** | _(retired agent)_ | 순차적 |
 
 ### 웨이브 실행 모델
 
@@ -384,7 +384,7 @@ UI-SPEC.md (per phase) ───────────────────
 │   ├── FEATURES.md
 │   ├── ARCHITECTURE.md
 │   └── PITFALLS.md
-├── codebase/               # 브라운필드 매핑 (/gsd-map-codebase에서)
+├── codebase/               # 브라운필드 매핑 (_(retired)_에서)
 │   ├── STACK.md
 │   ├── ARCHITECTURE.md
 │   ├── CONVENTIONS.md
@@ -410,13 +410,13 @@ UI-SPEC.md (per phase) ───────────────────
 ├── todos/
 │   ├── pending/            # 캡처된 아이디어
 │   └── done/               # 완료된 할 일
-├── threads/               # 영구 컨텍스트 스레드 (/gsd-thread에서)
-├── seeds/                 # 미래 지향적 아이디어 (/gsd-plant-seed에서)
+├── threads/               # 영구 컨텍스트 스레드 (_(retired)_에서)
+├── seeds/                 # 미래 지향적 아이디어 (_(retired)_에서)
 ├── debug/                  # 활성 디버그 세션
 │   ├── *.md                # 활성 세션
 │   ├── resolved/           # 보관된 세션
 │   └── knowledge-base.md   # 영구 디버그 학습 내용
-├── ui-reviews/             # /gsd-ui-review의 스크린샷 (gitignored)
+├── ui-reviews/             # _(retired)_의 스크린샷 (gitignored)
 └── continue-here.md        # 컨텍스트 핸드오프 (pause-work에서)
 ```
 
@@ -500,7 +500,7 @@ Runtime Engine (Claude Code / Gemini CLI)
 **Workflow Guard** (`gsd-workflow-guard.js`).
 - `.planning/` 외부 파일에 Write/Edit 시 트리거됩니다
 - GSD 워크플로우 컨텍스트 외부의 편집을 감지합니다 (활성 `/gsd-` 명령어 또는 Task 서브에이전트 없음)
-- 상태 추적 변경을 위해 `/gsd-quick` 또는 `/gsd-fast` 사용을 권고합니다
+- 상태 추적 변경을 위해 `/gsd-quick` 또는 _(retired)_ 사용을 권고합니다
 - `hooks.workflow_guard: true`로 활성화 (기본값: false)
 
 ---
