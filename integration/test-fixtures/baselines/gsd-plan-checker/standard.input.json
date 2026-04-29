@@ -1,0 +1,12 @@
+{
+  "fixture_id": "standard",
+  "agent": "gsd-plan-checker",
+  "description": "Canonical plan-checker input: a small PLAN.md with 2 mild structural issues (a missing must_haves entry and an under-specified verify block). Expected output: structured findings with severity. Schema-conformance baseline.",
+  "prompt": "Spawn the gsd-plan-checker agent against PLAN.md in the current sandbox. Run the structural-rule checks and emit findings as JSON: { findings: [{ rule, severity, message, evidence }] }. Be terse — baseline capture.",
+  "sandbox_files": {
+    "PLAN.md": "---\nphase: 01-auth-system\nplan: 02\ntype: execute\nfiles_modified:\n  - src/auth/login.ts\nmust_haves:\n  truths:\n    - \"REQ-AUTH-01 implemented and tested\"\n---\n\n<objective>Implement /auth/login.</objective>\n\n<tasks>\n<task type=\"auto\">\n  <name>Task 1: POST /auth/login</name>\n  <action>Build the handler.</action>\n  <verify>Run the tests.</verify>\n  <done>Login works.</done>\n</task>\n</tasks>\n\n<success_criteria>\n- [ ] Login endpoint exists.\n</success_criteria>\n",
+    "REQUIREMENTS.md": "- REQ-AUTH-01: POST /auth/login\n- REQ-AUTH-02: DELETE /auth/session\n"
+  },
+  "env": {},
+  "expected_schema_kind": "schema-conformance"
+}

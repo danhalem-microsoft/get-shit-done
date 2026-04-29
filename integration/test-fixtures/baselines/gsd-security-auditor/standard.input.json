@@ -1,0 +1,12 @@
+{
+  "fixture_id": "standard",
+  "agent": "gsd-security-auditor",
+  "description": "Canonical security-auditor input: a phase plan with a small threat-model section and a deliberate security gap (no rate limiting on login, secrets in plaintext config). Expected output: SECURITY-AUDIT.md with STRIDE-classified findings. Schema-conformance baseline.",
+  "prompt": "Spawn the gsd-security-auditor agent against PLAN.md and config.json in the current sandbox. Identify security issues using STRIDE classification. Produce SECURITY-AUDIT.md with severity-classified findings. Be terse — baseline capture.",
+  "sandbox_files": {
+    "PLAN.md": "---\nphase: 01-auth-system\nplan: 02\nthreat_model:\n  - id: T-01\n    category: Spoofing\n    asset: User credentials\n    mitigation: bcrypt + JWT\n---\n\n<objective>Implement POST /auth/login.</objective>\n\n<tasks>\n<task><name>Task 1: Login handler</name><action>Build the handler. No rate limit needed for v1.</action></task>\n<task><name>Task 2: Wire env config</name><action>Read JWT_SECRET from config.json (committed to repo).</action></task>\n</tasks>\n",
+    "config.json": "{\n  \"JWT_SECRET\": \"super-secret-key-please-change\",\n  \"DATABASE_URL\": \"postgres://admin:hunter2@db.internal/auth\"\n}\n"
+  },
+  "env": {},
+  "expected_schema_kind": "schema-conformance"
+}

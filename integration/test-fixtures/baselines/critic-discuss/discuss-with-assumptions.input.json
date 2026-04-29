@@ -1,0 +1,11 @@
+{
+  "fixture_id": "discuss-with-assumptions",
+  "agent": "critic-discuss",
+  "description": "Discussion artifact (CONTEXT.md draft) with deliberate hidden assumptions for discuss-critic baseline. Known issues: (1) CRITICAL — Decision D-02 assumes the existing user table has an `email_lower` column without verifying; (2) MAJOR — Decision D-04 picks bcrypt cost 12 with no benchmark on target hardware; (3) MINOR — D-05 says 'we'll figure out rate limiting later' (deferred work without an owner).",
+  "prompt": "Spawn the gsd-critic-discuss agent against CONTEXT.md in the current sandbox. Read it and identify hidden assumptions, unverified premises, and deferred-work without owners. Output JSON with shape: { findings: [{ severity, lane, title, evidence, fix }] }. Be terse — baseline capture.",
+  "sandbox_files": {
+    "CONTEXT.md": "# Phase 1 Auth — Context\n\n## Decisions\n\n- **D-01:** Email/password auth, bcrypt for hashing.\n- **D-02:** Use existing `users.email_lower` column for case-insensitive lookups.\n- **D-03:** JWT with 1h expiry, RS256 signing.\n- **D-04:** bcrypt cost factor = 12.\n- **D-05:** Rate limiting? We'll figure out rate limiting later.\n- **D-06:** Sessions stored in Redis with TTL = JWT expiry.\n"
+  },
+  "env": {},
+  "expected_schema_kind": "critic-findings"
+}

@@ -1,0 +1,12 @@
+{
+  "fixture_id": "standard",
+  "agent": "gsd-integration-checker",
+  "description": "Canonical integration-checker input: 2 phase summaries that should integrate (Phase 1 emits a JWT format; Phase 2 consumes it) but with a deliberate cross-phase mismatch (Phase 1 says HS256, Phase 2 expects RS256). Expected output: integration-issues report. Schema-conformance baseline.",
+  "prompt": "Spawn the gsd-integration-checker agent. Read phase-1-summary.md and phase-2-summary.md in the sandbox. Identify any cross-phase integration mismatches (contract drift, dependency violations, format mismatches). Output integration-issues as JSON: { issues: [{ severity, source_phase, target_phase, description, fix }] }.",
+  "sandbox_files": {
+    "phase-1-summary.md": "# Phase 1: Auth Summary\n\nDelivered: POST /auth/login issues JWT signed with HS256, 1h expiry, secret in env JWT_SECRET. Token format: standard JWT 3-segment.\n",
+    "phase-2-summary.md": "# Phase 2: API Authorization Summary\n\nVerifies incoming JWT using `jose.jwtVerify(token, publicKey, { algorithms: ['RS256'] })`. Loads public key from JWKS endpoint /jwks.json.\n"
+  },
+  "env": {},
+  "expected_schema_kind": "schema-conformance"
+}

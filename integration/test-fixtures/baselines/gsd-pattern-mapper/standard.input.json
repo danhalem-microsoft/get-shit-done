@@ -1,0 +1,13 @@
+{
+  "fixture_id": "standard",
+  "agent": "gsd-pattern-mapper",
+  "description": "Canonical pattern-mapper input: a small synthetic codebase with 3 modules following a clear handler+service+repository pattern. Expected output: PATTERNS.md identifying the layered pattern, naming conventions, and idioms used. Schema-conformance baseline — Phase 6 trim consumer.",
+  "prompt": "Spawn the gsd-pattern-mapper agent against the sandbox cwd. Scan src/ (3 files: handler.js, service.js, repository.js) and produce PATTERNS.md describing the patterns observed: layering, naming conventions, dependency direction. Output the full PATTERNS.md.",
+  "sandbox_files": {
+    "src/user-handler.js": "'use strict';\nconst userService = require('./user-service');\n\nasync function handleGetUser(req, res) {\n  const user = await userService.findById(req.params.id);\n  if (!user) return res.status(404).json({ error: 'not found' });\n  res.json(user);\n}\n\nmodule.exports = { handleGetUser };\n",
+    "src/user-service.js": "'use strict';\nconst userRepository = require('./user-repository');\n\nasync function findById(id) {\n  return userRepository.findOne({ id });\n}\n\nmodule.exports = { findById };\n",
+    "src/user-repository.js": "'use strict';\nconst db = require('./db');\n\nasync function findOne(where) {\n  return db.users.findOne(where);\n}\n\nmodule.exports = { findOne };\n"
+  },
+  "env": {},
+  "expected_schema_kind": "schema-conformance"
+}

@@ -1,0 +1,11 @@
+{
+  "fixture_id": "standard",
+  "agent": "gsd-assumptions-analyzer",
+  "description": "Canonical assumptions-analyzer input: a CONTEXT.md with 3 implicit assumptions that should be surfaced (target Node version, expected throughput, deployment topology). Expected output: ASSUMPTIONS.md with explicit list + verification methods. Schema-conformance baseline.",
+  "prompt": "Spawn the gsd-assumptions-analyzer agent against CONTEXT.md in the current sandbox. Identify implicit assumptions and produce ASSUMPTIONS.md listing each, the evidence for it, the risk if wrong, and how to verify. Be terse — baseline capture.",
+  "sandbox_files": {
+    "CONTEXT.md": "# Phase 1 Auth\n\nWe'll use bcrypt 5.1.1 for password hashing. JWT issued via jose 5.x. Sessions stored in Redis (single node — we don't need clustering). Should handle the user load fine.\n\nDecisions:\n- D-01: bcrypt cost 12.\n- D-02: jose 5.x for JWT.\n- D-03: Redis single-node.\n"
+  },
+  "env": {},
+  "expected_schema_kind": "schema-conformance"
+}

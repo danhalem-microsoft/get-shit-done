@@ -1,0 +1,12 @@
+{
+  "fixture_id": "standard",
+  "agent": "gsd-executor",
+  "description": "Canonical executor input: a 1-task PLAN.md asking the executor to add a tiny pure function. Sandbox is read-only for this baseline — the executor produces a plan-of-action / response describing what it would do (we do not exercise live edits in capture mode). Schema-conformance baseline.",
+  "prompt": "Spawn the gsd-executor agent against PLAN.md in the current sandbox. Read PLAN.md. Describe in detail (do NOT actually edit files in this baseline) the precise sequence of Read/Write/Bash actions you would take, the exact file content you would write, and the verify+done assertions you would run. Output the description as text — this is a baseline capture, not a real execution run.",
+  "sandbox_files": {
+    "PLAN.md": "---\nphase: 01-utilities\nplan: 01\ntype: execute\nfiles_modified:\n  - src/util/sum.js\n  - src/util/sum.test.js\n---\n\n<objective>Add a tiny `sum(a, b)` utility with one test.</objective>\n\n<tasks>\n<task type=\"auto\">\n  <name>Task 1: Implement sum</name>\n  <action>Create src/util/sum.js exporting `sum(a, b) => a + b`. Create src/util/sum.test.js with one assertion: sum(2, 3) === 5.</action>\n  <verify><automated>node --test src/util/sum.test.js</automated></verify>\n  <done>Test passes.</done>\n</task>\n</tasks>\n\n<success_criteria>\n- [ ] sum.js exports a pure function.\n- [ ] sum.test.js passes.\n</success_criteria>\n",
+    "src/util/.keep": ""
+  },
+  "env": {},
+  "expected_schema_kind": "schema-conformance"
+}
