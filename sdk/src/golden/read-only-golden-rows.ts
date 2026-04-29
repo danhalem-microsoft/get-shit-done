@@ -1,6 +1,13 @@
 /**
  * Read-only subprocess golden rows: SDK `registry.dispatch` vs `gsd-tools.cjs` JSON on stdout.
  * Imported by `read-only-parity.integration.test.ts` and `golden-policy.ts` coverage accounting.
+ *
+ * Multi-user routing (`.planning/users/<user>/<project>/`) is covered by
+ * `sdk/src/query/multi-user-resolution.test.ts` rather than rows in this file.
+ * Live-repo parity rows depend on the host repo's exact `.planning/` state and
+ * would be brittle for fork-only behavior. The unit-suite test catches both
+ * resolver regressions in `helpers.ts`/`context.ts` and re-introduction of
+ * hardcoded `.planning` paths in init handlers.
  */
 
 export type JsonParityRow = {
