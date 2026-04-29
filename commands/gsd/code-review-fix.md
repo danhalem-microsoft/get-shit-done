@@ -1,52 +1,29 @@
 ---
 name: gsd:code-review-fix
-description: Auto-fix issues found by code review in REVIEW.md. Spawns fixer agent, commits each fix atomically, produces REVIEW-FIX.md summary.
-argument-hint: "<phase-number> [--all] [--auto]"
+description: "[DEPRECATED] Use /gsd-review --code-fix instead. This stub will be removed in a future milestone."
+argument-hint: "<phase> [other flags]"
 allowed-tools:
   - Read
+  - Write
   - Bash
   - Glob
   - Grep
-  - Write
-  - Edit
   - Task
 ---
 <objective>
-Auto-fix issues found by code review. Reads REVIEW.md from the specified phase, spawns gsd-code-fixer agent to apply fixes, and produces REVIEW-FIX.md summary.
+**⚠ DEPRECATED**
 
-Arguments:
-- Phase number (required) — which phase's REVIEW.md to fix (e.g., "2" or "02")
-- `--all` (optional) — include Info findings in fix scope (default: Critical + Warning only)
-- `--auto` (optional) — enable fix + re-review iteration loop, capped at 3 iterations
+`/gsd-code-review-fix` has been consolidated into `/gsd-review`.
 
-Output: {padded_phase}-REVIEW-FIX.md in phase directory + inline summary of fixes applied
+**Use:** `/gsd-review --code-fix <phase>`
+
+This stub will be removed after a future milestone. See `CHANGELOG.md` and `commands/gsd/help.md` for the full migration table.
+
+Now dispatching to `/gsd-review --code-fix` with your arguments...
 </objective>
 
-<execution_context>
-@~/.claude/get-shit-done/workflows/code-review-fix.md
-</execution_context>
-
-<context>
-Phase: $ARGUMENTS (first positional argument is phase number)
-
-Optional flags parsed from $ARGUMENTS:
-- `--all` — Include Info findings in fix scope. Default behavior fixes Critical + Warning only.
-- `--auto` — Enable fix + re-review iteration loop. After applying fixes, re-run code-review at same depth. If new issues found, iterate. Cap at 3 iterations total. Without this flag, single fix pass only.
-
-Context files (CLAUDE.md, REVIEW.md, phase state) are resolved inside the workflow via `gsd-sdk query init.phase-op` and delegated to agent via config blocks.
-</context>
-
 <process>
-This command is a thin dispatch layer. It parses arguments and delegates to the workflow.
-
-Execute the code-review-fix workflow from @~/.claude/get-shit-done/workflows/code-review-fix.md end-to-end.
-
-The workflow (not this command) enforces these gates:
-- Phase validation (before config gate)
-- Config gate check (workflow.code_review)
-- REVIEW.md existence check (error if missing)
-- REVIEW.md status check (skip if clean/skipped)
-- Agent spawning (gsd-code-fixer)
-- Iteration loop (if --auto, capped at 3 iterations)
-- Result presentation (inline summary + next steps)
+1. Print the deprecation banner above to the user (verbatim).
+2. Forward to `/gsd-review --code-fix $ARGUMENTS` — execute the review workflow with the consolidated flag prepended to whatever arguments the user supplied.
 </process>
+</content>

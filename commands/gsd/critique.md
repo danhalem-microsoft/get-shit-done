@@ -1,7 +1,7 @@
 ---
 name: gsd:critique
-description: Run adversarial critics against phase artifacts
-argument-hint: "[phase] [--only=plan,code,scope,verify,discuss,strategy]"
+description: "[DEPRECATED] Use /gsd-review --critique instead. This stub will be removed in a future milestone."
+argument-hint: "<phase> [other flags]"
 allowed-tools:
   - Read
   - Write
@@ -11,26 +11,19 @@ allowed-tools:
   - Task
 ---
 <objective>
-Run adversarial critique of a phase's artifacts. Spawn parallel critic agents, collect per-critic reports, merge with dedup, write CRITIQUE.md with diff tracking, and present inline summary.
+**⚠ DEPRECATED**
 
-**Default:** Runs all 5 phase-level critics (plan, code, scope, verify, discuss).
-**--only:** Filter to specific critics. `strategy` is milestone-only and not included in the default set.
+`/gsd-critique` has been consolidated into `/gsd-review`.
 
-Valid --only values: plan, code, scope, verify, discuss, strategy
+**Use:** `/gsd-review --critique <phase>`
+
+This stub will be removed after a future milestone. See `CHANGELOG.md` and `commands/gsd/help.md` for the full migration table.
+
+Now dispatching to `/gsd-review --critique` with your arguments...
 </objective>
 
-<execution_context>
-@~/.claude/get-shit-done/workflows/critique.md
-</execution_context>
-
-<context>
-Phase number: $ARGUMENTS (optional -- auto-detects current phase from STATE.md if omitted)
-
-**Flags:**
-- `--only=plan,code,...` -- Run only the specified critics (comma-separated). Valid values: plan, code, scope, verify, discuss, strategy.
-</context>
-
 <process>
-Execute the critique workflow from @~/.claude/get-shit-done/workflows/critique.md end-to-end.
-Preserve all workflow gates (initialization, registry loading, critic spawning, merge, diff tracking, summary, commit).
+1. Print the deprecation banner above to the user (verbatim).
+2. Forward to `/gsd-review --critique $ARGUMENTS` — execute the review workflow with the consolidated flag prepended to whatever arguments the user supplied.
 </process>
+</content>
