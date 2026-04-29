@@ -1,0 +1,15 @@
+{
+  "name": "post-cull spine",
+  "phase_marker": "phase-1-complete",
+  "expected_steps": [
+    { "step_num": 1, "name": "new-project",     "produces": ["PROJECT.md", "ROADMAP.md", "STATE.md"], "requires": [] },
+    { "step_num": 2, "name": "discuss-phase",   "produces": ["CONTEXT.md"],                            "requires": ["new-project"] },
+    { "step_num": 3, "name": "plan-phase",      "produces": ["PLAN.md"], "may_produce": ["RESEARCH.md"], "requires": ["discuss-phase"] },
+    { "step_num": 4, "name": "review-critique", "produces": ["CRITIQUE.md"],                           "requires": ["plan-phase"] },
+    { "step_num": 5, "name": "execute-phase",   "produces": ["SUMMARY.md"],                            "requires": ["plan-phase"] },
+    { "step_num": 6, "name": "add-mistake",     "produces": ["mistakes/*.md"],                         "requires": [] },
+    { "step_num": 7, "name": "add-taste",       "produces": ["taste/*.md"],                            "requires": [] },
+    { "step_num": 8, "name": "verify-work",     "produces": ["VERIFICATION.md"],                       "requires": ["execute-phase"] },
+    { "step_num": 9, "name": "progress",        "produces": [],                                        "requires": [] }
+  ]
+}
