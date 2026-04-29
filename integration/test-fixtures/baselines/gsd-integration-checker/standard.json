@@ -1,0 +1,69 @@
+{
+  "_meta": {
+    "agent": "gsd-integration-checker",
+    "fixture_id": "standard",
+    "captured_at": "2026-04-29T22:40:17.009Z",
+    "schema_kind": "schema-conformance",
+    "runs_recorded": 1
+  },
+  "result": "```json\n{\n  \"issues\": [\n    {\n      \"severity\": \"critical\",\n      \"source_phase\": \"phase-1\",\n      \"target_phase\": \"phase-2\",\n      \"description\": \"Algorithm mismatch: phase-1 signs JWTs with HS256 (symmetric, shared secret in env JWT_SECRET), but phase-2 verifies tokens using algorithms: ['RS256'] (asymmetric). Every token issued by phase-1 will fail verification in phase-2.\",\n      \"fix\": \"Align on a single algorithm. Either (a) change phase-1 to sign with RS256 using a private key whose public counterpart is published at /jwks.json, or (b) change phase-2 to verify with HS256 using the shared JWT_SECRET via jose.jwtVerify(token, secretKey, { algorithms: ['HS256'] }).\"\n    },\n    {\n      \"severity\": \"critical\",\n      \"source_phase\": \"phase-1\",\n      \"target_phase\": \"phase-2\",\n      \"description\": \"Key distribution mismatch: phase-2 loads a public key from a JWKS endpoint at /jwks.json, but phase-1 only documents an HS256 shared secret in env JWT_SECRET and does not deliver/publish a JWKS endpoint or any public key.\",\n      \"fix\": \"If staying asymmetric, phase-1 must expose a /jwks.json endpoint publishing the RS256 public key (with matching kid) and sign tokens with the corresponding private key. Otherwise drop JWKS in phase-2 and load the HS256 secret from JWT_SECRET.\"\n    },\n    {\n      \"severity\": \"high\",\n      \"source_phase\": \"phase-1\",\n      \"target_phase\": \"phase-2\",\n      \"description\": \"Missing contract details that phase-2 verification typically requires: phase-1 does not specify issuer (iss), audience (aud), or kid claims, while a JWKS-based verifier in phase-2 generally needs a kid header to select the right key and often validates iss/aud.\",\n      \"fix\": \"Define and document iss, aud, and kid in phase-1's signing contract, and have phase-2 pass matching issuer/audience options to jwtVerify so claims are validated consistently.\"\n    }\n  ]\n}\n```\n\nThree integration mismatches found between phase-1 (issuer) and phase-2 (verifier): two critical (HS256 vs RS256 algorithm split, and missing JWKS endpoint to back the asymmetric verifier) plus one high (undefined iss/aud/kid contract).",
+  "raw": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "api_error_status": null,
+    "duration_ms": 29082,
+    "duration_api_ms": 28664,
+    "num_turns": 2,
+    "result": "```json\n{\n  \"issues\": [\n    {\n      \"severity\": \"critical\",\n      \"source_phase\": \"phase-1\",\n      \"target_phase\": \"phase-2\",\n      \"description\": \"Algorithm mismatch: phase-1 signs JWTs with HS256 (symmetric, shared secret in env JWT_SECRET), but phase-2 verifies tokens using algorithms: ['RS256'] (asymmetric). Every token issued by phase-1 will fail verification in phase-2.\",\n      \"fix\": \"Align on a single algorithm. Either (a) change phase-1 to sign with RS256 using a private key whose public counterpart is published at /jwks.json, or (b) change phase-2 to verify with HS256 using the shared JWT_SECRET via jose.jwtVerify(token, secretKey, { algorithms: ['HS256'] }).\"\n    },\n    {\n      \"severity\": \"critical\",\n      \"source_phase\": \"phase-1\",\n      \"target_phase\": \"phase-2\",\n      \"description\": \"Key distribution mismatch: phase-2 loads a public key from a JWKS endpoint at /jwks.json, but phase-1 only documents an HS256 shared secret in env JWT_SECRET and does not deliver/publish a JWKS endpoint or any public key.\",\n      \"fix\": \"If staying asymmetric, phase-1 must expose a /jwks.json endpoint publishing the RS256 public key (with matching kid) and sign tokens with the corresponding private key. Otherwise drop JWKS in phase-2 and load the HS256 secret from JWT_SECRET.\"\n    },\n    {\n      \"severity\": \"high\",\n      \"source_phase\": \"phase-1\",\n      \"target_phase\": \"phase-2\",\n      \"description\": \"Missing contract details that phase-2 verification typically requires: phase-1 does not specify issuer (iss), audience (aud), or kid claims, while a JWKS-based verifier in phase-2 generally needs a kid header to select the right key and often validates iss/aud.\",\n      \"fix\": \"Define and document iss, aud, and kid in phase-1's signing contract, and have phase-2 pass matching issuer/audience options to jwtVerify so claims are validated consistently.\"\n    }\n  ]\n}\n```\n\nThree integration mismatches found between phase-1 (issuer) and phase-2 (verifier): two critical (HS256 vs RS256 algorithm split, and missing JWKS endpoint to back the asymmetric verifier) plus one high (undefined iss/aud/kid contract).",
+    "stop_reason": "end_turn",
+    "session_id": "28c56376-8142-4d9f-b775-7b6c5caa3ad9",
+    "total_cost_usd": 0.3183715,
+    "usage": {
+      "input_tokens": 12,
+      "cache_creation_input_tokens": 19307,
+      "cache_read_input_tokens": 59882,
+      "output_tokens": 1541,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 19307
+      },
+      "inference_geo": "",
+      "iterations": [
+        {
+          "input_tokens": 6,
+          "output_tokens": 836,
+          "cache_read_input_tokens": 38837,
+          "cache_creation_input_tokens": 1515,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 1515,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-opus-4-7[1m]": {
+        "inputTokens": 19,
+        "outputTokens": 2424,
+        "cacheReadInputTokens": 75328,
+        "cacheCreationInputTokens": 35202,
+        "webSearchRequests": 0,
+        "costUSD": 0.3183715,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 64000
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "uuid": "738f88f8-e104-4ddc-8200-b300d3b90919"
+  }
+}

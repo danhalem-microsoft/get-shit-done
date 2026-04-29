@@ -1,0 +1,69 @@
+{
+  "_meta": {
+    "agent": "critic-scope",
+    "fixture_id": "scope-with-creep",
+    "captured_at": "2026-04-29T22:12:48.272Z",
+    "schema_kind": "critic-findings",
+    "runs_recorded": 1
+  },
+  "result": "```json\n{ \"findings\": [ { \"severity\": \"critical\", \"lane\": \"drive-by\", \"title\": \"Task 3 refactors logger unrelated to auth phase\", \"evidence\": \"PLAN.md:14 replaces winston with pino across the entire codebase, which has no traceability to the auth phase goal in CONTEXT.md:3 (email/password auth ONLY).\", \"fix\": \"Remove Task 3 from this plan and file it as a separate refactor proposal.\" }, { \"severity\": \"critical\", \"lane\": \"deferred-item\", \"title\": \"Task 4 implements OAuth which is explicitly deferred\", \"evidence\": \"PLAN.md:15 wires Google OAuth and /oauth/callback, but CONTEXT.md:3 explicitly defers OAuth to a later phase.\", \"fix\": \"Remove Task 4 and note 'OAuth deferred per CONTEXT.md line 3.'\" }, { \"severity\": \"critical\", \"lane\": \"deferred-item\", \"title\": \"Task 5 adds Stripe payments which are explicitly deferred\", \"evidence\": \"PLAN.md:16 wires Stripe SDK for subscriptions, but CONTEXT.md:3 explicitly defers payments to a later phase.\", \"fix\": \"Remove Task 5 and move payment integration to its designated future phase.\" }, { \"severity\": \"high\", \"lane\": \"phase-boundary\", \"title\": \"Plan objective inconsistent with included tasks\", \"evidence\": \"PLAN.md:8 states 'Implement the email/password auth flow' but Tasks 3-5 (PLAN.md:14-16) cover logging, OAuth, and payments — none of which fit the stated objective.\", \"fix\": \"Restrict the plan to Tasks 1-2 so tasks match the stated objective and CONTEXT.md goal.\" }, { \"severity\": \"medium\", \"lane\": \"roadmap-consistency\", \"title\": \"No ROADMAP.md or REQUIREMENTS.md to anchor scope\", \"evidence\": \"Sandbox contains only PLAN.md and CONTEXT.md; tasks cannot be traced to authoritative requirements, making creep easy to smuggle in.\", \"fix\": \"Add ROADMAP.md/REQUIREMENTS.md listing the auth phase requirements and deferred items so traceability is enforceable.\" } ] }\n```",
+  "raw": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "api_error_status": null,
+    "duration_ms": 30569,
+    "duration_api_ms": 30126,
+    "num_turns": 2,
+    "result": "```json\n{ \"findings\": [ { \"severity\": \"critical\", \"lane\": \"drive-by\", \"title\": \"Task 3 refactors logger unrelated to auth phase\", \"evidence\": \"PLAN.md:14 replaces winston with pino across the entire codebase, which has no traceability to the auth phase goal in CONTEXT.md:3 (email/password auth ONLY).\", \"fix\": \"Remove Task 3 from this plan and file it as a separate refactor proposal.\" }, { \"severity\": \"critical\", \"lane\": \"deferred-item\", \"title\": \"Task 4 implements OAuth which is explicitly deferred\", \"evidence\": \"PLAN.md:15 wires Google OAuth and /oauth/callback, but CONTEXT.md:3 explicitly defers OAuth to a later phase.\", \"fix\": \"Remove Task 4 and note 'OAuth deferred per CONTEXT.md line 3.'\" }, { \"severity\": \"critical\", \"lane\": \"deferred-item\", \"title\": \"Task 5 adds Stripe payments which are explicitly deferred\", \"evidence\": \"PLAN.md:16 wires Stripe SDK for subscriptions, but CONTEXT.md:3 explicitly defers payments to a later phase.\", \"fix\": \"Remove Task 5 and move payment integration to its designated future phase.\" }, { \"severity\": \"high\", \"lane\": \"phase-boundary\", \"title\": \"Plan objective inconsistent with included tasks\", \"evidence\": \"PLAN.md:8 states 'Implement the email/password auth flow' but Tasks 3-5 (PLAN.md:14-16) cover logging, OAuth, and payments — none of which fit the stated objective.\", \"fix\": \"Restrict the plan to Tasks 1-2 so tasks match the stated objective and CONTEXT.md goal.\" }, { \"severity\": \"medium\", \"lane\": \"roadmap-consistency\", \"title\": \"No ROADMAP.md or REQUIREMENTS.md to anchor scope\", \"evidence\": \"Sandbox contains only PLAN.md and CONTEXT.md; tasks cannot be traced to authoritative requirements, making creep easy to smuggle in.\", \"fix\": \"Add ROADMAP.md/REQUIREMENTS.md listing the auth phase requirements and deferred items so traceability is enforceable.\" } ] }\n```",
+    "stop_reason": "end_turn",
+    "session_id": "bb98878c-327c-4488-ac09-26ed4ea3df93",
+    "total_cost_usd": 0.2919215,
+    "usage": {
+      "input_tokens": 12,
+      "cache_creation_input_tokens": 19367,
+      "cache_read_input_tokens": 59873,
+      "output_tokens": 1448,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 19367
+      },
+      "inference_geo": "",
+      "iterations": [
+        {
+          "input_tokens": 6,
+          "output_tokens": 780,
+          "cache_read_input_tokens": 38828,
+          "cache_creation_input_tokens": 1584,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 1584,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-opus-4-7[1m]": {
+        "inputTokens": 19,
+        "outputTokens": 2477,
+        "cacheReadInputTokens": 82003,
+        "cacheCreationInputTokens": 30224,
+        "webSearchRequests": 0,
+        "costUSD": 0.2919215,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 64000
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "uuid": "0b82a2fe-5b5d-401d-85c9-95b3979c0a26"
+  }
+}

@@ -1,0 +1,69 @@
+{
+  "_meta": {
+    "agent": "gsd-executor",
+    "fixture_id": "standard",
+    "captured_at": "2026-04-29T22:36:47.070Z",
+    "schema_kind": "schema-conformance",
+    "runs_recorded": 1
+  },
+  "result": "# Baseline: gsd-executor dry-run for PLAN.md\n\nThis describes the exact sequence of actions the `gsd-executor` agent would take if dispatched against `PLAN.md` at `/tmp/gsd-sandbox-TQQhTj/baseline-capture-gsd-executor-standard/`. **No files are being modified** — this is a baseline capture.\n\n---\n\n## Pre-flight: Context loading\n\n1. **Read** `PLAN.md` — parses frontmatter:\n   - `phase: 01-utilities`, `plan: 01`, `type: execute`\n   - `files_modified:` declares `src/util/sum.js` and `src/util/sum.test.js` as the contract — anything written outside this list would be a deviation.\n   - One `<task>` block, `auto` mode (no human checkpoints required).\n2. **Bash** `git status --porcelain` and `git rev-parse HEAD` — captures starting commit (`e237c22 init: test sandbox`) and confirms working tree state (untracked: `PLAN.md`, `src/util/`).\n3. **Bash** `ls src/util/` — observes only `.keep` exists. Confirms target files are net-new (Write, not Edit).\n4. **Read** `package.json` — `{\"name\":\"test-sandbox\",\"version\":\"1.0.0\"}`. No test runner declared, no `type: module`, no dependencies. Confirms Node's built-in `node --test` (the verify command) is the right runner and CommonJS is the default module system.\n\n---\n\n## Task 1: Implement sum\n\n### Step 1 — Write `src/util/sum.js`\n\n**Tool:** `Write`\n**Path:** `/tmp/gsd-sandbox-TQQhTj/baseline-capture-gsd-executor-standard/src/util/sum.js`\n**Exact content:**\n```js\nfunction sum(a, b) {\n  return a + b;\n}\n\nmodule.exports = { sum };\n```\n\nRationale for choices:\n- CommonJS `module.exports` because `package.json` has no `\"type\": \"module\"`. Using `export` would break `require()` from the test file.\n- Named export `{ sum }` matches the destructured `require` shape used in step 2.\n- No JSDoc, no input validation — plan asks for \"tiny\" pure function; success criterion is \"exports a pure function,\" nothing more.\n\n### Step 2 — Write `src/util/sum.test.js`\n\n**Tool:** `Write`\n**Path:** `/tmp/gsd-sandbox-TQQhTj/baseline-capture-gsd-executor-standard/src/util/sum.test.js`\n**Exact content:**\n```js\nconst test = require('node:test');\nconst assert = require('node:assert');\nconst { sum } = require('./sum');\n\ntest('sum(2, 3) === 5', () => {\n  assert.strictEqual(sum(2, 3), 5);\n});\n```\n\nRationale:\n- `node:test` + `node:assert` — matches the `<verify>` command `node --test src/util/sum.test.js`.\n- Single assertion `sum(2, 3) === 5` is verbatim from the `<action>` text.\n- `assert.strictEqual` (not `assert.equal`) to honor the `===` in the spec.\n- Relative `./sum` import — sibling file in same directory.\n\n### Step 3 — Verify (the `<verify><automated>` block)\n\n**Tool:** `Bash`\n**Command:** `node --test src/util/sum.test.js`\n**Working directory:** project root.\n\n**Expected output assertions** (gsd-executor would check all of these before declaring done):\n- Exit code `0`.\n- stdout contains `# pass 1` (or `tests 1` / `pass 1` — Node's TAP format).\n- stdout contains `# fail 0`.\n- No `not ok` lines.\n- The named test `sum(2, 3) === 5` appears as `ok 1`.\n\nIf verification failed, executor would enter deviation-handling: read failure output, decide whether to re-Write the source files or escalate to checkpoint. With this plan there is no realistic failure path beyond a typo.\n\n### Step 4 — Done assertion (the `<done>` clause)\n\n`<done>` says \"Test passes.\" Mapped to: exit code 0 from Step 3 plus the TAP `pass 1 / fail 0` lines above. No additional checks required.\n\n---\n\n## Success-criteria sweep (final gate before commit)\n\nThe two checkboxes in `<success_criteria>`:\n\n- [x] **sum.js exports a pure function** — verified by inspecting Step 1's content: no I/O, no closures over mutable state, no side effects, deterministic output for given inputs.\n- [x] **sum.test.js passes** — verified by Step 3 exit code 0.\n\n---\n\n## Commit\n\n**Tool:** `Bash`\n**Command:** atomic commit per gsd-executor convention, staging only the declared `files_modified`:\n\n```\ngit add src/util/sum.js src/util/sum.test.js\ngit commit -m \"$(cat <<'EOF'\nphase 01-utilities / plan 01: add sum utility\n\nImplements sum(a, b) and a single-assertion node:test verifying sum(2, 3) === 5.\n\nCo-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>\nEOF\n)\"\n```\n\nNotes:\n- `PLAN.md` itself is **not** added — it's a planning artifact, not a `files_modified` entry, and gsd-executor keeps planning docs out of code commits (this is the same separation `/gsd-pr-branch` later relies on).\n- `src/util/.keep` is left in place; deleting it would be an undeclared modification.\n- `MODULE.bazel.lock` is irrelevant here (no Bazel in this project), but the global rule about not committing it without test-run validation would apply if it appeared.\n\n---\n\n## Final state gsd-executor would report\n\n- Files created: `src/util/sum.js`, `src/util/sum.test.js`.\n- Tests: 1 passing, 0 failing.\n- Commits added: 1 (atomic, scoped to plan 01).\n- Deviations: none.\n- Checkpoints triggered: none (task was `auto`).\n- Working tree: clean except for the still-untracked `PLAN.md`.",
+  "raw": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "api_error_status": null,
+    "duration_ms": 44662,
+    "duration_api_ms": 43224,
+    "num_turns": 5,
+    "result": "# Baseline: gsd-executor dry-run for PLAN.md\n\nThis describes the exact sequence of actions the `gsd-executor` agent would take if dispatched against `PLAN.md` at `/tmp/gsd-sandbox-TQQhTj/baseline-capture-gsd-executor-standard/`. **No files are being modified** — this is a baseline capture.\n\n---\n\n## Pre-flight: Context loading\n\n1. **Read** `PLAN.md` — parses frontmatter:\n   - `phase: 01-utilities`, `plan: 01`, `type: execute`\n   - `files_modified:` declares `src/util/sum.js` and `src/util/sum.test.js` as the contract — anything written outside this list would be a deviation.\n   - One `<task>` block, `auto` mode (no human checkpoints required).\n2. **Bash** `git status --porcelain` and `git rev-parse HEAD` — captures starting commit (`e237c22 init: test sandbox`) and confirms working tree state (untracked: `PLAN.md`, `src/util/`).\n3. **Bash** `ls src/util/` — observes only `.keep` exists. Confirms target files are net-new (Write, not Edit).\n4. **Read** `package.json` — `{\"name\":\"test-sandbox\",\"version\":\"1.0.0\"}`. No test runner declared, no `type: module`, no dependencies. Confirms Node's built-in `node --test` (the verify command) is the right runner and CommonJS is the default module system.\n\n---\n\n## Task 1: Implement sum\n\n### Step 1 — Write `src/util/sum.js`\n\n**Tool:** `Write`\n**Path:** `/tmp/gsd-sandbox-TQQhTj/baseline-capture-gsd-executor-standard/src/util/sum.js`\n**Exact content:**\n```js\nfunction sum(a, b) {\n  return a + b;\n}\n\nmodule.exports = { sum };\n```\n\nRationale for choices:\n- CommonJS `module.exports` because `package.json` has no `\"type\": \"module\"`. Using `export` would break `require()` from the test file.\n- Named export `{ sum }` matches the destructured `require` shape used in step 2.\n- No JSDoc, no input validation — plan asks for \"tiny\" pure function; success criterion is \"exports a pure function,\" nothing more.\n\n### Step 2 — Write `src/util/sum.test.js`\n\n**Tool:** `Write`\n**Path:** `/tmp/gsd-sandbox-TQQhTj/baseline-capture-gsd-executor-standard/src/util/sum.test.js`\n**Exact content:**\n```js\nconst test = require('node:test');\nconst assert = require('node:assert');\nconst { sum } = require('./sum');\n\ntest('sum(2, 3) === 5', () => {\n  assert.strictEqual(sum(2, 3), 5);\n});\n```\n\nRationale:\n- `node:test` + `node:assert` — matches the `<verify>` command `node --test src/util/sum.test.js`.\n- Single assertion `sum(2, 3) === 5` is verbatim from the `<action>` text.\n- `assert.strictEqual` (not `assert.equal`) to honor the `===` in the spec.\n- Relative `./sum` import — sibling file in same directory.\n\n### Step 3 — Verify (the `<verify><automated>` block)\n\n**Tool:** `Bash`\n**Command:** `node --test src/util/sum.test.js`\n**Working directory:** project root.\n\n**Expected output assertions** (gsd-executor would check all of these before declaring done):\n- Exit code `0`.\n- stdout contains `# pass 1` (or `tests 1` / `pass 1` — Node's TAP format).\n- stdout contains `# fail 0`.\n- No `not ok` lines.\n- The named test `sum(2, 3) === 5` appears as `ok 1`.\n\nIf verification failed, executor would enter deviation-handling: read failure output, decide whether to re-Write the source files or escalate to checkpoint. With this plan there is no realistic failure path beyond a typo.\n\n### Step 4 — Done assertion (the `<done>` clause)\n\n`<done>` says \"Test passes.\" Mapped to: exit code 0 from Step 3 plus the TAP `pass 1 / fail 0` lines above. No additional checks required.\n\n---\n\n## Success-criteria sweep (final gate before commit)\n\nThe two checkboxes in `<success_criteria>`:\n\n- [x] **sum.js exports a pure function** — verified by inspecting Step 1's content: no I/O, no closures over mutable state, no side effects, deterministic output for given inputs.\n- [x] **sum.test.js passes** — verified by Step 3 exit code 0.\n\n---\n\n## Commit\n\n**Tool:** `Bash`\n**Command:** atomic commit per gsd-executor convention, staging only the declared `files_modified`:\n\n```\ngit add src/util/sum.js src/util/sum.test.js\ngit commit -m \"$(cat <<'EOF'\nphase 01-utilities / plan 01: add sum utility\n\nImplements sum(a, b) and a single-assertion node:test verifying sum(2, 3) === 5.\n\nCo-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>\nEOF\n)\"\n```\n\nNotes:\n- `PLAN.md` itself is **not** added — it's a planning artifact, not a `files_modified` entry, and gsd-executor keeps planning docs out of code commits (this is the same separation `/gsd-pr-branch` later relies on).\n- `src/util/.keep` is left in place; deleting it would be an undeclared modification.\n- `MODULE.bazel.lock` is irrelevant here (no Bazel in this project), but the global rule about not committing it without test-run validation would apply if it appeared.\n\n---\n\n## Final state gsd-executor would report\n\n- Files created: `src/util/sum.js`, `src/util/sum.test.js`.\n- Tests: 1 passing, 0 failing.\n- Commits added: 1 (atomic, scoped to plan 01).\n- Deviations: none.\n- Checkpoints triggered: none (task was `auto`).\n- Working tree: clean except for the still-untracked `PLAN.md`.",
+    "stop_reason": "end_turn",
+    "session_id": "9f1bd4fa-3c4b-4bfb-bbee-05fb68e4bbfb",
+    "total_cost_usd": 0.28657099999999996,
+    "usage": {
+      "input_tokens": 10,
+      "cache_creation_input_tokens": 19906,
+      "cache_read_input_tokens": 178517,
+      "output_tokens": 2914,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 19906
+      },
+      "inference_geo": "",
+      "iterations": [
+        {
+          "input_tokens": 1,
+          "output_tokens": 2189,
+          "cache_read_input_tokens": 40097,
+          "cache_creation_input_tokens": 184,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 184,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-opus-4-7[1m]": {
+        "inputTokens": 10,
+        "outputTokens": 2914,
+        "cacheReadInputTokens": 178517,
+        "cacheCreationInputTokens": 19906,
+        "webSearchRequests": 0,
+        "costUSD": 0.28657099999999996,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 64000
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "uuid": "b87814aa-8fcf-47ba-8cf8-0babac7678a3"
+  }
+}

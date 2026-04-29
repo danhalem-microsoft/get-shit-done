@@ -1,0 +1,69 @@
+{
+  "_meta": {
+    "agent": "gsd-code-fixer",
+    "fixture_id": "standard",
+    "captured_at": "2026-04-29T22:39:44.827Z",
+    "schema_kind": "schema-conformance",
+    "runs_recorded": 1
+  },
+  "result": "Baseline captured. gsd-code-fixer (read-only) returned:\n\n**Finding 1 — `lastN` off-by-one** (`src/index.js:4`)\n```diff\n-  return arr.slice(arr.length - n - 1);\n+  return arr.slice(arr.length - n);\n```\nRationale: `slice(length - n)` returns exactly N trailing elements.\n\n**Finding 2 — `divide` silent on b === 0** (`src/index.js:7-9`)\n```diff\n function divide(a, b) {\n+  if (b === 0) {\n+    throw new RangeError('divide: divisor must be non-zero');\n+  }\n   return a / b;\n }\n```\nRationale: explicit throw surfaces the error instead of returning Infinity/NaN.\n\nNo files modified.",
+  "raw": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "api_error_status": null,
+    "duration_ms": 23250,
+    "duration_api_ms": 22745,
+    "num_turns": 4,
+    "result": "Baseline captured. gsd-code-fixer (read-only) returned:\n\n**Finding 1 — `lastN` off-by-one** (`src/index.js:4`)\n```diff\n-  return arr.slice(arr.length - n - 1);\n+  return arr.slice(arr.length - n);\n```\nRationale: `slice(length - n)` returns exactly N trailing elements.\n\n**Finding 2 — `divide` silent on b === 0** (`src/index.js:7-9`)\n```diff\n function divide(a, b) {\n+  if (b === 0) {\n+    throw new RangeError('divide: divisor must be non-zero');\n+  }\n   return a / b;\n }\n```\nRationale: explicit throw surfaces the error instead of returning Infinity/NaN.\n\nNo files modified.",
+    "stop_reason": "end_turn",
+    "session_id": "021ac80a-82a2-40f0-bbce-e7351f6cddb1",
+    "total_cost_usd": 0.33766099999999993,
+    "usage": {
+      "input_tokens": 13,
+      "cache_creation_input_tokens": 19558,
+      "cache_read_input_tokens": 99588,
+      "output_tokens": 1254,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 19558
+      },
+      "inference_geo": "",
+      "iterations": [
+        {
+          "input_tokens": 6,
+          "output_tokens": 266,
+          "cache_read_input_tokens": 39734,
+          "cache_creation_input_tokens": 869,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 869,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-opus-4-7[1m]": {
+        "inputTokens": 20,
+        "outputTokens": 1755,
+        "cacheReadInputTokens": 117122,
+        "cacheCreationInputTokens": 37620,
+        "webSearchRequests": 0,
+        "costUSD": 0.33766099999999993,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 64000
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "uuid": "40c0c0c1-6306-40a0-aacf-a5509668fe63"
+  }
+}
