@@ -1,0 +1,11 @@
+{
+  "fixture_id": "standard",
+  "agent": "gsd-project-researcher",
+  "description": "Canonical project-researcher input: a small project description (a CLI utility for converting CSV to JSON). Expected output: PROJECT-RESEARCH.md covering domain, prior art, common pitfalls, technology recommendations. Schema-conformance baseline.",
+  "prompt": "Spawn the gsd-project-researcher agent. The project is described in PROJECT.md. Research the domain and produce PROJECT-RESEARCH.md with sections: Domain context, Prior art, Pitfalls, Technology recommendations. Be terse — baseline capture.",
+  "sandbox_files": {
+    "PROJECT.md": "# csv-to-json\n\nA Node.js CLI that streams CSV input from stdin and emits JSON to stdout. Should handle quoted fields, embedded newlines, and large files (>1 GB) without loading the whole input into memory.\n"
+  },
+  "env": {},
+  "expected_schema_kind": "schema-conformance"
+}

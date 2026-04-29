@@ -1,0 +1,11 @@
+{
+  "fixture_id": "standard",
+  "agent": "gsd-code-reviewer",
+  "description": "Canonical code-reviewer input: a small JS module with deliberate bugs (off-by-one + missing input validation). Expected output: REVIEW.md with severity-classified findings. Schema-conformance baseline.",
+  "prompt": "Spawn the gsd-code-reviewer agent against src/index.js in the current sandbox. Identify bugs, missing validation, and code-quality issues. Produce REVIEW.md with severity-classified findings. Be terse — baseline capture.",
+  "sandbox_files": {
+    "src/index.js": "'use strict';\n\nfunction lastN(arr, n) {\n  // Off-by-one: should be slice(arr.length - n), not slice(arr.length - n - 1)\n  return arr.slice(arr.length - n - 1);\n}\n\nfunction divide(a, b) {\n  // Missing zero-check\n  return a / b;\n}\n\nfunction parseUserId(raw) {\n  // No type check; passes NaN through silently\n  return parseInt(raw, 10);\n}\n\nmodule.exports = { lastN, divide, parseUserId };\n"
+  },
+  "env": {},
+  "expected_schema_kind": "schema-conformance"
+}

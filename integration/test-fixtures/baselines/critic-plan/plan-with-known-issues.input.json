@@ -1,0 +1,12 @@
+{
+  "fixture_id": "plan-with-known-issues",
+  "agent": "critic-plan",
+  "description": "Phase plan with known issues for plan-critic baseline. Known issues: (1) CRITICAL — REQ-AUTH-02 (logout) is listed in must_haves but no task implements it; (2) MAJOR — Task 2 has no <verify> block; (3) MINOR — fixture_id field missing from sandbox_files convention. Plan-critic should surface these in its baseline output.",
+  "prompt": "Spawn the gsd-critic-plan agent against PLAN.md in the current sandbox. Read PLAN.md and produce a CRITIQUE.md with severity-classified findings (critical/major/minor/info). Output JSON with shape: { findings: [{ severity, lane, title, evidence, fix }] }. Be terse — this is a baseline capture, not a full review.",
+  "sandbox_files": {
+    "PLAN.md": "---\nphase: 01-auth-system\nplan: 02\ntype: execute\nfiles_modified:\n  - src/auth/login.ts\nmust_haves:\n  truths:\n    - \"REQ-AUTH-01 (login) and REQ-AUTH-02 (logout) both implemented and tested\"\n---\n\n<objective>\nImplement the login endpoint for the auth system.\n</objective>\n\n<tasks>\n<task type=\"auto\">\n  <name>Task 1: Implement POST /auth/login</name>\n  <action>Build the login handler in src/auth/login.ts with email+password.</action>\n  <verify><automated>npm test -- login.test.ts</automated></verify>\n  <done>Login endpoint returns 200 with valid JWT.</done>\n</task>\n\n<task type=\"auto\">\n  <name>Task 2: Hash passwords with bcrypt</name>\n  <action>Use bcrypt with cost 12 in the login handler.</action>\n  <done>Passwords are hashed before comparison.</done>\n</task>\n</tasks>\n\n<success_criteria>\n- Login works.\n</success_criteria>\n",
+    "CONTEXT.md": "# Auth Phase Context\n\nDecisions: bcrypt cost 12, JWT with 1h expiry.\n"
+  },
+  "env": {},
+  "expected_schema_kind": "critic-findings"
+}

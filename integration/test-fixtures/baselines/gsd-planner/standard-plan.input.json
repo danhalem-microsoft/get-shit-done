@@ -1,0 +1,13 @@
+{
+  "fixture_id": "standard-plan",
+  "agent": "gsd-planner",
+  "description": "Canonical small phase for planner baseline (standard mode). Inputs: a 2-requirement auth phase with CONTEXT.md (locked decisions) and minimal RESEARCH.md. Planner is expected to emit a PLAN.md frontmatter + 2-3 task <task> blocks with <action>/<verify>/<done>, populated must_haves, and a self-consistent dependency graph.",
+  "prompt": "Spawn the gsd-planner agent for phase 01-auth-system. Read CONTEXT.md, REQUIREMENTS.md, and RESEARCH.md from the sandbox cwd. Produce a PLAN.md (frontmatter + objective + tasks + verification + success_criteria) covering the 2 requirements (REQ-AUTH-01 login, REQ-AUTH-02 logout). Output the full PLAN.md as your response.",
+  "sandbox_files": {
+    "CONTEXT.md": "# Phase 1 Auth — Context\n\n## Decisions\n\n- D-01: Email/password auth with bcrypt cost 12.\n- D-02: JWT (RS256) with 1h expiry; refresh tokens stored in Redis.\n- D-03: Session invalidation = remove refresh token from Redis.\n",
+    "REQUIREMENTS.md": "# Requirements\n\n- REQ-AUTH-01: POST /auth/login with email+password returns 200 + JWT.\n- REQ-AUTH-02: DELETE /auth/session returns 204 and invalidates the refresh token.\n",
+    "RESEARCH.md": "# Research\n\n- bcrypt 5.1.1 is the standard hashing library.\n- jose 5.x for RS256 signing.\n- ioredis for the session store.\n"
+  },
+  "env": {},
+  "expected_schema_kind": "plan-structural"
+}

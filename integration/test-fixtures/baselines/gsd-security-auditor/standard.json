@@ -1,0 +1,69 @@
+{
+  "_meta": {
+    "agent": "gsd-security-auditor",
+    "fixture_id": "standard",
+    "captured_at": "2026-04-29T22:41:02.272Z",
+    "schema_kind": "schema-conformance",
+    "runs_recorded": 1
+  },
+  "result": "Audit complete. SECURITY-AUDIT.md written with 3 CRITICAL / 3 HIGH / 4 MEDIUM / 2 LOW / 1 INFO findings.\n\nTop blockers:\n- `config.json:2` — JWT secret committed in plaintext and weak\n- `config.json:3` — DB admin credentials committed\n- `PLAN.md:14` — Login handler skips rate limiting\n- `PLAN.md:15` — Plan codifies reading secrets from repo-committed file\n- `PLAN.md:5-8` — Threat model only covers Spoofing; missing T/R/I/D/E\n\nBoth committed secrets should be treated as compromised.",
+  "raw": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "api_error_status": null,
+    "duration_ms": 42121,
+    "duration_api_ms": 41338,
+    "num_turns": 2,
+    "result": "Audit complete. SECURITY-AUDIT.md written with 3 CRITICAL / 3 HIGH / 4 MEDIUM / 2 LOW / 1 INFO findings.\n\nTop blockers:\n- `config.json:2` — JWT secret committed in plaintext and weak\n- `config.json:3` — DB admin credentials committed\n- `PLAN.md:14` — Login handler skips rate limiting\n- `PLAN.md:15` — Plan codifies reading secrets from repo-committed file\n- `PLAN.md:5-8` — Threat model only covers Spoofing; missing T/R/I/D/E\n\nBoth committed secrets should be treated as compromised.",
+    "stop_reason": "end_turn",
+    "session_id": "34969791-f42b-4f6e-b0d8-0d3772e5f203",
+    "total_cost_usd": 0.32823775,
+    "usage": {
+      "input_tokens": 12,
+      "cache_creation_input_tokens": 18830,
+      "cache_read_input_tokens": 59840,
+      "output_tokens": 834,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 18830
+      },
+      "inference_geo": "",
+      "iterations": [
+        {
+          "input_tokens": 6,
+          "output_tokens": 231,
+          "cache_read_input_tokens": 38795,
+          "cache_creation_input_tokens": 1080,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 1080,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-opus-4-7[1m]": {
+        "inputTokens": 20,
+        "outputTokens": 3050,
+        "cacheReadInputTokens": 85088,
+        "cacheCreationInputTokens": 33495,
+        "webSearchRequests": 0,
+        "costUSD": 0.32823775,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 64000
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "uuid": "057e07f7-2d54-4760-97d3-85ac5436ad30"
+  }
+}

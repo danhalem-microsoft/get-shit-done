@@ -1,0 +1,12 @@
+{
+  "fixture_id": "scope-with-creep",
+  "agent": "critic-scope",
+  "description": "Phase plan with deliberate scope creep for scope-critic baseline. Known issues: (1) CRITICAL — Task 5 introduces an entirely new payment system, far outside the auth phase boundary; (2) MAJOR — Task 4 adds OAuth provider integration that should be a separate phase; (3) MINOR — Task 3 mentions 'while we're at it, refactor the logger' (drive-by refactor).",
+  "prompt": "Spawn the gsd-critic-scope agent against PLAN.md in the current sandbox. Read PLAN.md and identify tasks that exceed the phase boundary or introduce drive-by work. Output JSON with shape: { findings: [{ severity, lane, title, evidence, fix }] }. Be terse — baseline capture only.",
+  "sandbox_files": {
+    "PLAN.md": "---\nphase: 01-auth-system\nplan: 03\ntype: execute\n---\n\n<objective>\nImplement the email/password auth flow.\n</objective>\n\n<tasks>\n<task><name>Task 1: Build /login</name><action>Implement login handler.</action></task>\n<task><name>Task 2: Build /logout</name><action>Implement logout handler.</action></task>\n<task><name>Task 3: Refactor logger while we're at it</name><action>Replace winston with pino across the entire codebase.</action></task>\n<task><name>Task 4: Add Google OAuth</name><action>Wire google-oauth2 provider, build /oauth/callback, store provider tokens.</action></task>\n<task><name>Task 5: Add Stripe payment integration</name><action>Wire Stripe SDK so authenticated users can subscribe to plans.</action></task>\n</tasks>\n",
+    "CONTEXT.md": "# Auth Phase\n\nGoal: email/password auth ONLY. OAuth and payments are explicitly DEFERRED to later phases.\n"
+  },
+  "env": {},
+  "expected_schema_kind": "critic-findings"
+}

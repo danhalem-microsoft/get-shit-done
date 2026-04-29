@@ -1,0 +1,12 @@
+{
+  "fixture_id": "standard",
+  "agent": "gsd-code-fixer",
+  "description": "Canonical code-fixer input: a REVIEW.md with 2 findings + the source file. Expected output: a description of the fixes the agent would apply (not actually applied — capture mode). Schema-conformance baseline.",
+  "prompt": "Spawn the gsd-code-fixer agent. Read REVIEW.md and src/index.js in the sandbox. Describe the precise fixes you would apply for each finding (file diff + rationale). Do NOT modify files in this baseline — output the diff as text. Be terse — baseline capture.",
+  "sandbox_files": {
+    "REVIEW.md": "# Review Findings\n\n## Critical\n\n1. Off-by-one in `lastN`: `arr.slice(arr.length - n - 1)` returns N+1 elements.\n   Fix: change to `arr.slice(arr.length - n)`.\n\n## Major\n\n2. `divide` does not handle b === 0 (returns Infinity / -Infinity / NaN silently).\n   Fix: throw on b === 0.\n",
+    "src/index.js": "'use strict';\n\nfunction lastN(arr, n) {\n  return arr.slice(arr.length - n - 1);\n}\n\nfunction divide(a, b) {\n  return a / b;\n}\n\nmodule.exports = { lastN, divide };\n"
+  },
+  "env": {},
+  "expected_schema_kind": "schema-conformance"
+}

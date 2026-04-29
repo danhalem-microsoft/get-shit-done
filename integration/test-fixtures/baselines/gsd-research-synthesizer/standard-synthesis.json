@@ -1,0 +1,69 @@
+{
+  "_meta": {
+    "agent": "gsd-research-synthesizer",
+    "fixture_id": "standard-synthesis",
+    "captured_at": "2026-04-29T22:20:19.507Z",
+    "schema_kind": "schema-conformance",
+    "runs_recorded": 1
+  },
+  "result": "The synthesizer agent wrote `RESEARCH.md` to the sandbox root. Full contents below.\n\n```markdown\n# Research\n\n## Patterns\n\n- Prefer pure functions for handlers (testability).\n- Sessions as opaque tokens, not encoded JWTs (revocation).\n- Source: research/2026-04-pattern-survey.md\n\n## Pitfalls\n\n- bcrypt cost > 14 causes 100ms+ latency on commodity CPUs.\n- JWT 'none' alg is a CVE class — explicitly reject.\n- Source: OWASP ASVS 4.0 §V3.\n\n## Stack\n\n- bcrypt 5.1.1 (active maintenance, no CVEs as of 2026-04).\n- jose 5.9 (audit-clean, ESM-only).\n- ioredis 5.4 (cluster + sentinel support).\n```\n\nThree sections in requested order; citations preserved verbatim.",
+  "raw": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "api_error_status": null,
+    "duration_ms": 24532,
+    "duration_api_ms": 23735,
+    "num_turns": 5,
+    "result": "The synthesizer agent wrote `RESEARCH.md` to the sandbox root. Full contents below.\n\n```markdown\n# Research\n\n## Patterns\n\n- Prefer pure functions for handlers (testability).\n- Sessions as opaque tokens, not encoded JWTs (revocation).\n- Source: research/2026-04-pattern-survey.md\n\n## Pitfalls\n\n- bcrypt cost > 14 causes 100ms+ latency on commodity CPUs.\n- JWT 'none' alg is a CVE class — explicitly reject.\n- Source: OWASP ASVS 4.0 §V3.\n\n## Stack\n\n- bcrypt 5.1.1 (active maintenance, no CVEs as of 2026-04).\n- jose 5.9 (audit-clean, ESM-only).\n- ioredis 5.4 (cluster + sentinel support).\n```\n\nThree sections in requested order; citations preserved verbatim.",
+    "stop_reason": "end_turn",
+    "session_id": "98785557-b83b-48c7-95f7-1c81a83851ee",
+    "total_cost_usd": 0.31262025,
+    "usage": {
+      "input_tokens": 13,
+      "cache_creation_input_tokens": 19809,
+      "cache_read_input_tokens": 99596,
+      "output_tokens": 1456,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 19809
+      },
+      "inference_geo": "",
+      "iterations": [
+        {
+          "input_tokens": 6,
+          "output_tokens": 311,
+          "cache_read_input_tokens": 39711,
+          "cache_creation_input_tokens": 1143,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 1143,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-opus-4-7[1m]": {
+        "inputTokens": 19,
+        "outputTokens": 2203,
+        "cacheReadInputTokens": 111538,
+        "cacheCreationInputTokens": 32269,
+        "webSearchRequests": 0,
+        "costUSD": 0.31262025,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 64000
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "uuid": "5bff4fe5-ee8a-4fd7-8f79-6eb9d1c7cfa8"
+  }
+}

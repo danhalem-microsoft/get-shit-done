@@ -1,0 +1,12 @@
+{
+  "fixture_id": "verify-with-gaps",
+  "agent": "critic-verify",
+  "description": "Phase plan with deliberate verification gaps for verify-critic baseline. Known issues: (1) CRITICAL — Task 1 has no <verify> block; (2) MAJOR — Task 2's <verify> says 'manual check' with no automated assertion; (3) MAJOR — Task 3 verifies the WRONG behavior (asserts 200 when the requirement is 204); (4) MINOR — Task 4 lacks a <done> criterion.",
+  "prompt": "Spawn the gsd-critic-verify agent against PLAN.md in the current sandbox. Read PLAN.md and identify verification gaps, missing <verify> blocks, manual-only verification, and mismatches between done criteria and requirements. Output JSON with shape: { findings: [{ severity, lane, title, evidence, fix }] }. Be terse — baseline capture.",
+  "sandbox_files": {
+    "PLAN.md": "---\nphase: 01-auth-system\nplan: 04\ntype: execute\n---\n\n<objective>Implement /logout endpoint per REQ-AUTH-02 (must return 204 on success).</objective>\n\n<tasks>\n<task><name>Task 1: Build /logout handler</name><action>Implement DELETE /auth/session.</action><done>Logout works.</done></task>\n<task><name>Task 2: Invalidate session token</name><action>Remove token from session store.</action><verify>Manual check — log in, log out, verify can't access protected route.</verify><done>Session invalidated.</done></task>\n<task><name>Task 3: Return 204 on success</name><action>Set response status.</action><verify><automated>curl -X DELETE /auth/session | grep -q '\"status\":200'</automated></verify><done>Status returned.</done></task>\n<task><name>Task 4: Clear session cookie</name><action>Set cookie maxAge=0 in response.</action><verify><automated>npm test -- logout-cookie.test.ts</automated></verify></task>\n</tasks>\n",
+    "REQUIREMENTS.md": "# Requirements\n\n- REQ-AUTH-02: DELETE /auth/session MUST return HTTP 204 No Content on successful logout.\n"
+  },
+  "env": {},
+  "expected_schema_kind": "critic-findings"
+}

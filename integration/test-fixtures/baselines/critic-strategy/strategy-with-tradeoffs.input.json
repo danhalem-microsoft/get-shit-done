@@ -1,0 +1,12 @@
+{
+  "fixture_id": "strategy-with-tradeoffs",
+  "agent": "critic-strategy",
+  "description": "Phase plan + roadmap excerpt with strategic tradeoffs for strategy-critic baseline. Known issues: (1) CRITICAL — Phase 2 depends on Phase 1's JWT format, but Phase 1 plans to switch from RS256 to HS256 mid-phase, breaking the contract; (2) MAJOR — The chosen Redis-only session store rules out future horizontal scaling without re-architecture; (3) MINOR — Phase ordering puts integration tests after release rather than before.",
+  "prompt": "Spawn the gsd-critic-strategy agent against PLAN.md and ROADMAP.md in the current sandbox. Read both and identify strategic-misalignment issues: cross-phase contract breaks, future-debt traps, ordering issues. Output JSON with shape: { findings: [{ severity, lane, title, evidence, fix }] }. Be terse — baseline capture.",
+  "sandbox_files": {
+    "PLAN.md": "---\nphase: 01-auth-system\nplan: 05\ntype: execute\n---\n\n<objective>\nImplement JWT-based auth. Mid-phase, switch from RS256 to HS256 for simplicity.\n</objective>\n\n<tasks>\n<task><name>Task 1: JWT with RS256</name><action>Issue tokens with RS256.</action></task>\n<task><name>Task 2: Switch to HS256</name><action>Re-key all signing to HS256, deploy new secret.</action></task>\n<task><name>Task 3: Redis session store</name><action>Single-node Redis for sessions.</action></task>\n</tasks>\n",
+    "ROADMAP.md": "# Roadmap\n\n- Phase 1: Auth (JWT format LOCKED — downstream phases depend on it).\n- Phase 2: API authorization (consumes Phase 1 JWT format directly).\n- Phase 3: Horizontal scaling.\n- Phase 99 (release): Integration tests run against staging.\n"
+  },
+  "env": {},
+  "expected_schema_kind": "critic-findings"
+}

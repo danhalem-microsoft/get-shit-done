@@ -1,0 +1,69 @@
+{
+  "_meta": {
+    "agent": "critic-verify",
+    "fixture_id": "verify-with-gaps",
+    "captured_at": "2026-04-29T22:13:33.360Z",
+    "schema_kind": "critic-findings",
+    "runs_recorded": 1
+  },
+  "result": "```json\n{\n  \"findings\": [\n    {\n      \"severity\": \"HIGH\",\n      \"lane\": \"requirements-alignment\",\n      \"title\": \"Task 3 verification greps for wrong status code (200 instead of required 204)\",\n      \"evidence\": \"Task 3: <automated>curl -X DELETE /auth/session | grep -q '\\\"status\\\":200'</automated>\",\n      \"fix\": \"Assert HTTP 204 explicitly: `curl -s -o /dev/null -w '%{http_code}' -X DELETE /auth/session | grep -q '^204$'`. Current check would PASS on a 200, violating REQ-AUTH-02.\"\n    },\n    {\n      \"severity\": \"HIGH\",\n      \"lane\": \"verification\",\n      \"title\": \"Task 1 has no <verify> block\",\n      \"evidence\": \"Task 1: <action>Implement DELETE /auth/session.</action><done>Logout works.</done> — no <verify> tag\",\n      \"fix\": \"Add <verify><automated>...</automated></verify> exercising the endpoint and asserting 204 + session invalidation.\"\n    },\n    {\n      \"severity\": \"HIGH\",\n      \"lane\": \"verification\",\n      \"title\": \"Task 2 verification is manual-only and unfalsifiable in CI\",\n      \"evidence\": \"Task 2: <verify>Manual check — log in, log out, verify can't access protected route.</verify>\",\n      \"fix\": \"Replace with automated integration test: POST /login, DELETE /auth/session, GET protected route, assert 401/403.\"\n    },\n    {\n      \"severity\": \"MEDIUM\",\n      \"lane\": \"done-criteria\",\n      \"title\": \"Task 1 done criterion is unfalsifiable\",\n      \"evidence\": \"Task 1: <done>Logout works.</done>\",\n      \"fix\": \"Specify falsifiable condition: 'DELETE /auth/session returns HTTP 204 and removes the session token from the store.'\"\n    },\n    {\n      \"severity\": \"MEDIUM\",\n      \"lane\": \"done-criteria\",\n      \"title\": \"Task 3 done criterion does not specify the required status\",\n      \"evidence\": \"Task 3: <done>Status returned.</done>\",\n      \"fix\": \"Tighten to 'Response status is exactly HTTP 204 No Content per REQ-AUTH-02.'\"\n    },\n    {\n      \"severity\": \"MEDIUM\",\n      \"lane\": \"done-criteria\",\n      \"title\": \"Task 4 has no <done> criterion\",\n      \"evidence\": \"Task 4: <action>Set cookie maxAge=0 in response.</action><verify><automated>npm test -- logout-cookie.test.ts</automated></verify> — no <done> tag\",\n      \"fix\": \"Add <done>Set-Cookie on DELETE /auth/session response includes Max-Age=0 (or past Expires) for the session cookie.</done>\"\n    },\n    {\n      \"severity\": \"LOW\",\n      \"lane\": \"verification\",\n      \"title\": \"Task 4 verify references a test file without inline assertions\",\n      \"evidence\": \"Task 4: <automated>npm test -- logout-cookie.test.ts</automated>\",\n      \"fix\": \"Inline the assertion (grep Set-Cookie for Max-Age=0) or name the specific test cases inside logout-cookie.test.ts so verification is reviewable without opening another file.\"\n    }\n  ]\n}\n```\n\nBaseline: 7 findings (3 HIGH, 3 MEDIUM, 1 LOW). The standout HIGH is the REQ-AUTH-02 mismatch — Task 3 greps for status 200 while the requirement mandates 204, so the automated check would falsely pass on a non-compliant implementation.",
+  "raw": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "api_error_status": null,
+    "duration_ms": 42224,
+    "duration_api_ms": 41732,
+    "num_turns": 4,
+    "result": "```json\n{\n  \"findings\": [\n    {\n      \"severity\": \"HIGH\",\n      \"lane\": \"requirements-alignment\",\n      \"title\": \"Task 3 verification greps for wrong status code (200 instead of required 204)\",\n      \"evidence\": \"Task 3: <automated>curl -X DELETE /auth/session | grep -q '\\\"status\\\":200'</automated>\",\n      \"fix\": \"Assert HTTP 204 explicitly: `curl -s -o /dev/null -w '%{http_code}' -X DELETE /auth/session | grep -q '^204$'`. Current check would PASS on a 200, violating REQ-AUTH-02.\"\n    },\n    {\n      \"severity\": \"HIGH\",\n      \"lane\": \"verification\",\n      \"title\": \"Task 1 has no <verify> block\",\n      \"evidence\": \"Task 1: <action>Implement DELETE /auth/session.</action><done>Logout works.</done> — no <verify> tag\",\n      \"fix\": \"Add <verify><automated>...</automated></verify> exercising the endpoint and asserting 204 + session invalidation.\"\n    },\n    {\n      \"severity\": \"HIGH\",\n      \"lane\": \"verification\",\n      \"title\": \"Task 2 verification is manual-only and unfalsifiable in CI\",\n      \"evidence\": \"Task 2: <verify>Manual check — log in, log out, verify can't access protected route.</verify>\",\n      \"fix\": \"Replace with automated integration test: POST /login, DELETE /auth/session, GET protected route, assert 401/403.\"\n    },\n    {\n      \"severity\": \"MEDIUM\",\n      \"lane\": \"done-criteria\",\n      \"title\": \"Task 1 done criterion is unfalsifiable\",\n      \"evidence\": \"Task 1: <done>Logout works.</done>\",\n      \"fix\": \"Specify falsifiable condition: 'DELETE /auth/session returns HTTP 204 and removes the session token from the store.'\"\n    },\n    {\n      \"severity\": \"MEDIUM\",\n      \"lane\": \"done-criteria\",\n      \"title\": \"Task 3 done criterion does not specify the required status\",\n      \"evidence\": \"Task 3: <done>Status returned.</done>\",\n      \"fix\": \"Tighten to 'Response status is exactly HTTP 204 No Content per REQ-AUTH-02.'\"\n    },\n    {\n      \"severity\": \"MEDIUM\",\n      \"lane\": \"done-criteria\",\n      \"title\": \"Task 4 has no <done> criterion\",\n      \"evidence\": \"Task 4: <action>Set cookie maxAge=0 in response.</action><verify><automated>npm test -- logout-cookie.test.ts</automated></verify> — no <done> tag\",\n      \"fix\": \"Add <done>Set-Cookie on DELETE /auth/session response includes Max-Age=0 (or past Expires) for the session cookie.</done>\"\n    },\n    {\n      \"severity\": \"LOW\",\n      \"lane\": \"verification\",\n      \"title\": \"Task 4 verify references a test file without inline assertions\",\n      \"evidence\": \"Task 4: <automated>npm test -- logout-cookie.test.ts</automated>\",\n      \"fix\": \"Inline the assertion (grep Set-Cookie for Max-Age=0) or name the specific test cases inside logout-cookie.test.ts so verification is reviewable without opening another file.\"\n    }\n  ]\n}\n```\n\nBaseline: 7 findings (3 HIGH, 3 MEDIUM, 1 LOW). The standout HIGH is the REQ-AUTH-02 mismatch — Task 3 greps for status 200 while the requirement mandates 204, so the automated check would falsely pass on a non-compliant implementation.",
+    "stop_reason": "end_turn",
+    "session_id": "c0fe9d5f-3b18-4273-90c8-0fd1226561b7",
+    "total_cost_usd": 0.35817975,
+    "usage": {
+      "input_tokens": 14,
+      "cache_creation_input_tokens": 20695,
+      "cache_read_input_tokens": 139081,
+      "output_tokens": 2197,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 20695
+      },
+      "inference_geo": "",
+      "iterations": [
+        {
+          "input_tokens": 6,
+          "output_tokens": 1221,
+          "cache_read_input_tokens": 39707,
+          "cache_creation_input_tokens": 2033,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 2033,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-opus-4-7[1m]": {
+        "inputTokens": 21,
+        "outputTokens": 3670,
+        "cacheReadInputTokens": 161587,
+        "cacheCreationInputTokens": 29685,
+        "webSearchRequests": 0,
+        "costUSD": 0.35817975,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 64000
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "uuid": "18dc146d-72d7-4f08-87f6-86d7b99e95be"
+  }
+}

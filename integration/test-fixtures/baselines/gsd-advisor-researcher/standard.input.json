@@ -1,0 +1,12 @@
+{
+  "fixture_id": "standard",
+  "agent": "gsd-advisor-researcher",
+  "description": "Canonical advisor-researcher input: a gray-area decision (chose between sync bcrypt and async bcrypt API) with project context. Expected output: ADVICE.md weighing tradeoffs and giving a concrete recommendation. Schema-conformance baseline.",
+  "prompt": "Spawn the gsd-advisor-researcher agent. Read DECISION.md (the gray-area decision) and CONTEXT.md (project context). Produce ADVICE.md with: stated decision, options weighed, tradeoffs per option, and a concrete recommendation. Be terse — baseline capture.",
+  "sandbox_files": {
+    "DECISION.md": "# Gray-area decision\n\nDuring login validation, should we use `bcrypt.compareSync` (simpler code, blocks event loop ~50-100ms per call) or `bcrypt.compare` (async, more complex, but non-blocking)? Throughput target: ~50 logins/sec sustained.\n",
+    "CONTEXT.md": "# Project Context\n\nNode.js 20 LTS server. Single-process per CPU core (cluster module). Redis-backed session store. Login is on the hot path and SLO is p99 < 200ms.\n"
+  },
+  "env": {},
+  "expected_schema_kind": "schema-conformance"
+}

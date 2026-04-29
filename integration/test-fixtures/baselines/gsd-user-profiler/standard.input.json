@@ -1,0 +1,11 @@
+{
+  "fixture_id": "standard",
+  "agent": "gsd-user-profiler",
+  "description": "Canonical user-profiler input: a small interaction history (3 brainstorm turns) where the user expresses preferences (terse output, prefers async/await over callbacks, hates magic numbers). Expected output: USER-PROFILE.md summarizing preferences. Schema-conformance baseline.",
+  "prompt": "Spawn the gsd-user-profiler agent. Read interaction-history.md (a transcript of recent user feedback). Produce USER-PROFILE.md summarizing observed preferences with evidence (quoted lines). Be terse — baseline capture.",
+  "sandbox_files": {
+    "interaction-history.md": "# Interaction History\n\n[2026-04-15] User: \"Stop the verbose explanations. Just show the diff.\"\n[2026-04-18] User: \"Why is this using callbacks? Use async/await — callbacks are 2010 vibes.\"\n[2026-04-22] User: \"What's `86400` in this code? Don't use magic numbers — name your constants.\"\n[2026-04-25] User: \"One question at a time. Don't bundle three questions into one prompt.\"\n[2026-04-27] User: \"Skip the default-yes confirmation gates. Just do the work.\"\n"
+  },
+  "env": {},
+  "expected_schema_kind": "schema-conformance"
+}

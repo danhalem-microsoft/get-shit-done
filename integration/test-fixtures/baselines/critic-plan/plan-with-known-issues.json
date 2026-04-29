@@ -1,0 +1,69 @@
+{
+  "_meta": {
+    "agent": "critic-plan",
+    "fixture_id": "plan-with-known-issues",
+    "captured_at": "2026-04-29T22:11:26.040Z",
+    "schema_kind": "critic-findings",
+    "runs_recorded": 1
+  },
+  "result": "The gsd-critic-plan agent ran against PLAN.md and produced CRITIQUE.md with 12 findings:\n\n- **2 critical**: REQ-AUTH-02 (logout) claimed but not planned; JWT 1h expiry decision not implemented\n- **6 major**: missing verify step (Task 2), vague Task 1 action, verify references non-existent test file, missing bcrypt/jsonwebtoken install, no test tasks despite \"tested\" claim, success_criteria not measurable\n- **3 minor**: incomplete files_modified, no rate limiting, missing frontmatter fields\n- **1 info**: plan numbered 02 with no Plan 01 referenced\n\nFindings span lanes: scope, verification, ambiguity, dependencies, security, frontmatter, and convention. Full JSON output is in the agent's response above.",
+  "raw": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "api_error_status": null,
+    "duration_ms": 40814,
+    "duration_api_ms": 40100,
+    "num_turns": 2,
+    "result": "The gsd-critic-plan agent ran against PLAN.md and produced CRITIQUE.md with 12 findings:\n\n- **2 critical**: REQ-AUTH-02 (logout) claimed but not planned; JWT 1h expiry decision not implemented\n- **6 major**: missing verify step (Task 2), vague Task 1 action, verify references non-existent test file, missing bcrypt/jsonwebtoken install, no test tasks despite \"tested\" claim, success_criteria not measurable\n- **3 minor**: incomplete files_modified, no rate limiting, missing frontmatter fields\n- **1 info**: plan numbered 02 with no Plan 01 referenced\n\nFindings span lanes: scope, verification, ambiguity, dependencies, security, frontmatter, and convention. Full JSON output is in the agent's response above.",
+    "stop_reason": "end_turn",
+    "session_id": "ad0cc36c-f571-4f37-a2ea-f2e254af1d3d",
+    "total_cost_usd": 0.29993675,
+    "usage": {
+      "input_tokens": 12,
+      "cache_creation_input_tokens": 20312,
+      "cache_read_input_tokens": 59894,
+      "output_tokens": 840,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 20312
+      },
+      "inference_geo": "",
+      "iterations": [
+        {
+          "input_tokens": 6,
+          "output_tokens": 284,
+          "cache_read_input_tokens": 38849,
+          "cache_creation_input_tokens": 2508,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 2508,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-opus-4-7[1m]": {
+        "inputTokens": 19,
+        "outputTokens": 2876,
+        "cacheReadInputTokens": 82921,
+        "cacheCreationInputTokens": 29837,
+        "webSearchRequests": 0,
+        "costUSD": 0.29993675,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 64000
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "uuid": "ed81bd81-aaaf-4b18-92ac-cf8d3c155dd0"
+  }
+}

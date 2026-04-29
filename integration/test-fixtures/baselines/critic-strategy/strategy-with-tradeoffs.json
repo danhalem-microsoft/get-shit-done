@@ -1,0 +1,69 @@
+{
+  "_meta": {
+    "agent": "critic-strategy",
+    "fixture_id": "strategy-with-tradeoffs",
+    "captured_at": "2026-04-29T22:15:01.154Z",
+    "schema_kind": "critic-findings",
+    "runs_recorded": 1
+  },
+  "result": "```json\n{\n  \"findings\": [\n    {\n      \"severity\": \"HIGH\",\n      \"lane\": \"cross-phase-contract\",\n      \"title\": \"JWT format change breaks Phase 1 LOCKED contract\",\n      \"evidence\": \"ROADMAP.md L3: 'Phase 1: Auth (JWT format LOCKED — downstream phases depend on it).' vs PLAN.md L8: 'Mid-phase, switch from RS256 to HS256'\",\n      \"fix\": \"Pick one algorithm before Phase 1 ends; do not change format mid-phase. Update ROADMAP if a deliberate change is needed and re-notify Phase 2 consumers.\"\n    },\n    {\n      \"severity\": \"HIGH\",\n      \"lane\": \"cross-phase-contract\",\n      \"title\": \"Phase 2 will consume an unstable JWT format\",\n      \"evidence\": \"ROADMAP.md L4: 'Phase 2: API authorization (consumes Phase 1 JWT format directly)' while PLAN.md ships two formats (RS256 then HS256) within Phase 1\",\n      \"fix\": \"Freeze JWT signing algorithm and key contract before Phase 2 begins; document the final algorithm in a Phase 1 ADR.\"\n    },\n    {\n      \"severity\": \"HIGH\",\n      \"lane\": \"future-debt\",\n      \"title\": \"Single-node Redis blocks Phase 3 horizontal scaling\",\n      \"evidence\": \"PLAN.md L14: 'Task 3: Redis session store: Single-node Redis for sessions.' vs ROADMAP.md L5: 'Phase 3: Horizontal scaling.'\",\n      \"fix\": \"Use a Redis deployment compatible with horizontal scaling (cluster/sentinel) or design sessions to be stateless/shardable now to avoid a Phase 3 rewrite.\"\n    },\n    {\n      \"severity\": \"MEDIUM\",\n      \"lane\": \"future-debt\",\n      \"title\": \"HS256 shared-secret choice constrains multi-service scaling\",\n      \"evidence\": \"PLAN.md L13: 'Re-key all signing to HS256, deploy new secret.' combined with ROADMAP.md L5 horizontal scaling phase\",\n      \"fix\": \"Prefer RS256/asymmetric keys so verifiers can scale without sharing a secret; if HS256 is required, document secret-rotation and distribution plan before Phase 3.\"\n    },\n    {\n      \"severity\": \"HIGH\",\n      \"lane\": \"ordering\",\n      \"title\": \"Integration tests deferred to release phase, after scaling lands\",\n      \"evidence\": \"ROADMAP.md L6: 'Phase 99 (release): Integration tests run against staging.'\",\n      \"fix\": \"Introduce integration tests at/after Phase 1 (auth contract) and Phase 2 (authorization) so contract breaks are caught before Phase 3 scaling work, not at release.\"\n    },\n    {\n      \"severity\": \"MEDIUM\",\n      \"lane\": \"ordering\",\n      \"title\": \"Algorithm switch sequenced inside the same phase that locks the format\",\n      \"evidence\": \"PLAN.md L8: 'Mid-phase, switch from RS256 to HS256 for simplicity.' under a phase ROADMAP marks as LOCKED\",\n      \"fix\": \"Split into two phases or do the algorithm decision in a pre-Phase-1 spike; only one signing algorithm should ship from Phase 1.\"\n    }\n  ]\n}\n```",
+  "raw": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "api_error_status": null,
+    "duration_ms": 36706,
+    "duration_api_ms": 36264,
+    "num_turns": 2,
+    "result": "```json\n{\n  \"findings\": [\n    {\n      \"severity\": \"HIGH\",\n      \"lane\": \"cross-phase-contract\",\n      \"title\": \"JWT format change breaks Phase 1 LOCKED contract\",\n      \"evidence\": \"ROADMAP.md L3: 'Phase 1: Auth (JWT format LOCKED — downstream phases depend on it).' vs PLAN.md L8: 'Mid-phase, switch from RS256 to HS256'\",\n      \"fix\": \"Pick one algorithm before Phase 1 ends; do not change format mid-phase. Update ROADMAP if a deliberate change is needed and re-notify Phase 2 consumers.\"\n    },\n    {\n      \"severity\": \"HIGH\",\n      \"lane\": \"cross-phase-contract\",\n      \"title\": \"Phase 2 will consume an unstable JWT format\",\n      \"evidence\": \"ROADMAP.md L4: 'Phase 2: API authorization (consumes Phase 1 JWT format directly)' while PLAN.md ships two formats (RS256 then HS256) within Phase 1\",\n      \"fix\": \"Freeze JWT signing algorithm and key contract before Phase 2 begins; document the final algorithm in a Phase 1 ADR.\"\n    },\n    {\n      \"severity\": \"HIGH\",\n      \"lane\": \"future-debt\",\n      \"title\": \"Single-node Redis blocks Phase 3 horizontal scaling\",\n      \"evidence\": \"PLAN.md L14: 'Task 3: Redis session store: Single-node Redis for sessions.' vs ROADMAP.md L5: 'Phase 3: Horizontal scaling.'\",\n      \"fix\": \"Use a Redis deployment compatible with horizontal scaling (cluster/sentinel) or design sessions to be stateless/shardable now to avoid a Phase 3 rewrite.\"\n    },\n    {\n      \"severity\": \"MEDIUM\",\n      \"lane\": \"future-debt\",\n      \"title\": \"HS256 shared-secret choice constrains multi-service scaling\",\n      \"evidence\": \"PLAN.md L13: 'Re-key all signing to HS256, deploy new secret.' combined with ROADMAP.md L5 horizontal scaling phase\",\n      \"fix\": \"Prefer RS256/asymmetric keys so verifiers can scale without sharing a secret; if HS256 is required, document secret-rotation and distribution plan before Phase 3.\"\n    },\n    {\n      \"severity\": \"HIGH\",\n      \"lane\": \"ordering\",\n      \"title\": \"Integration tests deferred to release phase, after scaling lands\",\n      \"evidence\": \"ROADMAP.md L6: 'Phase 99 (release): Integration tests run against staging.'\",\n      \"fix\": \"Introduce integration tests at/after Phase 1 (auth contract) and Phase 2 (authorization) so contract breaks are caught before Phase 3 scaling work, not at release.\"\n    },\n    {\n      \"severity\": \"MEDIUM\",\n      \"lane\": \"ordering\",\n      \"title\": \"Algorithm switch sequenced inside the same phase that locks the format\",\n      \"evidence\": \"PLAN.md L8: 'Mid-phase, switch from RS256 to HS256 for simplicity.' under a phase ROADMAP marks as LOCKED\",\n      \"fix\": \"Split into two phases or do the algorithm decision in a pre-Phase-1 spike; only one signing algorithm should ship from Phase 1.\"\n    }\n  ]\n}\n```",
+    "stop_reason": "end_turn",
+    "session_id": "0f49706f-0522-4b6f-a8d9-b4c141b5805d",
+    "total_cost_usd": 0.29926925000000004,
+    "usage": {
+      "input_tokens": 12,
+      "cache_creation_input_tokens": 19675,
+      "cache_read_input_tokens": 59916,
+      "output_tokens": 1830,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 19675
+      },
+      "inference_geo": "",
+      "iterations": [
+        {
+          "input_tokens": 6,
+          "output_tokens": 1162,
+          "cache_read_input_tokens": 38871,
+          "cache_creation_input_tokens": 1849,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 1849,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-opus-4-7[1m]": {
+        "inputTokens": 19,
+        "outputTokens": 3093,
+        "cacheReadInputTokens": 82736,
+        "cacheCreationInputTokens": 28877,
+        "webSearchRequests": 0,
+        "costUSD": 0.29926925000000004,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 64000
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "uuid": "ea2a467c-0816-4171-864a-6d10e917bbeb"
+  }
+}

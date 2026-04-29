@@ -1,0 +1,12 @@
+{
+  "fixture_id": "standard",
+  "agent": "gsd-verifier",
+  "description": "Canonical verifier input: a phase SUMMARY.md plus a PLAN.md to verify against. Expected output: VERIFICATION.md with per-criterion pass/fail entries and any gap findings. Schema-conformance baseline.",
+  "prompt": "Spawn the gsd-verifier agent against PLAN.md and SUMMARY.md in the current sandbox. Verify each success criterion in PLAN.md against the artifacts described in SUMMARY.md. Produce VERIFICATION.md with criterion-by-criterion results and any gaps. Output the full VERIFICATION.md.",
+  "sandbox_files": {
+    "PLAN.md": "---\nphase: 01-auth-system\nplan: 02\n---\n\n<objective>Implement /auth/login.</objective>\n\n<success_criteria>\n- [ ] POST /auth/login returns 200 with JWT for valid credentials.\n- [ ] Returns 401 for invalid credentials.\n- [ ] Bcrypt cost factor is 12.\n</success_criteria>\n",
+    "SUMMARY.md": "# Plan 02 Summary\n\nImplemented POST /auth/login. Returns 200 with JWT on valid creds. Returns 401 on invalid creds. Bcrypt cost factor: 10 (chose lower for test perf).\n\nFiles created: src/auth/login.ts, src/auth/login.test.ts\nCommits: abc1234\n"
+  },
+  "env": {},
+  "expected_schema_kind": "schema-conformance"
+}

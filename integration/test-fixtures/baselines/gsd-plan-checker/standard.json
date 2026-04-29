@@ -1,0 +1,69 @@
+{
+  "_meta": {
+    "agent": "gsd-plan-checker",
+    "fixture_id": "standard",
+    "captured_at": "2026-04-29T22:32:20.178Z",
+    "schema_kind": "schema-conformance",
+    "runs_recorded": 1
+  },
+  "result": "```json\n{\n  \"findings\": [\n    { \"rule\": \"missing-requirement-coverage\", \"severity\": \"high\", \"message\": \"REQ-AUTH-02 (DELETE /auth/session) has no covering task or artifact in PLAN.md.\", \"evidence\": \"REQUIREMENTS.md lists REQ-AUTH-02 but PLAN.md only references REQ-AUTH-01\" },\n    { \"rule\": \"vague-action\", \"severity\": \"high\", \"message\": \"Task 1 action is non-specific and not executable as written.\", \"evidence\": \"<action>Build the handler.</action>\" },\n    { \"rule\": \"vague-verify\", \"severity\": \"high\", \"message\": \"Verify step lacks a concrete command, file path, or test target.\", \"evidence\": \"<verify>Run the tests.</verify>\" },\n    { \"rule\": \"vague-done\", \"severity\": \"medium\", \"message\": \"Done criterion is not measurable or user-observable.\", \"evidence\": \"<done>Login works.</done>\" },\n    { \"rule\": \"missing-files-element\", \"severity\": \"high\", \"message\": \"Task 1 lacks a <files> element listing artifacts to be created/modified.\", \"evidence\": \"Task block contains only name/action/verify/done\" },\n    { \"rule\": \"missing-depends_on\", \"severity\": \"medium\", \"message\": \"Frontmatter omits depends_on field, preventing wave/dependency analysis.\", \"evidence\": \"Frontmatter has phase, plan, type, files_modified, must_haves only\" },\n    { \"rule\": \"missing-wave\", \"severity\": \"low\", \"message\": \"Frontmatter omits wave field.\", \"evidence\": \"No wave key in frontmatter\" },\n    { \"rule\": \"missing-requirements-frontmatter\", \"severity\": \"high\", \"message\": \"Frontmatter lacks requirements field mapping plan to requirement IDs.\", \"evidence\": \"Only must_haves.truths mentions REQ-AUTH-01 informally\" },\n    { \"rule\": \"implementation-focused-truth\", \"severity\": \"medium\", \"message\": \"must_haves.truths is implementation-focused rather than user-observable.\", \"evidence\": \"\\\"REQ-AUTH-01 implemented and tested\\\"\" },\n    { \"rule\": \"missing-artifacts\", \"severity\": \"medium\", \"message\": \"must_haves lacks artifacts list with paths/min_lines.\", \"evidence\": \"must_haves contains only truths\" },\n    { \"rule\": \"missing-key_links\", \"severity\": \"medium\", \"message\": \"must_haves lacks key_links to wire artifacts together.\", \"evidence\": \"No key_links in must_haves\" },\n    { \"rule\": \"no-automated-verify\", \"severity\": \"high\", \"message\": \"Verify block has no <automated> command for Nyquist sampling.\", \"evidence\": \"<verify>Run the tests.</verify>\" },\n    { \"rule\": \"weak-success-criteria\", \"severity\": \"medium\", \"message\": \"success_criteria is not user-observable and duplicates the objective without measurable acceptance.\", \"evidence\": \"- [ ] Login endpoint exists.\" },\n    { \"rule\": \"no-research-reference\", \"severity\": \"low\", \"message\": \"Plan does not reference RESEARCH.md, PATTERNS.md, or any analog file for the handler being built.\", \"evidence\": \"Action contains no analog or pattern reference\" },\n    { \"rule\": \"underscoped-plan\", \"severity\": \"medium\", \"message\": \"Single-task plan covering only one of two listed requirements suggests phase scope is incomplete.\", \"evidence\": \"Only Task 1 present; REQ-AUTH-02 absent\" }\n  ]\n}\n```",
+  "raw": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "api_error_status": null,
+    "duration_ms": 41679,
+    "duration_api_ms": 39792,
+    "num_turns": 3,
+    "result": "```json\n{\n  \"findings\": [\n    { \"rule\": \"missing-requirement-coverage\", \"severity\": \"high\", \"message\": \"REQ-AUTH-02 (DELETE /auth/session) has no covering task or artifact in PLAN.md.\", \"evidence\": \"REQUIREMENTS.md lists REQ-AUTH-02 but PLAN.md only references REQ-AUTH-01\" },\n    { \"rule\": \"vague-action\", \"severity\": \"high\", \"message\": \"Task 1 action is non-specific and not executable as written.\", \"evidence\": \"<action>Build the handler.</action>\" },\n    { \"rule\": \"vague-verify\", \"severity\": \"high\", \"message\": \"Verify step lacks a concrete command, file path, or test target.\", \"evidence\": \"<verify>Run the tests.</verify>\" },\n    { \"rule\": \"vague-done\", \"severity\": \"medium\", \"message\": \"Done criterion is not measurable or user-observable.\", \"evidence\": \"<done>Login works.</done>\" },\n    { \"rule\": \"missing-files-element\", \"severity\": \"high\", \"message\": \"Task 1 lacks a <files> element listing artifacts to be created/modified.\", \"evidence\": \"Task block contains only name/action/verify/done\" },\n    { \"rule\": \"missing-depends_on\", \"severity\": \"medium\", \"message\": \"Frontmatter omits depends_on field, preventing wave/dependency analysis.\", \"evidence\": \"Frontmatter has phase, plan, type, files_modified, must_haves only\" },\n    { \"rule\": \"missing-wave\", \"severity\": \"low\", \"message\": \"Frontmatter omits wave field.\", \"evidence\": \"No wave key in frontmatter\" },\n    { \"rule\": \"missing-requirements-frontmatter\", \"severity\": \"high\", \"message\": \"Frontmatter lacks requirements field mapping plan to requirement IDs.\", \"evidence\": \"Only must_haves.truths mentions REQ-AUTH-01 informally\" },\n    { \"rule\": \"implementation-focused-truth\", \"severity\": \"medium\", \"message\": \"must_haves.truths is implementation-focused rather than user-observable.\", \"evidence\": \"\\\"REQ-AUTH-01 implemented and tested\\\"\" },\n    { \"rule\": \"missing-artifacts\", \"severity\": \"medium\", \"message\": \"must_haves lacks artifacts list with paths/min_lines.\", \"evidence\": \"must_haves contains only truths\" },\n    { \"rule\": \"missing-key_links\", \"severity\": \"medium\", \"message\": \"must_haves lacks key_links to wire artifacts together.\", \"evidence\": \"No key_links in must_haves\" },\n    { \"rule\": \"no-automated-verify\", \"severity\": \"high\", \"message\": \"Verify block has no <automated> command for Nyquist sampling.\", \"evidence\": \"<verify>Run the tests.</verify>\" },\n    { \"rule\": \"weak-success-criteria\", \"severity\": \"medium\", \"message\": \"success_criteria is not user-observable and duplicates the objective without measurable acceptance.\", \"evidence\": \"- [ ] Login endpoint exists.\" },\n    { \"rule\": \"no-research-reference\", \"severity\": \"low\", \"message\": \"Plan does not reference RESEARCH.md, PATTERNS.md, or any analog file for the handler being built.\", \"evidence\": \"Action contains no analog or pattern reference\" },\n    { \"rule\": \"underscoped-plan\", \"severity\": \"medium\", \"message\": \"Single-task plan covering only one of two listed requirements suggests phase scope is incomplete.\", \"evidence\": \"Only Task 1 present; REQ-AUTH-02 absent\" }\n  ]\n}\n```",
+    "stop_reason": "end_turn",
+    "session_id": "96dc5062-c3e6-434a-b018-0e6181c8f94c",
+    "total_cost_usd": 0.4332705000000001,
+    "usage": {
+      "input_tokens": 13,
+      "cache_creation_input_tokens": 20245,
+      "cache_read_input_tokens": 99302,
+      "output_tokens": 1930,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 20245
+      },
+      "inference_geo": "",
+      "iterations": [
+        {
+          "input_tokens": 6,
+          "output_tokens": 1185,
+          "cache_read_input_tokens": 39459,
+          "cache_creation_input_tokens": 1831,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 1831,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-opus-4-7[1m]": {
+        "inputTokens": 21,
+        "outputTokens": 3313,
+        "cacheReadInputTokens": 146706,
+        "cacheCreationInputTokens": 44318,
+        "webSearchRequests": 0,
+        "costUSD": 0.4332705000000001,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 64000
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "uuid": "ce417729-a5e8-43b7-9c70-48fc96a25335"
+  }
+}

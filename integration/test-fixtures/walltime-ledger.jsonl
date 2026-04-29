@@ -1,1 +1,26 @@
 # walltime-ledger v1 — JSONL of {date, test, walltime_ms, cost_usd, phase}. Records appended by integration/helpers/walltime-recorder.cjs (XCUT-03 owner Phase 2; setup Phase 1).
+{"date":"2026-04-29","test":"agent-parity:critic-plan:plan-with-known-issues","walltime_ms":73558,"cost_usd":0.56025425,"phase":"phase-1-cull"}
+{"date":"2026-04-29","test":"agent-parity:critic-code:code-with-smells","walltime_ms":56194,"cost_usd":0.34580825,"phase":"phase-1-cull"}
+{"date":"2026-04-29","test":"agent-parity:critic-scope:scope-with-creep","walltime_ms":30597,"cost_usd":0.2667705,"phase":"phase-1-cull"}
+{"date":"2026-04-29","test":"agent-parity:critic-plan:plan-with-known-issues","walltime_ms":40814,"cost_usd":0.29993675,"phase":"phase-1-cull"}
+{"date":"2026-04-29","test":"agent-parity:critic-code:code-with-smells","walltime_ms":45547,"cost_usd":0.33864174999999996,"phase":"phase-1-cull"}
+{"date":"2026-04-29","test":"agent-parity:critic-scope:scope-with-creep","walltime_ms":30569,"cost_usd":0.2919215,"phase":"phase-1-cull"}
+{"date":"2026-04-29","test":"agent-parity:critic-verify:verify-with-gaps","walltime_ms":42224,"cost_usd":0.35817975,"phase":"phase-1-cull"}
+{"date":"2026-04-29","test":"agent-parity:critic-discuss:discuss-with-assumptions","walltime_ms":44263,"cost_usd":0.31275225,"phase":"phase-1-cull"}
+{"date":"2026-04-29","test":"agent-parity:critic-strategy:strategy-with-tradeoffs","walltime_ms":36706,"cost_usd":0.29926925000000004,"phase":"phase-1-cull"}
+{"date":"2026-04-29","test":"agent-parity:gsd-planner:standard-plan","walltime_ms":287605,"cost_usd":1.108235,"phase":"phase-1-cull"}
+{"date":"2026-04-29","test":"agent-parity:gsd-research-synthesizer:standard-synthesis","walltime_ms":24532,"cost_usd":0.31262025,"phase":"phase-1-cull"}
+{"date":"2026-04-29","test":"agent-parity:gsd-pattern-mapper:standard","walltime_ms":93874,"cost_usd":0.5095985000000001,"phase":"phase-1-cull"}
+{"date":"2026-04-29","test":"agent-parity:gsd-phase-researcher:standard","walltime_ms":574514,"cost_usd":2.04415675,"phase":"phase-1-cull"}
+{"date":"2026-04-29","test":"agent-parity:gsd-plan-checker:standard","walltime_ms":41679,"cost_usd":0.4332705000000001,"phase":"phase-1-cull"}
+{"date":"2026-04-29","test":"agent-parity:gsd-verifier:standard","walltime_ms":211551,"cost_usd":0.8267892499999999,"phase":"phase-1-cull"}
+{"date":"2026-04-29","test":"agent-parity:gsd-executor:standard","walltime_ms":44662,"cost_usd":0.28657099999999996,"phase":"phase-1-cull"}
+{"date":"2026-04-29","test":"agent-parity:gsd-project-researcher:standard","walltime_ms":69521,"cost_usd":0.41946225,"phase":"phase-1-cull"}
+{"date":"2026-04-29","test":"agent-parity:gsd-roadmapper:standard","walltime_ms":32069,"cost_usd":0.33930950000000004,"phase":"phase-1-cull"}
+{"date":"2026-04-29","test":"agent-parity:gsd-code-reviewer:standard","walltime_ms":38639,"cost_usd":0.29879249999999996,"phase":"phase-1-cull"}
+{"date":"2026-04-29","test":"agent-parity:gsd-code-fixer:standard","walltime_ms":23250,"cost_usd":0.33766099999999993,"phase":"phase-1-cull"}
+{"date":"2026-04-29","test":"agent-parity:gsd-integration-checker:standard","walltime_ms":29082,"cost_usd":0.3183715,"phase":"phase-1-cull"}
+{"date":"2026-04-29","test":"agent-parity:gsd-security-auditor:standard","walltime_ms":42121,"cost_usd":0.32823775,"phase":"phase-1-cull"}
+{"date":"2026-04-29","test":"agent-parity:gsd-assumptions-analyzer:standard","walltime_ms":90583,"cost_usd":0.48983124999999994,"phase":"phase-1-cull"}
+{"date":"2026-04-29","test":"agent-parity:gsd-advisor-researcher:standard","walltime_ms":38672,"cost_usd":0.3079367499999999,"phase":"phase-1-cull"}
+{"date":"2026-04-29","test":"agent-parity:gsd-user-profiler:standard","walltime_ms":68025,"cost_usd":0.48261125,"phase":"phase-1-cull"}

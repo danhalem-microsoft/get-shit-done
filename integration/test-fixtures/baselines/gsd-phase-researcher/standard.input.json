@@ -1,0 +1,11 @@
+{
+  "fixture_id": "standard",
+  "agent": "gsd-phase-researcher",
+  "description": "Canonical phase-researcher input: a phase needing research on JWT signing libraries. Expected output: RESEARCH.md with library options, version recommendations, pitfalls section. Schema-conformance baseline.",
+  "prompt": "Spawn the gsd-phase-researcher agent for phase 01-auth-system. Research JWT signing libraries for Node.js (focus: jose, jsonwebtoken). Produce RESEARCH.md covering library options, recommended versions, and 2-3 pitfalls. Output the full RESEARCH.md.",
+  "sandbox_files": {
+    "CONTEXT.md": "# Phase 1 Auth\n\nNeed: Pick a JWT library for Node.js. Must support RS256 + ES256, must be ESM-friendly, must have active maintenance.\n"
+  },
+  "env": {},
+  "expected_schema_kind": "schema-conformance"
+}

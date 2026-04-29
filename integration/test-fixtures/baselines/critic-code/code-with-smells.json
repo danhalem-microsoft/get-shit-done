@@ -1,0 +1,69 @@
+{
+  "_meta": {
+    "agent": "critic-code",
+    "fixture_id": "code-with-smells",
+    "captured_at": "2026-04-29T22:12:14.665Z",
+    "schema_kind": "critic-findings",
+    "runs_recorded": 1
+  },
+  "result": "```json\n{\n  \"findings\": [\n    {\n      \"severity\": \"critical\",\n      \"lane\": \"security\",\n      \"title\": \"SQL injection in queryUser\",\n      \"evidence\": \"src/server.js:11 — user-supplied email is interpolated directly into a SQL string: `SELECT * FROM users WHERE email = '${email}'`\",\n      \"fix\": \"Use parameterized queries: `db.query('SELECT * FROM users WHERE email = ?', [email])`.\"\n    },\n    {\n      \"severity\": \"critical\",\n      \"lane\": \"security\",\n      \"title\": \"Insecure session cookie\",\n      \"evidence\": \"src/server.js:17 — cookie uses raw user.id with no httpOnly, secure, sameSite flags; guessable identifier rather than signed/random token.\",\n      \"fix\": \"Issue a cryptographically random session id and set { httpOnly: true, secure: true, sameSite: 'lax', signed: true }.\"\n    },\n    {\n      \"severity\": \"critical\",\n      \"lane\": \"error-handling\",\n      \"title\": \"No input validation on req.body.email\",\n      \"evidence\": \"src/server.js:16 — handleRequest dereferences req.body.email without checking req.body exists or email is a string.\",\n      \"fix\": \"Validate req.body and req.body.email before use; respond 400 on invalid input.\"\n    },\n    {\n      \"severity\": \"high\",\n      \"lane\": \"error-handling\",\n      \"title\": \"Missing try/catch around sync I/O and DB calls\",\n      \"evidence\": \"src/server.js:6-7,15-16 — fs.readFileSync, JSON.parse, and db.query can throw; no error handling.\",\n      \"fix\": \"Wrap in try/catch, return 5xx, log with context. Prefer fs.promises.readFile.\"\n    },\n    {\n      \"severity\": \"high\",\n      \"lane\": \"bug\",\n      \"title\": \"queryUser result treated as a user object\",\n      \"evidence\": \"src/server.js:16-17 — db.query typically returns a Promise/rows array, not a single user; user.id will be undefined or throw.\",\n      \"fix\": \"await the query and extract rows[0]; handle not-found explicitly.\"\n    },\n    {\n      \"severity\": \"high\",\n      \"lane\": \"performance\",\n      \"title\": \"Synchronous file I/O on hot path\",\n      \"evidence\": \"src/server.js:15 — fs.readFileSync runs on every request, blocking the event loop.\",\n      \"fix\": \"Load config once at startup or cache it; use fs.promises.readFile if re-reading is required.\"\n    },\n    {\n      \"severity\": \"medium\",\n      \"lane\": \"maintainability\",\n      \"title\": \"Duplicated config loading logic\",\n      \"evidence\": \"src/server.js:6,15 — both parseConfig and handleRequest read './config.json'; handler never JSON.parses or uses cfg.\",\n      \"fix\": \"Reuse parseConfig() (or cached config module) in handleRequest.\"\n    },\n    {\n      \"severity\": \"medium\",\n      \"lane\": \"bug\",\n      \"title\": \"Unused variable cfg\",\n      \"evidence\": \"src/server.js:15 — `const cfg = fs.readFileSync(...)` assigned but never referenced.\",\n      \"fix\": \"Remove the dead read or actually use cfg in the handler.\"\n    },\n    {\n      \"severity\": \"medium\",\n      \"lane\": \"maintainability\",\n      \"title\": \"Hardcoded relative path for config\",\n      \"evidence\": \"src/server.js:6,15 — './config.json' resolves against process.cwd().\",\n      \"fix\": \"Use path.join(__dirname, '..', 'config.json') or load via env var/config module.\"\n    },\n    {\n      \"severity\": \"medium\",\n      \"lane\": \"security\",\n      \"title\": \"SELECT * exposes all user columns\",\n      \"evidence\": \"src/server.js:11 — `SELECT *` may pull password hashes, tokens, or PII into memory.\",\n      \"fix\": \"Select explicit columns needed (e.g., `SELECT id, email FROM users WHERE email = ?`).\"\n    },\n    {\n      \"severity\": \"low\",\n      \"lane\": \"bug\",\n      \"title\": \"Cookie maxAge unit ambiguity\",\n      \"evidence\": \"src/server.js:17 — maxAge: 86400 is likely intended as 1 day but Express maxAge is milliseconds (~86s).\",\n      \"fix\": \"Use 86400 * 1000 or the `expires` option.\"\n    },\n    {\n      \"severity\": \"low\",\n      \"lane\": \"error-handling\",\n      \"title\": \"No response on error or missing user\",\n      \"evidence\": \"src/server.js:14-19 — handler always returns { ok: true } regardless of failures or missing user.\",\n      \"fix\": \"Return 404 when not found, 400 on validation failure, 500 on internal errors.\"\n    }\n  ]\n}\n```",
+  "raw": {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "api_error_status": null,
+    "duration_ms": 45547,
+    "duration_api_ms": 45129,
+    "num_turns": 2,
+    "result": "```json\n{\n  \"findings\": [\n    {\n      \"severity\": \"critical\",\n      \"lane\": \"security\",\n      \"title\": \"SQL injection in queryUser\",\n      \"evidence\": \"src/server.js:11 — user-supplied email is interpolated directly into a SQL string: `SELECT * FROM users WHERE email = '${email}'`\",\n      \"fix\": \"Use parameterized queries: `db.query('SELECT * FROM users WHERE email = ?', [email])`.\"\n    },\n    {\n      \"severity\": \"critical\",\n      \"lane\": \"security\",\n      \"title\": \"Insecure session cookie\",\n      \"evidence\": \"src/server.js:17 — cookie uses raw user.id with no httpOnly, secure, sameSite flags; guessable identifier rather than signed/random token.\",\n      \"fix\": \"Issue a cryptographically random session id and set { httpOnly: true, secure: true, sameSite: 'lax', signed: true }.\"\n    },\n    {\n      \"severity\": \"critical\",\n      \"lane\": \"error-handling\",\n      \"title\": \"No input validation on req.body.email\",\n      \"evidence\": \"src/server.js:16 — handleRequest dereferences req.body.email without checking req.body exists or email is a string.\",\n      \"fix\": \"Validate req.body and req.body.email before use; respond 400 on invalid input.\"\n    },\n    {\n      \"severity\": \"high\",\n      \"lane\": \"error-handling\",\n      \"title\": \"Missing try/catch around sync I/O and DB calls\",\n      \"evidence\": \"src/server.js:6-7,15-16 — fs.readFileSync, JSON.parse, and db.query can throw; no error handling.\",\n      \"fix\": \"Wrap in try/catch, return 5xx, log with context. Prefer fs.promises.readFile.\"\n    },\n    {\n      \"severity\": \"high\",\n      \"lane\": \"bug\",\n      \"title\": \"queryUser result treated as a user object\",\n      \"evidence\": \"src/server.js:16-17 — db.query typically returns a Promise/rows array, not a single user; user.id will be undefined or throw.\",\n      \"fix\": \"await the query and extract rows[0]; handle not-found explicitly.\"\n    },\n    {\n      \"severity\": \"high\",\n      \"lane\": \"performance\",\n      \"title\": \"Synchronous file I/O on hot path\",\n      \"evidence\": \"src/server.js:15 — fs.readFileSync runs on every request, blocking the event loop.\",\n      \"fix\": \"Load config once at startup or cache it; use fs.promises.readFile if re-reading is required.\"\n    },\n    {\n      \"severity\": \"medium\",\n      \"lane\": \"maintainability\",\n      \"title\": \"Duplicated config loading logic\",\n      \"evidence\": \"src/server.js:6,15 — both parseConfig and handleRequest read './config.json'; handler never JSON.parses or uses cfg.\",\n      \"fix\": \"Reuse parseConfig() (or cached config module) in handleRequest.\"\n    },\n    {\n      \"severity\": \"medium\",\n      \"lane\": \"bug\",\n      \"title\": \"Unused variable cfg\",\n      \"evidence\": \"src/server.js:15 — `const cfg = fs.readFileSync(...)` assigned but never referenced.\",\n      \"fix\": \"Remove the dead read or actually use cfg in the handler.\"\n    },\n    {\n      \"severity\": \"medium\",\n      \"lane\": \"maintainability\",\n      \"title\": \"Hardcoded relative path for config\",\n      \"evidence\": \"src/server.js:6,15 — './config.json' resolves against process.cwd().\",\n      \"fix\": \"Use path.join(__dirname, '..', 'config.json') or load via env var/config module.\"\n    },\n    {\n      \"severity\": \"medium\",\n      \"lane\": \"security\",\n      \"title\": \"SELECT * exposes all user columns\",\n      \"evidence\": \"src/server.js:11 — `SELECT *` may pull password hashes, tokens, or PII into memory.\",\n      \"fix\": \"Select explicit columns needed (e.g., `SELECT id, email FROM users WHERE email = ?`).\"\n    },\n    {\n      \"severity\": \"low\",\n      \"lane\": \"bug\",\n      \"title\": \"Cookie maxAge unit ambiguity\",\n      \"evidence\": \"src/server.js:17 — maxAge: 86400 is likely intended as 1 day but Express maxAge is milliseconds (~86s).\",\n      \"fix\": \"Use 86400 * 1000 or the `expires` option.\"\n    },\n    {\n      \"severity\": \"low\",\n      \"lane\": \"error-handling\",\n      \"title\": \"No response on error or missing user\",\n      \"evidence\": \"src/server.js:14-19 — handler always returns { ok: true } regardless of failures or missing user.\",\n      \"fix\": \"Return 404 when not found, 400 on validation failure, 500 on internal errors.\"\n    }\n  ]\n}\n```",
+    "stop_reason": "end_turn",
+    "session_id": "7ce0b2c6-f8f5-4f23-8b8c-57957d114365",
+    "total_cost_usd": 0.33864174999999996,
+    "usage": {
+      "input_tokens": 12,
+      "cache_creation_input_tokens": 20249,
+      "cache_read_input_tokens": 59833,
+      "output_tokens": 2050,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 20249
+      },
+      "inference_geo": "",
+      "iterations": [
+        {
+          "input_tokens": 6,
+          "output_tokens": 1577,
+          "cache_read_input_tokens": 38788,
+          "cache_creation_input_tokens": 2506,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 2506,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard"
+    },
+    "modelUsage": {
+      "claude-opus-4-7[1m]": {
+        "inputTokens": 19,
+        "outputTokens": 4046,
+        "cacheReadInputTokens": 82256,
+        "cacheCreationInputTokens": 31403,
+        "webSearchRequests": 0,
+        "costUSD": 0.33864174999999996,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 64000
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "uuid": "060e9300-ba2f-40f7-81d1-7f7040408a68"
+  }
+}

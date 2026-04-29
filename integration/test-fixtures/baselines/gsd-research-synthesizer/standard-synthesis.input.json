@@ -1,0 +1,13 @@
+{
+  "fixture_id": "standard-synthesis",
+  "agent": "gsd-research-synthesizer",
+  "description": "Canonical research-synthesis input (3 small researcher outputs to merge). Synthesizer is being deleted in Phase 3 — this baseline is for archival/structural-conformance comparison, not active drift detection. Expected output: a single RESEARCH.md merging the three sources without duplication, with citations preserved.",
+  "prompt": "Spawn the gsd-research-synthesizer agent. Read the three research files in the sandbox (research/PATTERNS.md, research/PITFALLS.md, research/STACK.md) and synthesize them into a single RESEARCH.md with sections: Patterns, Pitfalls, Stack. Preserve citations. Output the full RESEARCH.md.",
+  "sandbox_files": {
+    "research/PATTERNS.md": "# Patterns\n\n- Prefer pure functions for handlers (testability).\n- Sessions as opaque tokens, not encoded JWTs (revocation).\n- Source: research/2026-04-pattern-survey.md\n",
+    "research/PITFALLS.md": "# Pitfalls\n\n- bcrypt cost > 14 causes 100ms+ latency on commodity CPUs.\n- JWT 'none' alg is a CVE class — explicitly reject.\n- Source: OWASP ASVS 4.0 §V3.\n",
+    "research/STACK.md": "# Stack\n\n- bcrypt 5.1.1 (active maintenance, no CVEs as of 2026-04).\n- jose 5.9 (audit-clean, ESM-only).\n- ioredis 5.4 (cluster + sentinel support).\n"
+  },
+  "env": {},
+  "expected_schema_kind": "schema-conformance"
+}

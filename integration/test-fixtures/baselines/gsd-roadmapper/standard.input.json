@@ -1,0 +1,12 @@
+{
+  "fixture_id": "standard",
+  "agent": "gsd-roadmapper",
+  "description": "Canonical roadmapper input: a small project description with 3 implied phases (CLI core, streaming parser, error reporting). Expected output: ROADMAP.md with 3 phases, dependencies, and per-phase success criteria. Schema-conformance baseline.",
+  "prompt": "Spawn the gsd-roadmapper agent. Read PROJECT.md and REQUIREMENTS.md. Produce a ROADMAP.md with 2-3 phases, dependencies between them, and per-phase success criteria. Be terse — baseline capture.",
+  "sandbox_files": {
+    "PROJECT.md": "# csv-to-json\n\nA Node.js CLI that streams CSV input to JSON. Goals: handle quoted fields and embedded newlines, stream-process large files (>1 GB), report row-level errors with line numbers.\n",
+    "REQUIREMENTS.md": "- REQ-CORE-01: Read CSV from stdin, emit JSON-Lines to stdout.\n- REQ-PARSER-01: Quoted fields with embedded newlines parse correctly.\n- REQ-PARSER-02: Streaming, no full-file buffering.\n- REQ-ERR-01: Row errors reported with line+col.\n"
+  },
+  "env": {},
+  "expected_schema_kind": "schema-conformance"
+}

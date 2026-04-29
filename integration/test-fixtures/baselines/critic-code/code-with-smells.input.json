@@ -1,0 +1,11 @@
+{
+  "fixture_id": "code-with-smells",
+  "agent": "critic-code",
+  "description": "Source file with deliberate code smells for code-critic baseline. Known issues: (1) CRITICAL — SQL string concatenation (injection vulnerability) in queryUser; (2) MAJOR — Synchronous file I/O on hot path in handleRequest; (3) MAJOR — No error handling in parseConfig; (4) MINOR — Magic number 86400 without named constant.",
+  "prompt": "Spawn the gsd-critic-code agent against src/server.js in the current sandbox. Read the file, identify code-quality issues, and produce JSON with shape: { findings: [{ severity, lane, title, evidence, fix }] }. Be terse — this is a baseline capture.",
+  "sandbox_files": {
+    "src/server.js": "'use strict';\nconst fs = require('node:fs');\nconst db = require('./db');\n\nfunction parseConfig() {\n  const raw = fs.readFileSync('./config.json', 'utf-8');\n  return JSON.parse(raw);\n}\n\nfunction queryUser(email) {\n  return db.query(`SELECT * FROM users WHERE email = '${email}'`);\n}\n\nfunction handleRequest(req, res) {\n  const cfg = fs.readFileSync('./config.json', 'utf-8');\n  const user = queryUser(req.body.email);\n  res.cookie('session', user.id, { maxAge: 86400 });\n  res.json({ ok: true });\n}\n\nmodule.exports = { handleRequest, queryUser, parseConfig };\n"
+  },
+  "env": {},
+  "expected_schema_kind": "critic-findings"
+}
