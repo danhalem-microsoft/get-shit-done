@@ -30,13 +30,10 @@ const CODEX_AGENT_SANDBOX = {
   'gsd-project-researcher': 'workspace-write',
   'gsd-research-synthesizer': 'workspace-write',
   'gsd-verifier': 'workspace-write',
-  'gsd-codebase-mapper': 'workspace-write',
   'gsd-roadmapper': 'workspace-write',
-  'gsd-debugger': 'workspace-write',
   'gsd-plan-checker': 'read-only',
   'gsd-integration-checker': 'read-only',
-  // Fork patch: critic + nyquist agent entries
-  'gsd-nyquist-auditor': 'read-only',
+  // Fork patch: critic agent entries
   'gsd-critic-plan': 'read-only',
   'gsd-critic-code': 'read-only',
   'gsd-critic-scope': 'read-only',

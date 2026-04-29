@@ -8,11 +8,11 @@
 
 const fs = require('fs');
 const path = require('path');
-const { output, loadConfig, resolveModelInternal, pathExistsInternal, toPosixPath, checkAgentsInstalled } = require('./core.cjs');
+const { output, loadConfig, pathExistsInternal, toPosixPath, checkAgentsInstalled } = require('./core.cjs');
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const GSD_MARKER = '<!-- generated-by: gsd-doc-writer -->';
+const GSD_MARKER = '<!-- generated-by: gsd-tools -->';
 
 const SKIP_DIRS = new Set([
   'node_modules', '.git', '.planning', '.claude', '__pycache__',
@@ -248,7 +248,6 @@ function detectMonorepoWorkspaces(cwd) {
 function cmdDocsInit(cwd, raw) {
   const config = loadConfig(cwd);
   const result = {
-    doc_writer_model: resolveModelInternal(cwd, 'gsd-doc-writer'),
     commit_docs: config.commit_docs,
     existing_docs: scanExistingDocs(cwd),
     project_type: detectProjectType(cwd),

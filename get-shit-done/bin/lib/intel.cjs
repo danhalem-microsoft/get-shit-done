@@ -306,7 +306,6 @@ function intelDiff(planningDir) {
 
 /**
  * Stub for triggering an intel update.
- * The actual update is performed by the intel-updater agent (PLAN-02).
  *
  * @param {string} planningDir - Path to .planning directory
  * @returns {{ action: string, message: string } | { disabled: true, message: string }}
@@ -315,8 +314,8 @@ function intelUpdate(planningDir) {
   if (!isIntelEnabled(planningDir)) return disabledResponse();
 
   return {
-    action: 'spawn_agent',
-    message: 'Run gsd-tools intel update or spawn gsd-intel-updater agent for full refresh'
+    action: 'manual',
+    message: 'Run gsd-tools intel update for full refresh'
   };
 }
 

@@ -918,9 +918,6 @@ function cmdInitMapCodebase(cwd, raw) {
   } catch { /* intentionally empty */ }
 
   const result = {
-    // Models
-    mapper_model: resolveModelInternal(cwd, 'gsd-codebase-mapper'),
-
     // Config
     commit_docs: config.commit_docs,
     search_gitignored: config.search_gitignored,
