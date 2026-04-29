@@ -1,0 +1,1 @@
+# walltime-ledger v1 — JSONL of {date, test, walltime_ms, cost_usd, phase}. Records appended by integration/helpers/walltime-recorder.cjs (XCUT-03 owner Phase 2; setup Phase 1).
