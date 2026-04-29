@@ -64,7 +64,7 @@ function pathExists(base: string, relPath: string): boolean {
  * Port of getLatestCompletedMilestone from init.cjs lines 10-25.
  */
 function getLatestCompletedMilestone(projectDir: string): { version: string; name: string } | null {
-  const milestonesPath = join(projectDir, '.planning', 'MILESTONES.md');
+  const milestonesPath = join(planningPaths(projectDir).planning, 'MILESTONES.md');
   if (!existsSync(milestonesPath)) return null;
 
   try {
@@ -242,7 +242,7 @@ export function withProjectRoot(
     result.project_code = projectCode;
   }
 
-  const projectMdPath = join(projectDir, '.planning', 'PROJECT.md');
+  const projectMdPath = join(planningPaths(projectDir).planning, 'PROJECT.md');
   try {
     if (existsSync(projectMdPath)) {
       const content = readFileSync(projectMdPath, 'utf-8');
@@ -271,7 +271,7 @@ export const initExecutePhase: QueryHandler = async (args, projectDir) => {
   }
 
   const config = await loadConfig(projectDir);
-  const planningDir = join(projectDir, '.planning');
+  const planningDir = join(planningPaths(projectDir).planning);
 
   const { phaseInfo, roadmapPhase } = await getPhaseInfoWithFallback(phase, projectDir);
   const phase_req_ids = extractReqIds(roadmapPhase);
@@ -350,7 +350,7 @@ export const initPlanPhase: QueryHandler = async (args, projectDir) => {
   }
 
   const config = await loadConfig(projectDir);
-  const planningDir = join(projectDir, '.planning');
+  const planningDir = join(planningPaths(projectDir).planning);
 
   const { phaseInfo, roadmapPhase } = await getPhaseInfoWithFallback(phase, projectDir);
   const phase_req_ids = extractReqIds(roadmapPhase);
@@ -429,7 +429,7 @@ export const initPlanPhase: QueryHandler = async (args, projectDir) => {
  */
 export const initNewMilestone: QueryHandler = async (_args, projectDir) => {
   const config = await loadConfig(projectDir);
-  const planningDir = join(projectDir, '.planning');
+  const planningDir = join(planningPaths(projectDir).planning);
   const milestone = await getMilestoneInfo(projectDir);
   const latestCompleted = getLatestCompletedMilestone(projectDir);
 
@@ -461,7 +461,7 @@ export const initNewMilestone: QueryHandler = async (_args, projectDir) => {
     latest_completed_milestone_name: latestCompleted?.name || null,
     phase_dir_count: phaseDirCount,
     phase_archive_path: latestCompleted
-      ? toPosixPath(relative(projectDir, join(projectDir, '.planning', 'milestones', `${latestCompleted.version}-phases`)))
+      ? toPosixPath(relative(projectDir, join(planningPaths(projectDir).planning, 'milestones', `${latestCompleted.version}-phases`)))
       : null,
     project_exists: pathExists(projectDir, '.planning/PROJECT.md'),
     roadmap_exists: existsSync(join(planningDir, 'ROADMAP.md')),
@@ -483,7 +483,7 @@ export const initNewMilestone: QueryHandler = async (_args, projectDir) => {
 export const initQuick: QueryHandler = async (args, projectDir) => {
   const description = args[0] || null;
   const config = await loadConfig(projectDir);
-  const planningDir = join(projectDir, '.planning');
+  const planningDir = join(planningPaths(projectDir).planning);
   const now = new Date();
   const slug = description ? generateSlugInternal(description).substring(0, 40) : null;
 
@@ -526,7 +526,7 @@ export const initQuick: QueryHandler = async (args, projectDir) => {
     quick_dir: '.planning/quick',
     task_dir: slug ? `.planning/quick/${quickId}-${slug}` : null,
     roadmap_exists: existsSync(join(planningDir, 'ROADMAP.md')),
-    planning_exists: existsSync(join(projectDir, '.planning')),
+    planning_exists: existsSync(join(planningPaths(projectDir).planning)),
   };
 
   return { data: withProjectRoot(projectDir, result, config as Record<string, unknown>) };
@@ -540,18 +540,18 @@ export const initQuick: QueryHandler = async (args, projectDir) => {
  */
 export const initResume: QueryHandler = async (_args, projectDir) => {
   const config = await loadConfig(projectDir);
-  const planningDir = join(projectDir, '.planning');
+  const planningDir = join(planningPaths(projectDir).planning);
 
   let interruptedAgentId: string | null = null;
   try {
-    interruptedAgentId = readFileSync(join(projectDir, '.planning', 'current-agent-id.txt'), 'utf-8').trim();
+    interruptedAgentId = readFileSync(join(planningPaths(projectDir).planning, 'current-agent-id.txt'), 'utf-8').trim();
   } catch { /* intentionally empty */ }
 
   const result: Record<string, unknown> = {
     state_exists: existsSync(join(planningDir, 'STATE.md')),
     roadmap_exists: existsSync(join(planningDir, 'ROADMAP.md')),
     project_exists: pathExists(projectDir, '.planning/PROJECT.md'),
-    planning_exists: existsSync(join(projectDir, '.planning')),
+    planning_exists: existsSync(join(planningPaths(projectDir).planning)),
     state_path: toPosixPath(relative(projectDir, join(planningDir, 'STATE.md'))),
     roadmap_path: toPosixPath(relative(projectDir, join(planningDir, 'ROADMAP.md'))),
     project_path: '.planning/PROJECT.md',
@@ -610,7 +610,7 @@ export const initPhaseOp: QueryHandler = async (args, projectDir) => {
   }
 
   const config = await loadConfig(projectDir);
-  const planningDir = join(projectDir, '.planning');
+  const planningDir = join(planningPaths(projectDir).planning);
 
   // findPhase with archived override: if only match is archived, prefer ROADMAP
   const phaseResult = await findPhase([phase], projectDir);
@@ -715,7 +715,7 @@ export const initPhaseOp: QueryHandler = async (args, projectDir) => {
 export const initTodos: QueryHandler = async (args, projectDir) => {
   const area = args[0] || null;
   const config = await loadConfig(projectDir);
-  const planningDir = join(projectDir, '.planning');
+  const planningDir = join(planningPaths(projectDir).planning);
   const now = new Date();
 
   const pendingDir = join(planningDir, 'todos', 'pending');
@@ -771,7 +771,7 @@ export const initTodos: QueryHandler = async (args, projectDir) => {
  */
 export const initMilestoneOp: QueryHandler = async (_args, projectDir) => {
   const config = await loadConfig(projectDir);
-  const planningDir = join(projectDir, '.planning');
+  const planningDir = join(planningPaths(projectDir).planning);
   const milestone = await getMilestoneInfo(projectDir);
 
   const phasesDir = join(planningDir, 'phases');
@@ -792,7 +792,7 @@ export const initMilestoneOp: QueryHandler = async (_args, projectDir) => {
     }
   } catch { /* intentionally empty */ }
 
-  const archiveDir = join(projectDir, '.planning', 'archive');
+  const archiveDir = join(planningPaths(projectDir).planning, 'archive');
   let archivedMilestones: string[] = [];
   try {
     archivedMilestones = readdirSync(archiveDir, { withFileTypes: true })
@@ -829,7 +829,7 @@ export const initMilestoneOp: QueryHandler = async (_args, projectDir) => {
 export const initMapCodebase: QueryHandler = async (_args, projectDir) => {
   const config = await loadConfig(projectDir);
   const now = new Date();
-  const codebaseDir = join(projectDir, '.planning', 'codebase');
+  const codebaseDir = join(planningPaths(projectDir).planning, 'codebase');
   let existingMaps: string[] = [];
   try {
     existingMaps = readdirSync(codebaseDir).filter(f => f.endsWith('.md'));

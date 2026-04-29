@@ -21,6 +21,7 @@ import { join, dirname, relative, resolve, isAbsolute, normalize } from 'node:pa
 import { realpath } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { GSDError, ErrorClassification } from '../errors.js';
+import { tryGetPlanningContext } from './context.js';
 
 // ─── Runtime-aware agents directory resolution ─────────────────────────────
 
@@ -413,7 +414,22 @@ export function normalizeMd(content: string): string {
  * @returns Object with paths to common .planning files
  */
 export function planningPaths(projectDir: string): PlanningPaths {
-  const base = join(projectDir, '.planning');
+  // Multi-user routing: when an active project exists under
+  // `.planning/users/<user>/<project>/`, route all paths there. Falls back
+  // to flat `.planning/` for upstream test fixtures and pre-project init.
+  // Mirrors core.cjs:839 (planningPaths) and core.cjs:1806 (getPlanningRoot).
+  let base: string;
+  try {
+    const ctx = tryGetPlanningContext(projectDir);
+    base = ctx.planning_root
+      ? join(projectDir, ctx.planning_root)
+      : join(projectDir, '.planning');
+  } catch {
+    // CI/CD detection or other resolver errors — fall back to flat layout.
+    // Query handlers should never crash on path resolution; let downstream
+    // existence checks surface meaningful errors instead.
+    base = join(projectDir, '.planning');
+  }
   return {
     planning: toPosixPath(base),
     state: toPosixPath(join(base, 'STATE.md')),
