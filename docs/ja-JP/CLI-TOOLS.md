@@ -155,7 +155,7 @@ node gsd-tools.cjs resolve-model <agent-name>
 # 戻り値: opus | sonnet | haiku | inherit
 ```
 
-エージェント名: `gsd-planner`, `gsd-executor`, `gsd-phase-researcher`, `gsd-project-researcher`, `gsd-research-synthesizer`, `gsd-verifier`, `gsd-plan-checker`, `gsd-integration-checker`, `gsd-roadmapper`, `gsd-debugger`, `gsd-codebase-mapper`, `gsd-nyquist-auditor`
+エージェント名: `gsd-planner`, `gsd-executor`, `gsd-phase-researcher`, `gsd-project-researcher`, `gsd-research-synthesizer`, `gsd-verifier`, `gsd-plan-checker`, `gsd-integration-checker`, `gsd-roadmapper`, _(retired agent)_, _(retired agent)_, _(retired agent)_
 
 ---
 

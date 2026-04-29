@@ -50,7 +50,7 @@ A detailed reference for workflows, troubleshooting, and configuration. For quic
              └─────────────┼──────────────┘
                             │
             ┌───────────────▼──────────────┐
-            │  /gsd-audit-milestone        │
+            │  _(retired)_        │
             │  /gsd-complete-milestone     │
             └───────────────┬──────────────┘
                             │
@@ -144,7 +144,7 @@ VALIDATION.md. If a test reveals an implementation bug, it's flagged as an
 escalation for you to address.
 
 **When to use:** After executing phases that were planned before Nyquist was
-enabled, or after `/gsd-audit-milestone` surfaces Nyquist compliance gaps.
+enabled, or after _(retired)_ surfaces Nyquist compliance gaps.
 
 ### Execution Wave Coordination
 
@@ -170,7 +170,7 @@ enabled, or after `/gsd-audit-milestone` surfaces Nyquist compliance gaps.
 ### Brownfield Workflow (Existing Codebase)
 
 ```
-  /gsd-map-codebase
+  _(retired)_
          │
          ├── Stack Mapper     -> codebase/STACK.md
          ├── Arch Mapper      -> codebase/ARCHITECTURE.md
@@ -196,7 +196,6 @@ enabled, or after `/gsd-audit-milestone` surfaces Nyquist compliance gaps.
 | `/gsd-plan-phase [N]` | Research + plan + verify | Before executing a phase |
 | `/gsd-execute-phase <N>` | Execute all plans in parallel waves | After planning is complete |
 | `/gsd-verify-work [N]` | Manual UAT with auto-diagnosis | After execution completes |
-| `/gsd-audit-milestone` | Verify milestone met its definition of done | Before completing milestone |
 | `/gsd-complete-milestone` | Archive milestone, tag release | All phases verified |
 | `/gsd-new-milestone [name]` | Start next version cycle | After completing a milestone |
 
@@ -218,17 +217,13 @@ enabled, or after `/gsd-audit-milestone` surfaces Nyquist compliance gaps.
 | `/gsd-add-phase` | Append new phase to roadmap | Scope grows after initial planning |
 | `/gsd-insert-phase [N]` | Insert urgent work (decimal numbering) | Urgent fix mid-milestone |
 | `/gsd-remove-phase [N]` | Remove future phase and renumber | Descoping a feature |
-| `/gsd-list-phase-assumptions [N]` | Preview Claude's intended approach | Before planning, to validate direction |
-| `/gsd-plan-milestone-gaps` | Create phases for audit gaps | After audit finds missing items |
 | `/gsd-research-phase [N]` | Deep ecosystem research only | Complex or unfamiliar domain |
 
 ### Brownfield & Utilities
 
 | Command | Purpose | When to Use |
 |---------|---------|-------------|
-| `/gsd-map-codebase` | Analyze existing codebase | Before `/gsd-new-project` on existing code |
 | `/gsd-quick` | Ad-hoc task with GSD guarantees | Bug fixes, small features, config changes |
-| `/gsd-debug [desc]` | Systematic debugging with persistent state | When something breaks |
 | `/gsd-add-todo [desc]` | Capture an idea for later | Think of something during a session |
 | `/gsd-check-todos` | List pending todos | Review captured ideas |
 | `/gsd-settings` | Configure workflow toggles and model profile | Change model, toggle agents |
@@ -241,8 +236,6 @@ enabled, or after `/gsd-audit-milestone` surfaces Nyquist compliance gaps.
 |---------|---------|-------------|
 | `/gsd-switch [project]` | Switch active project (or list all with no args) | Working on multiple projects |
 | `/gsd-team-status` | See all users' active projects, phases, progress | Check teammate activity |
-| `/gsd-archive-project` | Archive a completed project to `_archived/` | Project finished, reduce clutter |
-| `/gsd-restore-project` | Restore an archived project | Revisit completed work |
 
 ---
 
@@ -331,8 +324,8 @@ Disable these to speed up phases in familiar domains or when conserving tokens.
 | gsd-phase-researcher | Opus | Sonnet | Haiku |
 | gsd-project-researcher | Opus | Sonnet | Haiku |
 | gsd-research-synthesizer | Sonnet | Sonnet | Haiku |
-| gsd-debugger | Opus | Sonnet | Sonnet |
-| gsd-codebase-mapper | Sonnet | Haiku | Haiku |
+| _(retired agent)_ | Opus | Sonnet | Sonnet |
+| _(retired agent)_ | Sonnet | Haiku | Haiku |
 | gsd-verifier | Sonnet | Sonnet | Haiku |
 | gsd-plan-checker | Sonnet | Sonnet | Haiku |
 | gsd-integration-checker | Sonnet | Sonnet | Haiku |
@@ -445,8 +438,8 @@ If you have an existing flat `.planning/PROJECT.md` structure, any GSD command w
 **Project lifecycle:**
 
 ```bash
-/gsd-archive-project            # Archive completed project
-/gsd-restore-project            # Bring back an archived project
+_(retired)_            # Archive completed project
+_(retired)_            # Bring back an archived project
 ```
 
 ---
@@ -466,7 +459,7 @@ claude --dangerously-skip-permissions
 /clear
 /gsd-discuss-phase 2        # Repeat for each phase
 ...
-/gsd-audit-milestone        # Check everything shipped
+_(retired)_        # Check everything shipped
 /gsd-complete-milestone     # Archive, tag, done
 ```
 
@@ -481,7 +474,7 @@ claude --dangerously-skip-permissions
 ### Existing Codebase
 
 ```bash
-/gsd-map-codebase           # Analyze what exists (parallel agents)
+_(retired)_           # Analyze what exists (parallel agents)
 /gsd-new-project            # Questions focus on what you're ADDING
 # (normal phase workflow from here)
 ```
@@ -504,8 +497,8 @@ claude --dangerously-skip-permissions
 ### Preparing for Release
 
 ```bash
-/gsd-audit-milestone        # Check requirements coverage, detect stubs
-/gsd-plan-milestone-gaps    # If audit found gaps, create phases to close them
+_(retired)_        # Check requirements coverage, detect stubs
+_(retired)_    # If audit found gaps, create phases to close them
 /gsd-complete-milestone     # Archive, tag, done
 ```
 
@@ -541,7 +534,7 @@ Clear your context window between major commands: `/clear` in Claude Code. GSD i
 
 ### Plans Seem Wrong or Misaligned
 
-Run `/gsd-discuss-phase [N]` before planning. Most plan quality issues come from Claude making assumptions that `CONTEXT.md` would have prevented. You can also run `/gsd-list-phase-assumptions [N]` to see what Claude intends to do before committing to a plan.
+Run `/gsd-discuss-phase [N]` before planning. Most plan quality issues come from Claude making assumptions that `CONTEXT.md` would have prevented. You can also run _(retired)_ to see what Claude intends to do before committing to a plan.
 
 ### Execution Fails or Produces Stubs
 
@@ -592,8 +585,8 @@ If you see a legacy detection message, run the migration flow offered by the com
 | Lost context / new session | `/gsd-resume-work` or `/gsd-progress` |
 | Phase went wrong | `git revert` the phase commits, then re-plan |
 | Need to change scope | `/gsd-add-phase`, `/gsd-insert-phase`, or `/gsd-remove-phase` |
-| Milestone audit found gaps | `/gsd-plan-milestone-gaps` |
-| Something broke | `/gsd-debug "description"` |
+| Milestone audit found gaps | _(retired)_ |
+| Something broke | _(retired)_ "description"` |
 | Quick targeted fix | `/gsd-quick` |
 | Plan doesn't match your vision | `/gsd-discuss-phase [N]` then re-plan |
 | Costs running high | `/gsd-set-profile budget` and `/gsd-settings` to toggle agents off |
@@ -633,7 +626,7 @@ For reference, here is what GSD creates in your project:
             CONTEXT.md         # Your implementation preferences
             RESEARCH.md        # Ecosystem research findings
             VERIFICATION.md    # Post-execution verification results
-  codebase/                # Brownfield codebase mapping (from /gsd-map-codebase)
+  codebase/                # Brownfield codebase mapping (from _(retired)_)
     STACK.md, ARCHITECTURE.md, CONVENTIONS.md, etc.
   milestones/              # Archived milestone data
     v1.0-ROADMAP.md, v1.0-REQUIREMENTS.md, v1.0-phases/

@@ -223,15 +223,15 @@ Orchestrator (workflow .md)
 
 | カテゴリ | エージェント | 並列実行 |
 |----------|--------|-------------|
-| **リサーチャー** | gsd-project-researcher, gsd-phase-researcher, gsd-ui-researcher, gsd-advisor-researcher | 4並列（stack、features、architecture、pitfalls）; advisorはdiscuss-phase中に起動 |
+| **リサーチャー** | gsd-project-researcher, gsd-phase-researcher, _(retired agent)_, gsd-advisor-researcher | 4並列（stack、features、architecture、pitfalls）; advisorはdiscuss-phase中に起動 |
 | **シンセサイザー** | gsd-research-synthesizer | 逐次（リサーチャー完了後） |
 | **プランナー** | gsd-planner, gsd-roadmapper | 逐次 |
-| **チェッカー** | gsd-plan-checker, gsd-integration-checker, gsd-ui-checker, gsd-nyquist-auditor | 逐次（検証ループ、最大3回反復） |
+| **チェッカー** | gsd-plan-checker, gsd-integration-checker, _(retired agent)_, _(retired agent)_ | 逐次（検証ループ、最大3回反復） |
 | **エグゼキューター** | gsd-executor | ウェーブ内は並列、ウェーブ間は逐次 |
 | **ベリファイアー** | gsd-verifier | 逐次（全エグゼキューター完了後） |
-| **マッパー** | gsd-codebase-mapper | 4並列（tech、arch、quality、concerns） |
-| **デバッガー** | gsd-debugger | 逐次（インタラクティブ） |
-| **オーディター** | gsd-ui-auditor | 逐次 |
+| **マッパー** | _(retired agent)_ | 4並列（tech、arch、quality、concerns） |
+| **デバッガー** | _(retired agent)_ | 逐次（インタラクティブ） |
+| **オーディター** | _(retired agent)_ | 逐次 |
 
 ### ウェーブ実行モデル
 
@@ -384,7 +384,7 @@ UI-SPEC.md (per phase) ───────────────────
 │   ├── FEATURES.md
 │   ├── ARCHITECTURE.md
 │   └── PITFALLS.md
-├── codebase/               # ブラウンフィールドマッピング（/gsd-map-codebase から）
+├── codebase/               # ブラウンフィールドマッピング（_(retired)_ から）
 │   ├── STACK.md
 │   ├── ARCHITECTURE.md
 │   ├── CONVENTIONS.md
@@ -410,13 +410,13 @@ UI-SPEC.md (per phase) ───────────────────
 ├── todos/
 │   ├── pending/            # キャプチャされたアイデア
 │   └── done/               # 完了済みtodo
-├── threads/               # 永続コンテキストスレッド（/gsd-thread から）
-├── seeds/                 # 将来に向けたアイデア（/gsd-plant-seed から）
+├── threads/               # 永続コンテキストスレッド（_(retired)_ から）
+├── seeds/                 # 将来に向けたアイデア（_(retired)_ から）
 ├── debug/                  # アクティブなデバッグセッション
 │   ├── *.md                # アクティブセッション
 │   ├── resolved/           # アーカイブ済みセッション
 │   └── knowledge-base.md   # 永続的なデバッグ知見
-├── ui-reviews/             # /gsd-ui-review からのスクリーンショット（gitignore対象）
+├── ui-reviews/             # _(retired)_ からのスクリーンショット（gitignore対象）
 └── continue-here.md        # コンテキスト引き継ぎ（pause-work から）
 ```
 
@@ -500,7 +500,7 @@ Runtime Engine (Claude Code / Gemini CLI)
 **Workflow Guard**（`gsd-workflow-guard.js`）：
 - `.planning/` 以外のファイルへのWrite/Edit時にトリガー
 - GSDワークフローコンテキスト外での編集を検出（アクティブな `/gsd-` コマンドやTaskサブエージェントがない場合）
-- 状態追跡される変更には `/gsd-quick` や `/gsd-fast` の使用をアドバイス
+- 状態追跡される変更には `/gsd-quick` や _(retired)_ の使用をアドバイス
 - `hooks.workflow_guard: true` によるオプトイン（デフォルト: false）
 
 ---

@@ -249,46 +249,6 @@ If "Run discuss-phase first":
   ```
   **Exit the plan-phase workflow. Do not continue.**
 
-## 4.5. Check AI-SPEC
-
-**Skip if:** `ai_integration_phase_enabled` from config is false, or `--skip-ai-spec` flag provided.
-
-```bash
-AI_SPEC_FILE=$(ls "${PHASE_DIR}"/*-AI-SPEC.md 2>/dev/null | head -1)
-AI_PHASE_CFG=$(gsd-sdk query config-get workflow.ai_integration_phase 2>/dev/null || echo "true")
-```
-
-**Skip if `AI_PHASE_CFG` is `false`.**
-
-**If `AI_SPEC_FILE` is empty:** Check phase goal for AI keywords:
-```bash
-echo "${phase_goal}" | grep -qi "agent\|llm\|rag\|chatbot\|embedding\|langchain\|llamaindex\|crewai\|langgraph\|openai\|anthropic\|vector\|eval\|ai system"
-```
-
-**If AI keywords detected AND no AI-SPEC.md:**
-```
-◆ Note: This phase appears to involve AI system development.
-  Consider running /gsd-ai-integration-phase {N} before planning to:
-  - Select the right framework for your use case
-  - Research its docs and best practices
-  - Design an evaluation strategy
-
-  Continue planning without AI-SPEC? (non-blocking — /gsd-ai-integration-phase can be run after)
-```
-
-Use AskUserQuestion with options:
-- "Continue — plan without AI-SPEC"
-- "Stop — I'll run /gsd-ai-integration-phase {N} first"
-
-If "Stop": Exit with `/gsd-ai-integration-phase {N}` reminder.
-If "Continue": Proceed. (Non-blocking — planner will note AI-SPEC is absent.)
-
-**If `AI_SPEC_FILE` is non-empty:** Extract framework for planner context:
-```bash
-FRAMEWORK_LINE=$(grep "Selected Framework:" "${AI_SPEC_FILE}" | head -1)
-```
-Pass `ai_spec_path` and `framework_line` to planner in step 7 so it can reference the AI design contract.
-
 ## 5. Handle Research
 
 **Skip if:** `--gaps` flag or `--skip-research` flag or `--reviews` flag.
@@ -442,73 +402,6 @@ Opt out: set security_enforcement: false in .planning/config.json
 ```
 
 Continue to step 5.6. Security config is passed to the planner in step 8.
-
-## 5.6. UI Design Contract Gate
-
-> Skip if `workflow.ui_phase` is explicitly `false` AND `workflow.ui_safety_gate` is explicitly `false` in `.planning/config.json`. If keys are absent, treat as enabled.
-
-```bash
-UI_PHASE_CFG=$(gsd-sdk query config-get workflow.ui_phase 2>/dev/null || echo "true")
-UI_GATE_CFG=$(gsd-sdk query config-get workflow.ui_safety_gate 2>/dev/null || echo "true")
-```
-
-**If both are `false`:** Skip to step 6.
-
-Check if phase has frontend indicators:
-
-```bash
-PHASE_SECTION=$(gsd-sdk query roadmap.get-phase "${PHASE}" 2>/dev/null)
-echo "$PHASE_SECTION" | grep -iE "UI|interface|frontend|component|layout|page|screen|view|form|dashboard|widget" > /dev/null 2>&1
-HAS_UI=$?
-```
-
-**If `HAS_UI` is 0 (frontend indicators found):**
-
-Check for existing UI-SPEC:
-```bash
-UI_SPEC_FILE=$(ls "${PHASE_DIR}"/*-UI-SPEC.md 2>/dev/null | head -1)
-```
-
-**If UI-SPEC.md found:** Set `UI_SPEC_PATH=$UI_SPEC_FILE`. Display: `Using UI design contract: ${UI_SPEC_PATH}`
-
-**If UI-SPEC.md missing AND `--skip-ui` flag is present in $ARGUMENTS:** Skip silently to step 6.
-
-**If UI-SPEC.md missing AND `UI_GATE_CFG` is `true`:**
-
-Read ephemeral chain flag (same field as `check.auto-mode` → `auto_chain_active`):
-```bash
-AUTO_CHAIN=$(gsd-sdk query check auto-mode --pick auto_chain_active 2>/dev/null || echo "false")
-```
-
-**If `AUTO_CHAIN` is `true` (running inside a `--chain` or `--auto` pipeline):**
-
-Auto-generate UI-SPEC without prompting:
-```
-Skill(skill="gsd-ui-phase", args="${PHASE} --auto ${GSD_WS}")
-```
-After `gsd-ui-phase` returns, re-read:
-```bash
-UI_SPEC_FILE=$(ls "${PHASE_DIR}"/*-UI-SPEC.md 2>/dev/null | head -1)
-UI_SPEC_PATH="${UI_SPEC_FILE}"
-```
-Continue to step 6.
-
-**If `AUTO_CHAIN` is `false` (manual invocation):**
-
-Output this markdown directly (not as a code block):
-
-```
-## ⚠ UI-SPEC.md missing for Phase {N}
-▶ Recommended next step:
-`/gsd-ui-phase {N} ${GSD_WS}` — generate UI design contract before planning
-───────────────────────────────────────────────
-Also available:
-- `/gsd-plan-phase {N} --skip-ui ${GSD_WS}` — plan without UI-SPEC (not recommended for frontend phases)
-```
-
-**Exit the plan-phase workflow. Do not continue.**
-
-**If `HAS_UI` is 1 (no frontend indicators):** Skip silently to step 5.7.
 
 ## 5.7. Schema Push Detection Gate
 
@@ -970,7 +863,7 @@ Display: `Revision iteration {N}/3 -- {blocker_count} blockers, {warning_count} 
   **If `stall_reentry_count >= 2`:**
     Display: `Stall persists after 2 re-planning attempts. The following issues could not be resolved automatically:`
     List the remaining issues from the checker.
-    Suggest: "Consider resolving these issues manually or running `/gsd-debug` to investigate root causes."
+    Suggest: "Consider resolving these issues manually (debugger agent retired)."
     Options: "Proceed anyway" | "Abandon"
     If "Proceed anyway": accept current plans and continue to step 13.
     If "Abandon": stop workflow.

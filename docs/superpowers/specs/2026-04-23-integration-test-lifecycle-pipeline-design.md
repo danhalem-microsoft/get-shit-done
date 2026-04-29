@@ -152,7 +152,7 @@ Before any skill runs, validate the sandbox was built from the fork:
 - Output mentions phase completion or progress
 - `turns >= 2` (Claude used tools, not canned response)
 
-### Step 10: `/gsd-stats`
+### Step 10: _(retired)_
 
 **Prompt:** Show stats.
 

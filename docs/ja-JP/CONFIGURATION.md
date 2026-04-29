@@ -97,13 +97,13 @@ GSD はプロジェクト設定を `.planning/config.json` に保存します。
 | `workflow.auto_advance` | boolean | `false` | discuss → plan → execute を停止せずに自動連鎖 |
 | `workflow.nyquist_validation` | boolean | `true` | plan-phase のリサーチ中にテストカバレッジマッピングを実施 |
 | `workflow.ui_phase` | boolean | `true` | フロントエンドフェーズで UI デザインコントラクトを生成 |
-| `workflow.ui_safety_gate` | boolean | `true` | plan-phase 中にフロントエンドフェーズに対して /gsd-ui-phase の実行を促すプロンプトを表示 |
+| `workflow.ui_safety_gate` | boolean | `true` | plan-phase 中にフロントエンドフェーズに対して _(retired)_ の実行を促すプロンプトを表示 |
 | `workflow.node_repair` | boolean | `true` | 検証失敗時にタスクを自律的に修復 |
 | `workflow.node_repair_budget` | number | `2` | 失敗タスクあたりの最大修復試行回数 |
 | `workflow.research_before_questions` | boolean | `false` | ディスカッション質問の後ではなく前にリサーチを実行 |
 | `workflow.use_worktrees` | boolean | `true` | `false` の場合、git worktree 分離を無効化 (v1.31) |
 | `workflow.discuss_mode` | string | `'discuss'` | `/gsd-discuss-phase` のコンテキスト収集方法を制御。`'discuss'`（デフォルト）は質問を1つずつ行います。`'assumptions'` はまずコードベースを読み取り、信頼度レベル付きの構造化された仮説を生成し、誤っている点のみ修正を求めます。v1.28 で追加 |
-| `workflow.skip_discuss` | boolean | `false` | `true` の場合、`/gsd-autonomous` は discuss-phase を完全にスキップし、ROADMAP のフェーズ目標から最小限の CONTEXT.md を作成します。開発者の要望が PROJECT.md/REQUIREMENTS.md に十分に記載されているプロジェクトに適しています。v1.28 で追加 |
+| `workflow.skip_discuss` | boolean | `false` | `true` の場合、_(retired)_ は discuss-phase を完全にスキップし、ROADMAP のフェーズ目標から最小限の CONTEXT.md を作成します。開発者の要望が PROJECT.md/REQUIREMENTS.md に十分に記載されているプロジェクトに適しています。v1.28 で追加 |
 | `workflow.text_mode` | boolean | `false` | AskUserQuestion の TUI メニューをプレーンテキストの番号付きリストに置き換えます。TUI メニューが表示されない Claude Code リモートセッション（`/rc` モード）で必要です。discuss-phase で `--text` フラグを使用してセッションごとに設定することもできます。v1.28 で追加 |
 
 ### 推奨プリセット
@@ -134,7 +134,7 @@ GSD はプロジェクト設定を `.planning/config.json` に保存します。
 | 設定 | 型 | デフォルト | 説明 |
 |------|-----|-----------|------|
 | `hooks.context_warnings` | boolean | `true` | コンテキストモニターフックによるコンテキストウィンドウ使用量の警告を表示 |
-| `hooks.workflow_guard` | boolean | `false` | GSD ワークフローのコンテキスト外でファイル編集が行われた場合に警告（`/gsd-quick` または `/gsd-fast` の使用を推奨） |
+| `hooks.workflow_guard` | boolean | `false` | GSD ワークフローのコンテキスト外でファイル編集が行われた場合に警告（`/gsd-quick` または _(retired)_ の使用を推奨） |
 
 プロンプトインジェクションガードフック（`gsd-prompt-guard.js`）は常に有効であり、無効にすることはできません。これはワークフロートグルではなく、セキュリティ機能です。
 
@@ -274,12 +274,12 @@ quick タスクのブランチ設定例：
 | gsd-phase-researcher | Opus | Sonnet | Haiku | Inherit |
 | gsd-project-researcher | Opus | Sonnet | Haiku | Inherit |
 | gsd-research-synthesizer | Sonnet | Sonnet | Haiku | Inherit |
-| gsd-debugger | Opus | Sonnet | Sonnet | Inherit |
-| gsd-codebase-mapper | Sonnet | Haiku | Haiku | Inherit |
+| _(retired agent)_ | Opus | Sonnet | Sonnet | Inherit |
+| _(retired agent)_ | Sonnet | Haiku | Haiku | Inherit |
 | gsd-verifier | Sonnet | Sonnet | Haiku | Inherit |
 | gsd-plan-checker | Sonnet | Sonnet | Haiku | Inherit |
 | gsd-integration-checker | Sonnet | Sonnet | Haiku | Inherit |
-| gsd-nyquist-auditor | Sonnet | Sonnet | Haiku | Inherit |
+| _(retired agent)_ | Sonnet | Sonnet | Haiku | Inherit |
 
 ### エージェントごとのオーバーライド
 
@@ -309,8 +309,8 @@ GSD が非 Claude ランタイム向けにインストールされると、イ�
   "model_overrides": {
     "gsd-planner": "o3",
     "gsd-executor": "o4-mini",
-    "gsd-debugger": "o3",
-    "gsd-codebase-mapper": "o4-mini"
+    "_(retired agent)_": "o3",
+    "_(retired agent)_": "o4-mini"
   }
 }
 ```

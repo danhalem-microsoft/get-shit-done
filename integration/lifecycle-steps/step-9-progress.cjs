@@ -6,9 +6,9 @@
  * Extracted verbatim (assertion logic) from integration/gsd-lifecycle.test.cjs
  * lines 435-445 as part of the Wave 0 lifecycle decomposition (Plan 01-02).
  *
- * NOTE (post-cull): /gsd-stats has been removed from the spine; the pre-cull
- * step-10 file is intentionally absent. Live progress is the final pipeline
- * step.
+ * NOTE (post-cull): the legacy stats command has been removed from the spine;
+ * the pre-cull step-10 file is intentionally absent. Live progress is the
+ * final pipeline step.
  */
 
 const path = require('node:path');

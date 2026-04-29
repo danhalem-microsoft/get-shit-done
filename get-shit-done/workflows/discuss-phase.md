@@ -216,7 +216,7 @@ Write these answers inline before continuing. If a blocking anti-pattern cannot 
 </step>
 
 <step name="check_spec">
-Check if a SPEC.md (from `/gsd-spec-phase`) exists for this phase. SPEC.md locks requirements before implementation decisions — if present, this discussion focuses on HOW to implement, not WHAT to build.
+Check if a SPEC.md exists for this phase. SPEC.md locks requirements before implementation decisions — if present, this discussion focuses on HOW to implement, not WHAT to build.
 
 ```bash
 ls ${phase_dir}/*-SPEC.md 2>/dev/null | grep -v AI-SPEC | head -1 || true
@@ -235,7 +235,7 @@ ls ${phase_dir}/*-SPEC.md 2>/dev/null | grep -v AI-SPEC | head -1 || true
 
 **If no SPEC.md is found:** Continue to `check_existing` with `spec_loaded = false` (default behavior unchanged).
 
-**Note:** SPEC.md files named `AI-SPEC.md` (from `/gsd-ai-integration-phase`) are excluded — those serve a different purpose.
+**Note:** SPEC.md files named `AI-SPEC.md` are excluded — those serve a different purpose.
 </step>
 
 <step name="check_existing">
@@ -376,7 +376,7 @@ Add to `<prior_decisions>`:
 
 If raw spikes/sketches exist but no findings skill, note in output:
 ```
-⚠ Unpackaged spikes/sketches detected — run `/gsd-spike-wrap-up` or `/gsd-sketch-wrap-up` to make findings available to planning agents.
+⚠ Unpackaged spikes/sketches detected — package the findings inline before continuing so they are available to planning agents.
 ```
 
 **Usage in subsequent steps:**
@@ -1130,7 +1130,6 @@ Created: .planning/phases/${PADDED_PHASE}-${SLUG}/${PADDED_PHASE}-CONTEXT.md
 **Also available:**
 - `/gsd-discuss-phase ${PHASE} --chain ${GSD_WS}` — re-run with auto plan+execute after
 - `/gsd-plan-phase ${PHASE} --skip-research ${GSD_WS}` — plan without research
-- `/gsd-ui-phase ${PHASE} ${GSD_WS}` — generate UI design contract before planning (if phase has frontend work)
 - Review/edit CONTEXT.md before continuing
 
 ---

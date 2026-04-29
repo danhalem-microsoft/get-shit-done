@@ -1,14 +1,10 @@
 <purpose>
-Orchestrate parallel debug agents to investigate UAT gaps and find root causes.
+Investigate UAT gaps and find root causes inline (in the orchestrator's main thread).
 
-After UAT finds gaps, spawn one debug agent per gap. Each agent investigates autonomously with symptoms pre-filled from UAT. Collect root causes, update UAT.md gaps with diagnosis, then hand off to plan-phase --gaps with actual diagnoses.
+After UAT finds gaps, walk each gap one at a time: form hypotheses, read suspect files, test them, and capture the diagnosis. Update UAT.md with root causes, then hand off to plan-phase --gaps so it can author targeted fixes from actual diagnoses (not guesses).
 
-Orchestrator stays lean: parse gaps, spawn agents, collect results, update UAT.
+The debugger agent has been retired — diagnostic work runs inline in the orchestrator using the standard reasoning + Read/Grep/Bash tools.
 </purpose>
-
-<available_agent_types>
-- gsd-debugger: Investigates bugs using scientific method with persistent state
-</available_agent_types>
 
 <paths>
 DEBUG_DIR=${planning_root}/debug
@@ -19,7 +15,7 @@ Debug files use the `${planning_root}/debug/` path (hidden directory with leadin
 <core_principle>
 **Diagnose before planning fixes.**
 
-UAT tells us WHAT is broken (symptoms). Debug agents find WHY (root cause). plan-phase --gaps then creates targeted fixes based on actual causes, not guesses.
+UAT tells us WHAT is broken (symptoms). Inline diagnosis finds WHY (root cause). plan-phase --gaps then creates targeted fixes based on actual causes, not guesses.
 
 Without diagnosis: "Comment doesn't refresh" → guess at fix → maybe wrong
 With diagnosis: "Comment doesn't refresh" → "useEffect missing dependency" → precise fix
@@ -64,7 +60,7 @@ gaps = [
 ```
 ## Diagnosing {N} Gaps
 
-Spawning parallel debug agents to investigate root causes:
+Investigating root causes inline (sequentially):
 
 | Gap (Truth) | Severity |
 |-------------|----------|
@@ -72,74 +68,35 @@ Spawning parallel debug agents to investigate root causes:
 | Reply button positioned correctly | minor |
 | Delete removes comment | blocker |
 
-Each agent will:
+For each gap, the orchestrator will:
 1. Create DEBUG-{slug}.md with symptoms pre-filled
-2. Investigate autonomously (read code, form hypotheses, test)
-3. Return root cause
-
-This runs in parallel - all gaps investigated simultaneously.
+2. Form hypotheses, read suspect files, narrow down the cause
+3. Record root cause + suggested fix direction
 ```
 </step>
 
-<step name="spawn_agents">
-**Spawn debug agents in parallel:**
+<step name="diagnose_gaps">
+**Investigate each gap inline (sequential, no agent spawn):**
 
-For each gap, fill the debug-subagent-prompt template and spawn:
+For each gap, follow the scientific-method debugging loop directly in the orchestrator's main thread using Read, Grep, and Bash:
 
-```
-Task(
-  prompt=filled_debug_subagent_prompt + "\n\n<files_to_read>\n- {phase_dir}/{phase_num}-UAT.md\n- ${planning_root}/STATE.md\n</files_to_read>",
-  subagent_type="gsd-debugger",
-  description="Debug: {truth_short}"
-)
-```
+1. **Reproduce** — confirm the symptom from the UAT test description.
+2. **Hypothesize** — list 2-4 plausible causes (missing dependency, race condition, wrong import path, off-by-one, etc.).
+3. **Read suspect files** — pull only the files relevant to each hypothesis.
+4. **Test** — minimal scripted reproduction or targeted code inspection to falsify hypotheses.
+5. **Capture** — write the confirmed root cause + evidence to `${DEBUG_DIR}/{slug}.md`.
 
-**All agents spawn in single message** (parallel execution).
+Use the `get-shit-done/templates/DEBUG.md` template structure for each debug file.
 
-Template placeholders:
-- `{truth}`: The expected behavior that failed
-- `{expected}`: From UAT test
-- `{actual}`: Verbatim user description from reason field
-- `{errors}`: Any error messages from UAT (or "None reported")
-- `{reproduction}`: "Test {test_num} in UAT"
-- `{timeline}`: "Discovered during UAT"
-- `{goal}`: `find_root_cause_only` (UAT flow - plan-phase --gaps handles fixes)
-- `{slug}`: Generated from truth
-</step>
-
-<step name="collect_results">
-**Collect root causes from agents:**
-
-Each agent returns with:
-```
-## ROOT CAUSE FOUND
-
-**Debug Session:** ${DEBUG_DIR}/{slug}.md
-
-**Root Cause:** {specific cause with evidence}
-
-**Evidence Summary:**
-- {key finding 1}
-- {key finding 2}
-- {key finding 3}
-
-**Files Involved:**
-- {file1}: {what's wrong}
-- {file2}: {related issue}
-
-**Suggested Fix Direction:** {brief hint for plan-phase --gaps}
-```
-
-Parse each return to extract:
+For each gap, record:
 - root_cause: The diagnosed cause
 - files: Files involved
 - debug_path: Path to debug session file
-- suggested_fix: Hint for gap closure plan
+- suggested_fix: Hint for the gap-closure plan
 
-If agent returns `## INVESTIGATION INCONCLUSIVE`:
-- root_cause: "Investigation inconclusive - manual review needed"
-- Note which issue needs manual attention
-- Include remaining possibilities from agent return
+If a gap cannot be diagnosed with reasonable effort:
+- root_cause: "Investigation inconclusive — manual review needed"
+- Note which issue needs manual attention and which hypotheses remain open
 </step>
 
 <step name="update_uat">
@@ -198,21 +155,21 @@ Do NOT offer manual next steps - verify-work handles the rest.
 </process>
 
 <context_efficiency>
-Agents start with symptoms pre-filled from UAT (no symptom gathering).
-Agents only diagnose—plan-phase --gaps handles fixes (no fix application).
+Inline diagnosis avoids agent-spawn overhead (UAT symptoms are already in context).
+Diagnosis only — plan-phase --gaps handles fixes (no fix application here).
 </context_efficiency>
 
 <failure_handling>
-**Agent fails to find root cause:**
+**Inline diagnosis cannot find root cause for a gap:**
 - Mark gap as "needs manual review"
 - Continue with other gaps
 - Report incomplete diagnosis
 
-**Agent times out:**
+**A diagnosis loop runs out of useful hypotheses:**
 - Check DEBUG-{slug}.md for partial progress
-- Can resume with /gsd-debug
+- Note open hypotheses in the debug session for future work
 
-**All agents fail:**
+**All gaps stay inconclusive:**
 - Something systemic (permissions, git, etc.)
 - Report for manual investigation
 - Fall back to plan-phase --gaps without root causes (less precise)
@@ -220,11 +177,11 @@ Agents only diagnose—plan-phase --gaps handles fixes (no fix application).
 
 <success_criteria>
 - [ ] Gaps parsed from UAT.md
-- [ ] Debug agents spawned in parallel
-- [ ] Root causes collected from all agents
+- [ ] Each gap diagnosed inline in the orchestrator (no agent spawn)
+- [ ] Root causes captured for every gap (or marked "manual review needed")
 - [ ] UAT.md gaps updated with artifacts and missing
 - [ ] Debug sessions saved to ${DEBUG_DIR}/
 - [ ] Hand off to verify-work for automatic planning
 
-**worktree_branch_check:** When spawning debug agents in worktree isolation, include worktree_branch_check instructions. Agents must verify they are on the correct base branch and use `git reset --hard` (not --soft) to correct any base mismatch.
+**worktree_branch_check:** If diagnosis runs in a worktree (USE_WORKTREES=true), verify the worktree base before reading files. Use `git reset --hard` (not --soft) to correct any base mismatch.
 </success_criteria>

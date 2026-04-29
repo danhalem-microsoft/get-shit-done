@@ -457,7 +457,6 @@ All tests passed. Ready to continue.
 - `/gsd-secure-phase {phase}` — security review (required before advancing)
 - `/gsd-plan-phase {next}` — Plan next phase
 - `/gsd-execute-phase {next}` — Execute next phase
-- `/gsd-ui-review {phase}` — visual quality audit (if frontend files were modified)
 ```
 
 If `SECURITY_CFG` is `true` AND `SECURITY_FILE` exists: check frontmatter `threats_open`. If > 0:
@@ -482,7 +481,6 @@ All tests passed. Phase {phase} marked complete.
 - `/gsd-plan-phase {next}` — Plan next phase
 - `/gsd-execute-phase {next}` — Execute next phase
 - `/gsd-secure-phase {phase}` — security review
-- `/gsd-ui-review {phase}` — visual quality audit (if frontend files were modified)
 ```
 </step>
 

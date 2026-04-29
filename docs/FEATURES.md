@@ -120,7 +120,7 @@
   - [Autonomous Audit-to-Fix](#98-autonomous-audit-to-fix)
   - [Improved Prompt Injection Scanner](#99-improved-prompt-injection-scanner)
   - [Stall Detection in Plan-Phase](#100-stall-detection-in-plan-phase)
-  - [Hard Stop Safety Gates in /gsd-next](#101-hard-stop-safety-gates-in-gsd-next)
+  - [Hard Stop Safety Gates in _(retired)_](#101-hard-stop-safety-gates-in-gsd-next)
   - [Adaptive Model Preset](#102-adaptive-model-preset)
   - [Post-Merge Hunk Verification](#103-post-merge-hunk-verification)
 - [v1.35.0 Features](#v1350-features)
@@ -211,7 +211,7 @@
 - Research agents have web search capability for current ecosystem information
 - Granularity setting controls phase count: `coarse` (3-5), `standard` (5-8), `fine` (8-12)
 - `--auto` mode extracts all information from the provided document without interactive questioning
-- Existing codebase context (from `/gsd-map-codebase`) is loaded if present
+- Existing codebase context (from _(retired)_) is loaded if present
 
 ---
 
@@ -246,7 +246,7 @@
 
 ### 3. UI Design Contract
 
-**Command:** `/gsd-ui-phase [N]`
+**Command:** _(retired)_
 
 **Purpose:** Lock design decisions before planning so that all components in a phase share consistent visual standards.
 
@@ -289,7 +289,7 @@
 - REQ-PLAN-04: System MUST include `read_first` and `acceptance_criteria` sections in every plan
 - REQ-PLAN-05: System MUST run plan checker verification loop (up to 3 iterations) unless `--skip-verify` is set
 - REQ-PLAN-06: System MUST support `--skip-research` flag to bypass research phase
-- REQ-PLAN-07: System MUST prompt user to run `/gsd-ui-phase` if frontend phase detected and no UI-SPEC.md exists (UI safety gate)
+- REQ-PLAN-07: System MUST prompt user to run _(retired)_ if frontend phase detected and no UI-SPEC.md exists (UI safety gate)
 - REQ-PLAN-08: System MUST include Nyquist validation mapping when `workflow.nyquist_validation` is enabled
 - REQ-PLAN-09: System MUST verify all phase requirements are covered by at least one plan before planning completes (requirements coverage gate)
 
@@ -390,7 +390,7 @@
 
 ### 6.5. Ship
 
-**Command:** `/gsd-ship [N] [--draft]`
+**Command:** _(retired)_ [--draft]`
 
 **Purpose:** Bridge local completion → merged PR. After verification passes, push branch, create PR with auto-generated body from planning artifacts, optionally trigger review, and track in STATE.md.
 
@@ -409,7 +409,7 @@
 
 ### 7. UI Review
 
-**Command:** `/gsd-ui-review [N]`
+**Command:** _(retired)_
 
 **Purpose:** Retroactive 6-pillar visual audit of implemented frontend code. Works standalone on any project.
 
@@ -434,7 +434,7 @@
 
 ### 8. Milestone Management
 
-**Commands:** `/gsd-audit-milestone`, `/gsd-complete-milestone`, `/gsd-new-milestone [name]`
+**Commands:** _(retired)_, `/gsd-complete-milestone`, `/gsd-new-milestone [name]`
 
 **Purpose:** Verify milestone completion, archive, tag release, and start the next development cycle.
 
@@ -449,7 +449,7 @@
 - REQ-MILE-08: New milestone MUST follow same flow as new-project (questions → research → requirements → roadmap)
 - REQ-MILE-09: New milestone MUST NOT reset existing workflow configuration
 
-**Gap Closure:** `/gsd-plan-milestone-gaps` creates phases to close gaps identified by audit.
+**Gap Closure:** _(retired)_ creates phases to close gaps identified by audit.
 
 ---
 
@@ -491,7 +491,7 @@
 
 ### 11. Autonomous Mode
 
-**Command:** `/gsd-autonomous [--from N]`
+**Command:** _(retired)_
 
 **Purpose:** Run all remaining phases autonomously — discuss → plan → execute per phase.
 
@@ -506,7 +506,7 @@
 
 ### 12. Freeform Routing
 
-**Command:** `/gsd-do`
+**Command:** _(retired in Phase 1 cull)_
 
 **Purpose:** Analyze freeform text and route to the appropriate GSD command.
 
@@ -520,7 +520,7 @@
 
 ### 13. Note Capture
 
-**Command:** `/gsd-note`
+**Command:** _(retired)_
 
 **Purpose:** Zero-friction idea capture without interrupting workflow. Append timestamped notes, list all notes, or promote notes to structured todos.
 
@@ -535,7 +535,7 @@
 
 ### 14. Auto-Advance (Next)
 
-**Command:** `/gsd-next`
+**Command:** _(retired)_
 
 **Purpose:** Automatically detect current project state and advance to the next logical workflow step, eliminating the need to remember which phase/step you're on.
 
@@ -623,7 +623,7 @@
 
 ### 19. Health Validation
 
-**Command:** `/gsd-health [--repair]`
+**Command:** _(retired)_
 
 **Purpose:** Validate `.planning/` directory integrity and auto-repair issues.
 
@@ -705,7 +705,7 @@
 
 ### 24. Session Reporting
 
-**Command:** `/gsd-session-report`
+**Command:** _(retired)_
 
 **Purpose:** Generate a structured post-session summary document capturing work performed, outcomes achieved, and estimated resource usage.
 
@@ -767,12 +767,12 @@
 | gsd-phase-researcher | Opus | Sonnet | Haiku | Inherit |
 | gsd-project-researcher | Opus | Sonnet | Haiku | Inherit |
 | gsd-research-synthesizer | Sonnet | Sonnet | Haiku | Inherit |
-| gsd-debugger | Opus | Sonnet | Sonnet | Inherit |
-| gsd-codebase-mapper | Sonnet | Haiku | Haiku | Inherit |
+| _(retired agent)_ | Opus | Sonnet | Sonnet | Inherit |
+| _(retired agent)_ | Sonnet | Haiku | Haiku | Inherit |
 | gsd-verifier | Sonnet | Sonnet | Haiku | Inherit |
 | gsd-plan-checker | Sonnet | Sonnet | Haiku | Inherit |
 | gsd-integration-checker | Sonnet | Sonnet | Haiku | Inherit |
-| gsd-nyquist-auditor | Sonnet | Sonnet | Haiku | Inherit |
+| _(retired agent)_ | Sonnet | Sonnet | Haiku | Inherit |
 
 ---
 
@@ -780,7 +780,7 @@
 
 ### 27. Codebase Mapping
 
-**Command:** `/gsd-map-codebase [area]`
+**Command:** _(retired)_
 
 **Purpose:** Analyze an existing codebase before starting a new project, so GSD understands what exists.
 
@@ -808,7 +808,7 @@
 
 ### 28. Debug System
 
-**Command:** `/gsd-debug [description]`
+**Command:** _(retired)_
 
 **Purpose:** Systematic debugging with persistent state across context resets.
 
@@ -840,7 +840,7 @@
 
 ### 30. Statistics Dashboard
 
-**Command:** `/gsd-stats`
+**Command:** _(retired)_
 
 **Purpose:** Display project metrics — phases, plans, requirements, git history, and timeline.
 
@@ -902,7 +902,7 @@
 
 ### 33. Test Generation
 
-**Command:** `/gsd-add-tests [N]`
+**Command:** _(retired)_
 
 **Purpose:** Generate tests for a completed phase based on UAT criteria and implementation.
 
@@ -1059,7 +1059,7 @@ After Level 3 wiring verification passes, spot-check individual exports for actu
 
 ### 40. Verification Debt Tracking
 
-**Command:** `/gsd-audit-uat`
+**Command:** _(retired)_
 
 **Purpose:** Prevent silent loss of UAT/verification items when projects advance past phases with outstanding tests. Surfaces verification debt across all prior phases so items are never forgotten.
 
@@ -1086,7 +1086,7 @@ When verification returns `human_needed`, items are persisted as a trackable HUM
 - REQ-DEBT-03: System MUST categorize blocked tests with `blocked_by` tags
 - REQ-DEBT-04: System MUST persist human_needed verification items as trackable UAT files
 - REQ-DEBT-05: System MUST warn (non-blocking) during phase completion and transition when verification debt exists
-- REQ-DEBT-06: `/gsd-audit-uat` MUST scan all phases, categorize items by testability, and produce a human test plan
+- REQ-DEBT-06: _(retired)_ MUST scan all phases, categorize items by testability, and produce a human test plan
 
 ---
 
@@ -1094,7 +1094,7 @@ When verification returns `human_needed`, items are persisted as a trackable HUM
 
 ### 41. Fast Mode
 
-**Command:** `/gsd-fast [task description]`
+**Command:** _(retired)_
 
 **Purpose:** Execute trivial tasks inline without spawning subagents or generating PLAN.md files. For tasks too small to justify planning overhead: typo fixes, config changes, small refactors, forgotten commits, simple additions.
 
@@ -1105,7 +1105,6 @@ When verification returns `human_needed`, items are persisted as a trackable HUM
 - REQ-FAST-04: System MUST NOT be used for tasks requiring research, multi-step planning, or verification
 
 **When to use vs `/gsd-quick`:**
-- `/gsd-fast` — One-sentence tasks executable in under 2 minutes (typo, config change, small addition)
 - `/gsd-quick` — Anything needing research, multi-step planning, or verification
 
 ---
@@ -1129,14 +1128,14 @@ When verification returns `human_needed`, items are persisted as a trackable HUM
 
 ### 43. Backlog Parking Lot
 
-**Commands:** `/gsd-add-backlog <description>`, `/gsd-review-backlog`, `/gsd-plant-seed <idea>`
+**Commands:** _(retired)_ <description>`, _(retired)_, _(retired)_ <idea>`
 
 **Purpose:** Capture ideas that aren't ready for active planning. Backlog items use 999.x numbering to stay outside the active phase sequence. Seeds are forward-looking ideas with trigger conditions that surface automatically at the right milestone.
 
 **Requirements:**
 - REQ-BACKLOG-01: Backlog items MUST use 999.x numbering to stay outside active phase sequence
 - REQ-BACKLOG-02: Phase directories MUST be created immediately so `/gsd-discuss-phase` and `/gsd-plan-phase` work on them
-- REQ-BACKLOG-03: `/gsd-review-backlog` MUST support promote, keep, and remove actions per item
+- REQ-BACKLOG-03: _(retired)_ MUST support promote, keep, and remove actions per item
 - REQ-BACKLOG-04: Promoted items MUST be renumbered into the active milestone sequence
 - REQ-SEED-01: Seeds MUST capture the full WHY and WHEN to surface conditions
 - REQ-SEED-02: `/gsd-new-milestone` MUST scan seeds and present matches
@@ -1151,7 +1150,7 @@ When verification returns `human_needed`, items are persisted as a trackable HUM
 
 ### 44. Persistent Context Threads
 
-**Command:** `/gsd-thread [name | description]`
+**Command:** _(retired)_
 
 **Purpose:** Lightweight cross-session knowledge stores for work that spans multiple sessions but doesn't belong to any specific phase. Lighter weight than `/gsd-pause-work` — no phase state, no plan context.
 
@@ -1196,7 +1195,7 @@ When verification returns `human_needed`, items are persisted as a trackable HUM
 PreToolUse hook that scans Write/Edit calls targeting `.planning/` for injection patterns. Advisory-only — logs detection for awareness without blocking legitimate operations.
 
 **3. Workflow Guard Hook** (`gsd-workflow-guard.js`)
-PreToolUse hook that detects when Claude attempts file edits outside a GSD workflow context. Advises using `/gsd-quick` or `/gsd-fast` instead of direct edits. Configurable via `hooks.workflow_guard` (default: false).
+PreToolUse hook that detects when Claude attempts file edits outside a GSD workflow context. Advises using `/gsd-quick` or _(retired)_ instead of direct edits. Configurable via `hooks.workflow_guard` (default: false).
 
 **4. CI-Ready Injection Scanner** (`prompt-injection-scan.test.cjs`)
 Test suite that scans all agent, workflow, and command files for embedded injection vectors.
@@ -1236,7 +1235,7 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ### 49. Forensics
 
-**Command:** `/gsd-forensics [description]`
+**Command:** _(retired)_
 
 **Purpose:** Post-mortem investigation of failed or stuck GSD workflows.
 
@@ -1262,7 +1261,7 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ### 50. Milestone Summary
 
-**Command:** `/gsd-milestone-summary [version]`
+**Command:** _(retired)_
 
 **Purpose:** Generate comprehensive project summary from milestone artifacts for team onboarding.
 
@@ -1308,7 +1307,7 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ### 52. Manager Dashboard
 
-**Command:** `/gsd-manager`
+**Command:** _(retired)_
 
 **Purpose:** Interactive command center for managing multiple phases from one terminal.
 
@@ -1356,18 +1355,18 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 **Part of:** `/gsd-new-project` and `/gsd-progress`
 
-**Purpose:** Automatically detect UI-heavy projects and surface `/gsd-ui-phase` recommendation.
+**Purpose:** Automatically detect UI-heavy projects and surface _(retired)_ recommendation.
 
 **Requirements:**
 - REQ-UI-DETECT-01: System MUST detect UI signals in project description (keywords, framework references)
 - REQ-UI-DETECT-02: System MUST annotate ROADMAP.md phases with `ui_hint` when applicable
-- REQ-UI-DETECT-03: System MUST suggest `/gsd-ui-phase` in next steps for UI-heavy phases
-- REQ-UI-DETECT-04: System MUST NOT make `/gsd-ui-phase` mandatory
+- REQ-UI-DETECT-03: System MUST suggest _(retired)_ in next steps for UI-heavy phases
+- REQ-UI-DETECT-04: System MUST NOT make _(retired)_ mandatory
 
 **Process:**
 1. **Detect** — Scan project description and tech stack for UI signals (keywords, framework references)
 2. **Annotate** — Add `ui_hint` markers to applicable phases in ROADMAP.md
-3. **Surface** — Include `/gsd-ui-phase` recommendation in next steps for UI-heavy phases
+3. **Surface** — Include _(retired)_ recommendation in next steps for UI-heavy phases
 
 ---
 
@@ -1500,13 +1499,13 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ### 61. Documentation Generation
 
-**Command:** `/gsd-docs-update`
+**Command:** _(retired)_
 
 **Purpose:** Generate and verify project documentation with accuracy checks.
 
 **Requirements:**
-- REQ-DOCS-01: System MUST spawn `gsd-doc-writer` agent to generate documentation
-- REQ-DOCS-02: System MUST spawn `gsd-doc-verifier` agent to check accuracy
+- REQ-DOCS-01: System MUST spawn _(retired agent)_ agent to generate documentation
+- REQ-DOCS-02: System MUST spawn _(retired agent)_ agent to check accuracy
 - REQ-DOCS-03: System MUST verify generated documentation against actual implementation
 
 **Produces:**
@@ -1515,8 +1514,8 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 | Updated project documentation | Generated and verified documentation files |
 
 **Process:**
-1. **Generate** — Spawn `gsd-doc-writer` to create or update documentation from implementation
-2. **Verify** — Spawn `gsd-doc-verifier` to check documentation accuracy against codebase
+1. **Generate** — Spawn _(retired agent)_ to create or update documentation from implementation
+2. **Verify** — Spawn _(retired agent)_ to check documentation accuracy against codebase
 3. **Output** — Produce verified documentation with accuracy annotations
 
 ---
@@ -1541,7 +1540,7 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ### 63. Single-Phase Autonomous
 
-**Flag:** `/gsd-autonomous --only N`
+**Flag:** _(retired)_ --only N`
 
 **Purpose:** Execute just one phase autonomously instead of all remaining phases.
 
@@ -1677,7 +1676,7 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ### 70. Autonomous `--to N` Flag
 
-**Flag:** `/gsd-autonomous --to N`
+**Flag:** _(retired)_ --to N`
 
 **Purpose:** Stop autonomous execution after completing a specific phase, allowing partial autonomous runs.
 
@@ -1775,7 +1774,7 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ### 76. Debug `--diagnose` Flag
 
-**Flag:** `/gsd-debug --diagnose`
+**Flag:** _(retired)_ --diagnose`
 
 **Purpose:** Diagnosis-only mode that investigates without attempting fixes.
 
@@ -1788,9 +1787,9 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ### 77. Phase Dependency Analysis
 
-**Command:** `/gsd-analyze-dependencies`
+**Command:** _(retired)_
 
-**Purpose:** Detect phase dependencies and suggest `Depends on` entries for ROADMAP.md before running `/gsd-manager`.
+**Purpose:** Detect phase dependencies and suggest `Depends on` entries for ROADMAP.md before running _(retired)_.
 
 **Requirements:**
 - REQ-DEP-01: System MUST detect file overlap between phases
@@ -1908,7 +1907,7 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ### 86. Autonomous `--interactive` Flag
 
-**Flag:** `/gsd-autonomous --interactive`
+**Flag:** _(retired)_ --interactive`
 
 **Purpose:** Lean-context autonomous mode that keeps discuss-phase interactive (user answers questions) while dispatching plan and execute as background agents.
 
@@ -1971,7 +1970,7 @@ Test suite that scans all agent, workflow, and command files for embedded inject
   - [Autonomous Audit-to-Fix](#98-autonomous-audit-to-fix)
   - [Improved Prompt Injection Scanner](#99-improved-prompt-injection-scanner)
   - [Stall Detection in Plan-Phase](#100-stall-detection-in-plan-phase)
-  - [Hard Stop Safety Gates in /gsd-next](#101-hard-stop-safety-gates-in-gsd-next)
+  - [Hard Stop Safety Gates in _(retired)_](#101-hard-stop-safety-gates-in-gsd-next)
   - [Adaptive Model Preset](#102-adaptive-model-preset)
   - [Post-Merge Hunk Verification](#103-post-merge-hunk-verification)
 
@@ -2000,7 +1999,7 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ### 90. Queryable Codebase Intelligence
 
-**Command:** `/gsd-intel [query <term>|status|diff|refresh]`
+**Command:** _(retired)_
 **Config:** `intel.enabled`
 
 **Purpose:** Maintain a queryable JSON index of codebase structure, API surface, dependency graph, file roles, and architecture decisions in `.planning/intel/`. Enables targeted lookups without reading the entire codebase.
@@ -2091,7 +2090,7 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ### 94. Socratic Exploration
 
-**Command:** `/gsd-explore [topic]`
+**Command:** _(retired)_
 
 **Purpose:** Guide a developer through exploring an idea via Socratic probing questions before committing to a plan. Routes outputs to the appropriate GSD artifact: notes, todos, seeds, research questions, requirements updates, or a new phase.
 
@@ -2105,7 +2104,7 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ### 95. Safe Undo
 
-**Command:** `/gsd-undo --last N | --phase NN | --plan NN-MM`
+**Command:** _(retired)_ --last N | --phase NN | --plan NN-MM`
 
 **Purpose:** Roll back GSD phase or plan commits safely using the phase manifest and git log, with dependency checks and a hard confirmation gate before any revert is applied.
 
@@ -2120,7 +2119,7 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ### 96. Plan Import
 
-**Command:** `/gsd-import --from <filepath>`
+**Command:** _(retired)_ --from <filepath>`
 
 **Purpose:** Ingest an external plan file into the GSD planning system with conflict detection against `PROJECT.md` decisions, converting it to a valid GSD PLAN.md and validating it through the plan-checker.
 
@@ -2134,20 +2133,20 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ### 97. Rapid Codebase Scan
 
-**Command:** `/gsd-scan [--focus tech|arch|quality|concerns|tech+arch]`
+**Command:** _(retired)_
 
-**Purpose:** Lightweight alternative to `/gsd-map-codebase` that spawns a single mapper agent for a specific focus area, producing targeted output in `.planning/codebase/` without the overhead of 4 parallel agents.
+**Purpose:** Lightweight alternative to _(retired)_ that spawns a single mapper agent for a specific focus area, producing targeted output in `.planning/codebase/` without the overhead of 4 parallel agents.
 
 **Requirements:**
 - REQ-SCAN-01: Scan MUST spawn exactly one mapper agent (not four parallel agents)
 - REQ-SCAN-02: Focus area MUST be one of: `tech`, `arch`, `quality`, `concerns`, `tech+arch` (default)
-- REQ-SCAN-03: Output MUST be written to `.planning/codebase/` in the same format as `/gsd-map-codebase`
+- REQ-SCAN-03: Output MUST be written to `.planning/codebase/` in the same format as _(retired)_
 
 ---
 
 ### 98. Autonomous Audit-to-Fix
 
-**Command:** `/gsd-audit-fix [--source <audit>] [--severity high|medium|all] [--max N] [--dry-run]`
+**Command:** _(retired)_ [--severity high|medium|all] [--max N] [--dry-run]`
 
 **Purpose:** End-to-end pipeline that runs an audit, classifies findings as auto-fixable vs. manual-only, then autonomously fixes auto-fixable issues with test verification and atomic commits.
 
@@ -2188,14 +2187,14 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ---
 
-### 101. Hard Stop Safety Gates in /gsd-next
+### 101. Hard Stop Safety Gates in _(retired)_
 
-**Command:** `/gsd-next`
+**Command:** _(retired)_
 
-**Purpose:** Prevent `/gsd-next` from entering runaway loops by adding hard stop safety gates and a consecutive-call guard that interrupts autonomous chaining when repeated identical steps are detected.
+**Purpose:** Prevent _(retired)_ from entering runaway loops by adding hard stop safety gates and a consecutive-call guard that interrupts autonomous chaining when repeated identical steps are detected.
 
 **Requirements:**
-- REQ-NEXT-GATE-01: `/gsd-next` MUST track consecutive same-step calls
+- REQ-NEXT-GATE-01: _(retired)_ MUST track consecutive same-step calls
 - REQ-NEXT-GATE-02: On repeated same-step, system MUST present a hard stop gate to the user
 - REQ-NEXT-GATE-03: User MUST explicitly confirm to continue past a hard stop gate
 
@@ -2258,7 +2257,7 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ### 105. GSD-2 Reverse Migration
 
-**Command:** `/gsd-from-gsd2 [--dry-run] [--force] [--path <dir>]`
+**Command:** _(retired)_ [--force] [--path <dir>]`
 
 **Purpose:** Migrate a project from GSD-2 format (`.gsd/` directory with Milestone→Slice→Task hierarchy) back to the v1 `.planning/` format, restoring full compatibility with all GSD v1 commands.
 
@@ -2281,7 +2280,7 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ### 106. AI Integration Phase Wizard
 
-**Command:** `/gsd-ai-integration-phase [N]`
+**Command:** _(retired)_
 
 **Purpose:** Guide developers through selecting, integrating, and planning evaluation for AI/LLM capabilities in a project phase. Produces a structured `AI-SPEC.md` that feeds into planning and verification.
 
@@ -2297,7 +2296,7 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ### 107. AI Eval Review
 
-**Command:** `/gsd-eval-review [N]`
+**Command:** _(retired)_
 
 **Purpose:** Retroactively audit an executed AI phase's evaluation coverage against the `AI-SPEC.md` plan. Identifies gaps between planned and implemented evaluation before the phase is closed.
 
@@ -2332,9 +2331,9 @@ Test suite that scans all agent, workflow, and command files for embedded inject
 
 ### 109. External Code Review Command
 
-**Command:** `/gsd-ship` (enhanced)
+**Command:** _(retired)_ (enhanced)
 
-**Purpose:** Before the manual review step in `/gsd-ship`, automatically run an external code review command if configured. The command receives the diff and phase context via stdin and returns a JSON verdict (`APPROVED` or `REVISE`). Falls through to the existing manual review flow regardless of outcome.
+**Purpose:** Before the manual review step in _(retired)_, automatically run an external code review command if configured. The command receives the diff and phase context via stdin and returns a JSON verdict (`APPROVED` or `REVISE`). Falls through to the existing manual review flow regardless of outcome.
 
 **Requirements:**
 - REQ-EXTREVIEW-01: `workflow.code_review_command` must be set to a command string; null means skip
@@ -2472,9 +2471,9 @@ Users who run a memory / knowledge-base MCP server (for example, ExoCortex-style
 
 ### 117. Spike Command
 
-**Command:** `/gsd-spike [idea] [--quick]`
+**Command:** _(retired)_ [--quick]`
 
-**Purpose:** Run 2–5 focused feasibility experiments before committing to an implementation approach. Each experiment uses Given/When/Then framing, produces executable code, and returns a VALIDATED / INVALIDATED / PARTIAL verdict. Companion `/gsd-spike-wrap-up` packages findings into a project-local skill.
+**Purpose:** Run 2–5 focused feasibility experiments before committing to an implementation approach. Each experiment uses Given/When/Then framing, produces executable code, and returns a VALIDATED / INVALIDATED / PARTIAL verdict. Companion _(retired)_ packages findings into a project-local skill.
 
 **Requirements:**
 - REQ-SPIKE-01: Each experiment MUST produce a Given/When/Then hypothesis before any code is written
@@ -2482,22 +2481,22 @@ Users who run a memory / knowledge-base MCP server (for example, ExoCortex-style
 - REQ-SPIKE-03: Each experiment MUST return one of: VALIDATED, INVALIDATED, or PARTIAL verdict with evidence
 - REQ-SPIKE-04: Results MUST be stored in `.planning/spikes/NNN-experiment-name/` with a README and MANIFEST.md
 - REQ-SPIKE-05: `--quick` flag skips intake conversation and uses the argument text as the experiment direction
-- REQ-SPIKE-06: `/gsd-spike-wrap-up` MUST package findings into `.claude/skills/spike-findings-[project]/`
+- REQ-SPIKE-06: _(retired)_ MUST package findings into `.claude/skills/spike-findings-[project]/`
 
 **Produces:**
 | Artifact | Description |
 |----------|-------------|
 | `.planning/spikes/NNN-name/README.md` | Hypothesis, experiment code, verdict, and evidence |
 | `.planning/spikes/MANIFEST.md` | Index of all spikes with verdicts |
-| `.claude/skills/spike-findings-[project]/` | Packaged findings (via `/gsd-spike-wrap-up`) |
+| `.claude/skills/spike-findings-[project]/` | Packaged findings (via _(retired)_) |
 
 ---
 
 ### 118. Sketch Command
 
-**Command:** `/gsd-sketch [idea] [--quick] [--text]`
+**Command:** _(retired)_ [--quick] [--text]`
 
-**Purpose:** Explore design directions through throwaway HTML mockups before committing to implementation. Produces 2–3 interactive variants per design question, all viewable directly in a browser with no build step. Companion `/gsd-sketch-wrap-up` packages winning decisions into a project-local skill.
+**Purpose:** Explore design directions through throwaway HTML mockups before committing to implementation. Produces 2–3 interactive variants per design question, all viewable directly in a browser with no build step. Companion _(retired)_ packages winning decisions into a project-local skill.
 
 **Requirements:**
 - REQ-SKETCH-01: Each sketch MUST answer one specific visual design question
@@ -2507,7 +2506,7 @@ Users who run a memory / knowledge-base MCP server (for example, ExoCortex-style
 - REQ-SKETCH-05: A shared `themes/default.css` MUST provide CSS variables adapted to the agreed aesthetic
 - REQ-SKETCH-06: `--quick` flag skips mood intake; `--text` flag replaces `AskUserQuestion` with numbered lists for non-Claude runtimes
 - REQ-SKETCH-07: The winning variant MUST be marked in the README frontmatter and with a ★ in the HTML tab
-- REQ-SKETCH-08: `/gsd-sketch-wrap-up` MUST package winning decisions into `.claude/skills/sketch-findings-[project]/`
+- REQ-SKETCH-08: _(retired)_ MUST package winning decisions into `.claude/skills/sketch-findings-[project]/`
 
 **Produces:**
 | Artifact | Description |
@@ -2516,7 +2515,7 @@ Users who run a memory / knowledge-base MCP server (for example, ExoCortex-style
 | `.planning/sketches/NNN-name/README.md` | Design question, variants, winner, what to look for |
 | `.planning/sketches/themes/default.css` | Shared CSS theme variables |
 | `.planning/sketches/MANIFEST.md` | Index of all sketches with winners |
-| `.claude/skills/sketch-findings-[project]/` | Packaged decisions (via `/gsd-sketch-wrap-up`) |
+| `.claude/skills/sketch-findings-[project]/` | Packaged decisions (via _(retired)_) |
 
 ---
 
@@ -2549,11 +2548,11 @@ Users who run a memory / knowledge-base MCP server (for example, ExoCortex-style
 
 ### 121. Knowledge Graph Integration
 
-**Purpose:** Build, query, and inspect a lightweight knowledge graph of the project in `.planning/graphs/`. Opt-in per project. Exposed as the `/gsd-graphify` user-facing command and the `gsd-tools.cjs graphify …` programmatic verb family. Complements `/gsd-intel` (snapshot-oriented) with a graph-oriented view of nodes and edges across commands, agents, workflows, and phases.
+**Purpose:** Build, query, and inspect a lightweight knowledge graph of the project in `.planning/graphs/`. Opt-in per project. Exposed as the _(retired)_ user-facing command and the `gsd-tools.cjs graphify …` programmatic verb family. Complements _(retired)_ (snapshot-oriented) with a graph-oriented view of nodes and edges across commands, agents, workflows, and phases.
 
 **Requirements:**
-- REQ-GRAPH-01: Opt-in via `graphify.enabled: true` in `.planning/config.json`. When disabled, `/gsd-graphify` prints an activation hint and stops without writing.
-- REQ-GRAPH-02: Slash-command `/gsd-graphify` exposes subcommands `build`, `query <term>`, `status`, `diff`. The programmatic CLI `node gsd-tools.cjs graphify …` additionally exposes `snapshot`, which is also invoked automatically as the final step of `graphify build`.
+- REQ-GRAPH-01: Opt-in via `graphify.enabled: true` in `.planning/config.json`. When disabled, _(retired)_ prints an activation hint and stops without writing.
+- REQ-GRAPH-02: Slash-command _(retired)_ exposes subcommands `build`, `query <term>`, `status`, `diff`. The programmatic CLI `node gsd-tools.cjs graphify …` additionally exposes `snapshot`, which is also invoked automatically as the final step of `graphify build`.
 - REQ-GRAPH-03: Build runs within the configurable `graphify.build_timeout` (seconds); exceeding the timeout aborts cleanly without leaving a partial graph.
 - REQ-GRAPH-04: `graphify.cjs` falls back to `graph.links` when `graph.edges` is absent so older graph artifacts keep rendering.
 - REQ-GRAPH-05: CJS-only surface; `gsd-sdk query` does not yet register graphify handlers.

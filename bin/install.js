@@ -30,13 +30,10 @@ const CODEX_AGENT_SANDBOX = {
   'gsd-project-researcher': 'workspace-write',
   'gsd-research-synthesizer': 'workspace-write',
   'gsd-verifier': 'workspace-write',
-  'gsd-codebase-mapper': 'workspace-write',
   'gsd-roadmapper': 'workspace-write',
-  'gsd-debugger': 'workspace-write',
   'gsd-plan-checker': 'read-only',
   'gsd-integration-checker': 'read-only',
-  // Fork patch: critic + nyquist agent entries
-  'gsd-nyquist-auditor': 'read-only',
+  // Fork patch: critic agent entries
   'gsd-critic-plan': 'read-only',
   'gsd-critic-code': 'read-only',
   'gsd-critic-scope': 'read-only',
@@ -3616,7 +3613,7 @@ function copyFlattenedCommands(srcDir, destDir, prefix, pathPrefix, runtime) {
 
     if (entry.isDirectory()) {
       // Recurse into subdirectories, adding to prefix
-      // e.g., commands/gsd/debug/start.md -> command/gsd-debug-start.md
+      // e.g., commands/gsd/foo/start.md -> command/gsd-foo-start.md
       copyFlattenedCommands(srcPath, destDir, `${prefix}-${entry.name}`, pathPrefix, runtime);
     } else if (entry.name.endsWith('.md')) {
       // Flatten: help.md -> gsd-help.md
@@ -6319,7 +6316,7 @@ function install(isGlobal, runtime = 'claude') {
 
     // Configure workflow guard hook (opt-in via hooks.workflow_guard: true)
     // Detects file edits outside GSD workflow context and advises using
-    // /gsd-quick or /gsd-fast for state-tracked changes. Advisory only.
+    // /gsd-quick for state-tracked changes. Advisory only.
     const workflowGuardCommand = isGlobal
       ? buildHookCommand(targetDir, 'gsd-workflow-guard.js', hookOpts)
       : 'node ' + localPrefix + '/hooks/gsd-workflow-guard.js';

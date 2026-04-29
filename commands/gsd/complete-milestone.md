@@ -42,20 +42,23 @@ Output: Milestone archived (roadmap + requirements), PROJECT.md evolved, git tag
 0. **Check for audit:**
 
    - Look for `.planning/v{{version}}-MILESTONE-AUDIT.md`
-   - If missing or stale: recommend `/gsd-audit-milestone` first
-   - If audit status is `gaps_found`: recommend `/gsd-plan-milestone-gaps` first
+   - If missing or stale: ask the user to manually verify requirements coverage,
+     cross-phase integration, and E2E flows before continuing
+   - If audit status is `gaps_found`: surface the gap list and ask the user to
+     either accept-as-tech-debt or run `/gsd-plan-phase` for each gap area
    - If audit status is `passed`: proceed to step 1
 
    ```markdown
    ## Pre-flight Check
 
    {If no v{{version}}-MILESTONE-AUDIT.md:}
-   ⚠ No milestone audit found. Run `/gsd-audit-milestone` first to verify
-   requirements coverage, cross-phase integration, and E2E flows.
+   ⚠ No milestone audit found. Manually verify requirements coverage,
+   cross-phase integration, and E2E flows before completing.
 
    {If audit has gaps:}
-   ⚠ Milestone audit found gaps. Run `/gsd-plan-milestone-gaps` to create
-   phases that close the gaps, or proceed anyway to accept as tech debt.
+   ⚠ Milestone audit found gaps. Either accept them as tech debt now and
+   document under `### Known Gaps` in MILESTONES.md, or open targeted gap-closure
+   plans via `/gsd-plan-phase` before completing.
 
    {If audit passed:}
    ✓ Milestone audit passed. Proceeding with completion.

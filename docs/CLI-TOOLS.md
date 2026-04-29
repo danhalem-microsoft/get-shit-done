@@ -207,7 +207,7 @@ node gsd-tools.cjs resolve-model <agent-name>
 # Returns: opus | sonnet | haiku | inherit
 ```
 
-Agent names: `gsd-planner`, `gsd-executor`, `gsd-phase-researcher`, `gsd-project-researcher`, `gsd-research-synthesizer`, `gsd-verifier`, `gsd-plan-checker`, `gsd-integration-checker`, `gsd-roadmapper`, `gsd-debugger`, `gsd-codebase-mapper`, `gsd-nyquist-auditor`
+Agent names: `gsd-planner`, `gsd-executor`, `gsd-phase-researcher`, `gsd-project-researcher`, `gsd-research-synthesizer`, `gsd-verifier`, `gsd-plan-checker`, `gsd-integration-checker`, `gsd-roadmapper`, `gsd-pattern-mapper`, plus the six `gsd-critic-*` agents.
 
 ---
 
@@ -408,7 +408,7 @@ node gsd-tools.cjs audit-uat
 # Cross-artifact audit queue — scan `.planning/` for unresolved audit items
 node gsd-tools.cjs audit-open [--json]
 
-# Reverse-migrate a GSD-2 project into the current structure (backs `/gsd-from-gsd2`)
+# Reverse-migrate a GSD-2 project into the current structure (CLI-only since the dedicated command was retired in the Phase 1 cull)
 node gsd-tools.cjs from-gsd2 [--path <dir>] [--force] [--dry-run]
 
 # Git commit with config checks
@@ -444,7 +444,7 @@ node gsd-tools.cjs graphify diff
 node gsd-tools.cjs graphify snapshot [name]
 ```
 
-User-facing entry point: `/gsd-graphify` (see [Command Reference](COMMANDS.md#gsd-graphify)).
+CLI-only since the dedicated graphify command was retired in the Phase 1 cull — invoke via `node gsd-tools.cjs graphify ...`.
 
 ---
 
@@ -467,11 +467,11 @@ User-facing entry point: `/gsd-graphify` (see [Command Reference](COMMANDS.md#gs
 | UAT | `lib/uat.cjs` | Cross-phase UAT/verification audit |
 | Profile Output | `lib/profile-output.cjs` | Developer profile formatting |
 | Profile Pipeline | `lib/profile-pipeline.cjs` | Session analysis pipeline |
-| Graphify | `lib/graphify.cjs` | Knowledge graph build/query/status/diff/snapshot (backs `/gsd-graphify`) |
+| Graphify | `lib/graphify.cjs` | Knowledge graph build/query/status/diff/snapshot (CLI-only) |
 | Learnings | `lib/learnings.cjs` | Extract learnings from phases/SUMMARY artifacts (backs `/gsd-extract-learnings`) |
 | Audit | `lib/audit.cjs` | Phase/milestone audit queue handlers; `audit-open` helper |
-| GSD2 Import | `lib/gsd2-import.cjs` | Reverse-migration importer from GSD-2 projects (backs `/gsd-from-gsd2`) |
-| Intel | `lib/intel.cjs` | Queryable codebase intelligence index (backs `/gsd-intel`) |
+| GSD2 Import | `lib/gsd2-import.cjs` | Reverse-migration importer from GSD-2 projects (CLI-only) |
+| Intel | `lib/intel.cjs` | Queryable codebase intelligence index (CLI-only) |
 
 ---
 

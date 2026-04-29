@@ -188,7 +188,6 @@ const CLAUDE_MD_WORKFLOW_ENFORCEMENT = [
   '',
   'Use these entry points:',
   '- `/gsd-quick` for small fixes, doc updates, and ad-hoc tasks',
-  '- `/gsd-debug` for investigation and bug fixing',
   '- `/gsd-execute-phase` for planned phase work',
   '',
   'Do not make direct repo edits outside a GSD workflow unless the user explicitly asks to bypass it.',

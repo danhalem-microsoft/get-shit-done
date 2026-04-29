@@ -64,29 +64,6 @@ GSD는 멀티 에이전트 아키텍처를 사용합니다. 가벼운 오케스�
 - 특정 단계 도메인의 구현 패턴을 조사합니다
 - Nyquist 검증 매핑을 위한 테스트 인프라를 감지합니다
 
----
-
-### gsd-ui-researcher
-
-**역할:** 프론트엔드 단계를 위한 UI 디자인 계약서를 생성합니다.
-
-| 속성 | 값 |
-|----------|-------|
-| **생성 주체** | `/gsd-ui-phase` |
-| **병렬성** | 단일 인스턴스 |
-| **도구** | Read, Write, Bash, Grep, Glob, WebSearch, WebFetch, mcp (context7) |
-| **모델 (balanced)** | Sonnet |
-| **색상** | `#E879F9` (fuchsia) |
-| **생성물** | `{phase}-UI-SPEC.md` |
-
-**기능.**
-- 디자인 시스템 상태 감지 (shadcn components.json, Tailwind config, 기존 토큰)
-- React/Next.js/Vite 프로젝트를 위한 shadcn 초기화 제안
-- 아직 답변되지 않은 디자인 계약 질문만 질의합니다
-- 서드파티 컴포넌트에 대한 레지스트리 안전 게이트를 적용합니다
-
----
-
 ### gsd-assumptions-analyzer
 
 **역할:** 단계에 대한 코드베이스를 심층 분석하고 증거, 신뢰 수준, 오류 시 결과를 포함한 구조화된 가정을 반환합니다.
@@ -244,29 +221,12 @@ GSD는 멀티 에이전트 아키텍처를 사용합니다. 가벼운 오케스�
 
 | 속성 | 값 |
 |----------|-------|
-| **생성 주체** | `/gsd-audit-milestone` |
+| **생성 주체** | _(retired)_ |
 | **병렬성** | 단일 인스턴스 |
 | **도구** | Read, Bash, Grep, Glob |
 | **모델 (balanced)** | Sonnet |
 | **색상** | Blue |
 | **생성물** | 통합 검증 보고서 |
-
----
-
-### gsd-ui-checker
-
-**역할:** 품질 차원에 대해 UI-SPEC.md 디자인 계약서를 검증합니다.
-
-| 속성 | 값 |
-|----------|-------|
-| **생성 주체** | `/gsd-ui-phase` (검증 루프, 최대 2회 반복) |
-| **병렬성** | 단일 인스턴스 |
-| **도구** | Read, Bash, Glob, Grep |
-| **모델 (balanced)** | Sonnet |
-| **색상** | `#22D3EE` (cyan) |
-| **생성물** | BLOCK/FLAG/PASS 판정 |
-
----
 
 ### gsd-verifier
 
@@ -285,95 +245,6 @@ GSD는 멀티 에이전트 아키텍처를 사용합니다. 가벼운 오케스�
 - 작업 완료 여부가 아닌 단계 목표에 대해 코드베이스를 확인합니다
 - 구체적인 증거를 포함한 PASS/FAIL 결과를 제공합니다
 - `/gsd-verify-work`가 처리할 문제를 기록합니다
-
----
-
-### gsd-nyquist-auditor
-
-**역할:** 테스트를 생성하여 Nyquist 검증 누락을 채웁니다.
-
-| 속성 | 값 |
-|----------|-------|
-| **생성 주체** | `/gsd-validate-phase` |
-| **병렬성** | 단일 인스턴스 |
-| **도구** | Read, Write, Edit, Bash, Grep, Glob |
-| **모델 (balanced)** | Sonnet |
-| **생성물** | 테스트 파일, 업데이트된 `VALIDATION.md` |
-
-**핵심 동작.**
-- 구현 코드는 절대 수정하지 않습니다 — 테스트 파일만 수정합니다
-- 누락당 최대 3번 시도합니다
-- 구현 버그는 사용자에게 에스컬레이션으로 표시합니다
-
----
-
-### gsd-ui-auditor
-
-**역할:** 구현된 프론트엔드 코드에 대한 사후 6기둥 시각적 감사를 수행합니다.
-
-| 속성 | 값 |
-|----------|-------|
-| **생성 주체** | `/gsd-ui-review` |
-| **병렬성** | 단일 인스턴스 |
-| **도구** | Read, Write, Bash, Grep, Glob |
-| **모델 (balanced)** | Sonnet |
-| **색상** | `#F472B6` (pink) |
-| **생성물** | 점수를 포함한 `{phase}-UI-REVIEW.md` |
-
-**6가지 감사 기둥 (1-4점 채점).**
-1. 카피라이팅
-2. 시각적 요소
-3. 색상
-4. 타이포그래피
-5. 간격
-6. 경험 디자인
-
----
-
-### gsd-codebase-mapper
-
-**역할:** 코드베이스를 탐색하고 구조화된 분석 문서를 작성합니다.
-
-| 속성 | 값 |
-|----------|-------|
-| **생성 주체** | `/gsd-map-codebase` |
-| **병렬성** | 4개 인스턴스 (tech, architecture, quality, concerns) |
-| **도구** | Read, Bash, Grep, Glob, Write |
-| **모델 (balanced)** | Haiku |
-| **색상** | Cyan |
-| **생성물** | `.planning/codebase/*.md` (7개 문서) |
-
-**핵심 동작.**
-- 읽기 전용 탐색과 구조화된 출력
-- 문서를 디스크에 직접 작성합니다
-- 추론 불필요 — 파일 내용에서 패턴 추출
-
----
-
-### gsd-debugger
-
-**역할:** 영구 상태를 활용한 과학적 방법으로 버그를 조사합니다.
-
-| 속성 | 값 |
-|----------|-------|
-| **생성 주체** | `/gsd-debug`, `/gsd-verify-work` (실패 시) |
-| **병렬성** | 단일 인스턴스 (대화형) |
-| **도구** | Read, Write, Edit, Bash, Grep, Glob, WebSearch |
-| **모델 (balanced)** | Sonnet |
-| **색상** | Orange |
-| **생성물** | `.planning/debug/*.md`, 지식 베이스 업데이트 |
-
-**디버그 세션 생명주기.**
-`gathering` → `investigating` → `fixing` → `verifying` → `awaiting_human_verify` → `resolved`
-
-**핵심 동작.**
-- 가설, 증거, 제거된 이론을 추적합니다
-- 컨텍스트 초기화 이후에도 상태가 유지됩니다
-- 해결됨으로 표시하기 전에 사람의 검증이 필요합니다
-- 해결 시 영구 지식 베이스에 추가합니다
-- 새 세션 시작 시 지식 베이스를 참조합니다
-
----
 
 ### gsd-user-profiler
 
