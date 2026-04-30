@@ -6,6 +6,27 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### BREAKING CHANGES
+
+- **49 commands removed outright** (audit-fix, audit-uat, forensics, health, stats, scan, intel, map-codebase, graphify, ai-integration-phase, ui-phase, ui-review, eval-review, spike, sketch, spike-wrap-up, sketch-wrap-up, debug, explore, note, plant-seed, add-backlog, thread, review-backlog, audit-milestone, plan-milestone-gaps, milestone-summary, archive-project, restore-project, ship, undo, inbox, review (old — see migration table for OLD-vs-NEW /gsd-review disambiguation), manager, autonomous, fast, do, next, session-report, spec-phase, import, ultraplan-phase, list-phase-assumptions, docs-update, ingest-docs, from-gsd2, add-tests, analyze-dependencies, cleanup).
+- **9 commands consolidated into 2** new commands (`/gsd-review` and `/gsd-phase`). Note: the NEW `/gsd-review` (consolidated quality-gate) is a different command from the OLD `/gsd-review` (git/PR helper, removed) — different functionality, same name.
+- **17 agents removed** (gsd-debugger, gsd-debug-session-manager, gsd-doc-writer, gsd-doc-classifier, gsd-doc-synthesizer, gsd-doc-verifier, gsd-domain-researcher, gsd-eval-auditor, gsd-eval-planner, gsd-framework-selector, gsd-ai-researcher, gsd-ui-auditor, gsd-ui-checker, gsd-ui-researcher, gsd-codebase-mapper, gsd-intel-updater, gsd-nyquist-auditor).
+
+### Added
+
+- `/gsd-review` — consolidated quality-gate review with flags `--code`, `--code-fix`, `--security`, `--coverage`, `--critique`, `--converge` (replaces 6 deprecated commands; deprecation stubs persist for one milestone). NOTE: this is the NEW consolidated `/gsd-review`, distinct from the OLD `/gsd-review` git/PR helper which was removed (see migration table).
+- `/gsd-phase` — consolidated phase manipulation with subcommands `add`, `insert`, `remove` (replaces 3 deprecated commands; no stubs — see migration table).
+- Phase 1 Wave 0 test infrastructure: `tests/cull-no-orphan-references.test.cjs`, `tests/parity-baselines-stale.test.cjs`, `tests/parity-baselines-shape.test.cjs`, `tests/lifecycle-decomposed.test.cjs`, `tests/agent-parity-helper-shape.test.cjs`, `tests/consolidated-review-flags.test.cjs`, `tests/consolidated-phase-subcommands.test.cjs`, `tests/install-manifest-matches-surviving.test.cjs`, `tests/migration-table-present.test.cjs`.
+- Pre-refactor agent baseline corpus at `integration/test-fixtures/baselines/` (22 agents × 1 fixture each per D-03); helper at `integration/helpers/agent-parity.cjs`; walltime ledger at `integration/test-fixtures/walltime-ledger.jsonl`; lifecycle decomposition at `integration/lifecycle-steps/step-N-*.cjs`.
+
+### Changed
+
+- `integration/gsd-lifecycle.test.cjs` is now a thin composer (~50 lines) that requires per-step files at `integration/lifecycle-steps/step-N-*.cjs`. Pipeline shape captured at `integration/test-fixtures/lifecycle-shapes/post-cull.json` (9 steps; step 4 renamed `review-critique`; step 10 `/gsd-stats` removed).
+
+### Migration table
+
+See `commands/gsd/help.md` (delegates to `get-shit-done/workflows/help.md`) for the full migration table mapping every deleted/consolidated command to its replacement, including the OLD-vs-NEW `/gsd-review` disambiguation per D-01.
+
 ## [6.0.0] - 2026-04-08 — Multi-User Monorepo Support (v1.0 Milestone)
 
 ### BREAKING CHANGES

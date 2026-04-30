@@ -664,4 +664,98 @@ Example config:
 - Read `.planning/STATE.md` for current context
 - Check `.planning/ROADMAP.md` for phase status
 - Run `/gsd-progress` to check where you're up to
+
+## Command Migration (Phase 1 Cull)
+
+The following commands were removed in Phase 1 of the GSD Slim milestone. Use the replacement listed below.
+
+### 49 commands removed outright
+
+| Removed Command | Replacement | Notes |
+|-----------------|-------------|-------|
+| `/gsd-audit-fix`               | _(none)_                       | Removed; functionality not replaced. |
+| `/gsd-audit-uat`               | _(none)_                       | Removed. |
+| `/gsd-forensics`               | _(none)_                       | Removed. |
+| `/gsd-health`                  | _(none)_                       | Removed. |
+| `/gsd-stats`                   | _(none)_                       | Removed; use `git log` directly. |
+| `/gsd-scan`                    | _(none)_                       | Removed. |
+| `/gsd-intel`                   | _(none)_                       | Removed; intel subsystem retired. |
+| `/gsd-map-codebase`            | _(none)_                       | Removed; use editor + Grep + `gsd-pattern-mapper`. |
+| `/gsd-graphify`                | _(none)_                       | Removed. |
+| `/gsd-ai-integration-phase`    | _(none)_                       | Removed; AI-integration subsystem retired. |
+| `/gsd-ui-phase`                | _(none)_                       | Removed; UI subsystem retired. |
+| `/gsd-ui-review`               | _(none)_                       | Removed. |
+| `/gsd-eval-review`             | _(none)_                       | Removed. |
+| `/gsd-spike`                   | _(none)_                       | Removed. |
+| `/gsd-sketch`                  | _(none)_                       | Removed. |
+| `/gsd-spike-wrap-up`           | _(none)_                       | Removed. |
+| `/gsd-sketch-wrap-up`          | _(none)_                       | Removed. |
+| `/gsd-debug`                   | _(none)_                       | Removed; use a debugging tool of choice. |
+| `/gsd-explore`                 | _(none)_                       | Removed; use `/gsd-progress` or read STATE.md. |
+| `/gsd-note`                    | _(none)_                       | Removed; ad-hoc note-taking should live in your editor. |
+| `/gsd-plant-seed`              | _(none)_                       | Removed. |
+| `/gsd-add-backlog`             | _(none)_                       | Removed. |
+| `/gsd-thread`                  | _(none)_                       | Removed. |
+| `/gsd-review-backlog`          | _(none)_                       | Removed. |
+| `/gsd-audit-milestone`         | _(none)_                       | Removed. |
+| `/gsd-plan-milestone-gaps`     | _(none)_                       | Removed. |
+| `/gsd-milestone-summary`       | _(none)_                       | Removed. |
+| `/gsd-archive-project`         | _(none)_                       | Removed. |
+| `/gsd-restore-project`         | _(none)_                       | Removed. |
+| `/gsd-ship`                    | _(none)_                       | Removed. |
+| `/gsd-undo`                    | _(none)_                       | Removed. |
+| `/gsd-inbox`                   | _(none)_                       | Removed. |
+| `/gsd-review` (old)            | _(none)_                       | Removed (the old `/gsd-review` git/PR helper; the new `/gsd-review` is the consolidated quality-gate review entry point — different functionality, same name). |
+| `/gsd-manager`                 | _(none)_                       | Removed. |
+| `/gsd-autonomous`              | _(none)_                       | Removed. |
+| `/gsd-fast`                    | _(none)_                       | Removed. |
+| `/gsd-do`                      | _(none)_                       | Removed. |
+| `/gsd-next`                    | _(none)_                       | Removed. |
+| `/gsd-session-report`          | _(none)_                       | Removed. |
+| `/gsd-spec-phase`              | _(none)_                       | Removed; Phase 5 introduces `--from-spec` integration. |
+| `/gsd-import`                  | _(none)_                       | Removed. |
+| `/gsd-ultraplan-phase`         | _(none)_                       | Removed. |
+| `/gsd-list-phase-assumptions`  | _(none)_                       | Removed. |
+| `/gsd-docs-update`             | _(none)_                       | Removed; doc subsystem retired. |
+| `/gsd-ingest-docs`             | _(none)_                       | Removed. |
+| `/gsd-from-gsd2`               | _(none)_                       | Removed. |
+| `/gsd-add-tests`               | _(none — Phase 4 TDD discipline)_ | Removed. Phase 4 lands tests-first discipline at executor + plan-checker + hook layers. |
+| `/gsd-analyze-dependencies`    | _(none)_                       | Removed. |
+| `/gsd-cleanup`                 | _(none)_                       | Removed. |
+
+### 9 commands consolidated
+
+| Removed Command | Replacement | Notes |
+|-----------------|-------------|-------|
+| `/gsd-secure-phase`              | `/gsd-review --security`         | **Stub kept** for one milestone. Dispatches automatically. |
+| `/gsd-validate-phase`            | `/gsd-review --coverage`         | **Stub kept** for one milestone. |
+| `/gsd-code-review`               | `/gsd-review --code`             | **Stub kept** for one milestone. |
+| `/gsd-code-review-fix`           | `/gsd-review --code-fix`         | **Stub kept** for one milestone. |
+| `/gsd-critique`                  | `/gsd-review --critique`         | **Stub kept** for one milestone. |
+| `/gsd-plan-review-convergence`   | `/gsd-review --converge`         | **Stub kept** for one milestone. |
+| `/gsd-add-phase`                 | `/gsd-phase add`                 | Old command removed; no stub. |
+| `/gsd-insert-phase`              | `/gsd-phase insert`              | Old command removed; no stub. |
+| `/gsd-remove-phase`              | `/gsd-phase remove`              | Old command removed; no stub. |
+
+## Agent Removals (Phase 1 Cull)
+
+| Removed Agent | Replacement / Notes |
+|---------------|---------------------|
+| `gsd-debugger`              | Removed. Use main thread reasoning + Task tool. |
+| `gsd-debug-session-manager` | Removed. |
+| `gsd-doc-writer`            | Removed. Documentation work happens in main thread. |
+| `gsd-doc-classifier`        | Removed (doc subsystem retired). |
+| `gsd-doc-synthesizer`       | Removed (doc subsystem retired). |
+| `gsd-doc-verifier`          | Removed (doc subsystem retired). |
+| `gsd-domain-researcher`     | Removed (AI-integration subsystem retired). |
+| `gsd-eval-auditor`          | Removed (AI-integration subsystem retired). |
+| `gsd-eval-planner`          | Removed (AI-integration subsystem retired). |
+| `gsd-framework-selector`    | Removed (AI-integration subsystem retired). |
+| `gsd-ai-researcher`         | Removed (AI-integration subsystem retired). |
+| `gsd-ui-auditor`            | Removed (UI subsystem retired). |
+| `gsd-ui-checker`            | Removed (UI subsystem retired). |
+| `gsd-ui-researcher`         | Removed (UI subsystem retired). |
+| `gsd-codebase-mapper`       | Removed. Use Grep + Read directly. |
+| `gsd-intel-updater`         | Removed (intel subsystem retired). |
+| `gsd-nyquist-auditor`       | Removed. Test-coverage gap detection lands in Phase 4 TDD layer. |
 </reference>
