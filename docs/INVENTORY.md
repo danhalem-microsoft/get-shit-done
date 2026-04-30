@@ -60,7 +60,7 @@ Full roster at `agents/gsd-*.md`. The "Primary doc" column flags whether [`docs/
 
 ---
 
-## Commands (70 shipped)
+## Commands (65 shipped)
 
 Full roster at `commands/gsd/*.md`. The groupings below mirror `docs/COMMANDS.md` section order; each row carries the command name, a one-line role derived from the command's frontmatter `description:`, and a link to the source file. `tests/command-count-sync.test.cjs` locks the count against the filesystem.
 
@@ -100,18 +100,13 @@ Full roster at `commands/gsd/*.md`. The groupings below mirror `docs/COMMANDS.md
 | `/gsd-analyze-dependencies` | Analyze phase dependencies and suggest `Depends on` entries for ROADMAP.md. | [commands/gsd/analyze-dependencies.md](../commands/gsd/analyze-dependencies.md) |
 | `/gsd-validate-phase` | Retroactively audit and fill Nyquist validation gaps for a completed phase. | [commands/gsd/validate-phase.md](../commands/gsd/validate-phase.md) |
 | `/gsd-secure-phase` | Retroactively verify threat mitigations for a completed phase. | [commands/gsd/secure-phase.md](../commands/gsd/secure-phase.md) |
-| `/gsd-audit-milestone` | Audit milestone completion against original intent before archiving. | [commands/gsd/audit-milestone.md](../commands/gsd/audit-milestone.md) |
-| `/gsd-plan-milestone-gaps` | Create phases to close all gaps identified by milestone audit. | [commands/gsd/plan-milestone-gaps.md](../commands/gsd/plan-milestone-gaps.md) |
 | `/gsd-complete-milestone` | Archive completed milestone and prepare for next version. | [commands/gsd/complete-milestone.md](../commands/gsd/complete-milestone.md) |
 | `/gsd-new-milestone` | Start a new milestone cycle — update PROJECT.md and route to requirements. | [commands/gsd/new-milestone.md](../commands/gsd/new-milestone.md) |
-| `/gsd-milestone-summary` | Generate a comprehensive project summary from milestone artifacts. | [commands/gsd/milestone-summary.md](../commands/gsd/milestone-summary.md) |
 | `/gsd-cleanup` | Archive accumulated phase directories from completed milestones. | [commands/gsd/cleanup.md](../commands/gsd/cleanup.md) |
 | `/gsd-manager` | Interactive command center for managing multiple phases from one terminal. | [commands/gsd/manager.md](../commands/gsd/manager.md) |
 | `/gsd-workstreams` | Manage parallel workstreams — list, create, switch, status, progress, complete, resume. | [commands/gsd/workstreams.md](../commands/gsd/workstreams.md) |
 | `/gsd-autonomous` | Run all remaining phases autonomously — discuss → plan → execute per phase. | [commands/gsd/autonomous.md](../commands/gsd/autonomous.md) |
 | `/gsd-undo` | Safe git revert — roll back phase or plan commits using the phase manifest. | [commands/gsd/undo.md](../commands/gsd/undo.md) |
-| `/gsd-archive-project` | Archive a completed project. | [commands/gsd/archive-project.md](../commands/gsd/archive-project.md) |
-| `/gsd-restore-project` | Restore an archived project. | [commands/gsd/restore-project.md](../commands/gsd/restore-project.md) |
 
 ### Session & Navigation
 
@@ -165,7 +160,7 @@ Full roster at `commands/gsd/*.md`. The groupings below mirror `docs/COMMANDS.md
 
 ---
 
-## Workflows (76 shipped)
+## Workflows (71 shipped)
 
 Full roster at `get-shit-done/workflows/*.md`. Workflows are thin orchestrators that commands reference internally; most are not read directly by end users. Rows below map each workflow file to its role (derived from the `<purpose>` block) and, where applicable, to the command that invokes it.
 
@@ -175,7 +170,6 @@ Full roster at `get-shit-done/workflows/*.md`. Workflows are thin orchestrators 
 | `add-tests.md` | Generate unit and E2E tests for a completed phase based on its artifacts. | `/gsd-add-tests` |
 | `add-todo.md` | Capture an idea or task that surfaces during a session as a structured todo. | `/gsd-add-todo`, `/gsd-add-backlog` |
 | `analyze-dependencies.md` | Analyze ROADMAP.md phases for file overlap and semantic dependencies; suggest `Depends on` edges. | `/gsd-analyze-dependencies` |
-| `audit-milestone.md` | Verify milestone met its definition of done by aggregating phase verifications. | `/gsd-audit-milestone` |
 | `autonomous.md` | Drive milestone phases autonomously — all remaining, a range, or a single phase. | `/gsd-autonomous` |
 | `check-todos.md` | List pending todos, allow selection, load context, and route to the appropriate action. | `/gsd-check-todos` |
 | `cleanup.md` | Archive accumulated phase directories from completed milestones. | `/gsd-cleanup` |
@@ -202,14 +196,12 @@ Full roster at `get-shit-done/workflows/*.md`. Workflows are thin orchestrators 
 | `list-phase-assumptions.md` | Surface Claude's assumptions about a phase before planning. | `/gsd-list-phase-assumptions` |
 | `list-workspaces.md` | List all GSD workspaces found in `~/gsd-workspaces/` with their status. | `/gsd-list-workspaces` |
 | `manager.md` | Interactive milestone command center — dashboard, inline discuss, background plan/execute. | `/gsd-manager` |
-| `milestone-summary.md` | Milestone summary synthesis — onboarding and review artifact from milestone artifacts. | `/gsd-milestone-summary` |
 | `new-milestone.md` | Start a new milestone cycle — load project context, gather goals, update PROJECT.md/STATE.md. | `/gsd-new-milestone` |
 | `new-project.md` | Unified new-project flow — questioning, research (optional), requirements, roadmap. | `/gsd-new-project` |
 | `new-workspace.md` | Create an isolated workspace with repo worktrees/clones and an independent `.planning/`. | `/gsd-new-workspace` |
 | `next.md` | Detect current project state and automatically advance to the next logical step. | `/gsd-next` |
 | `node-repair.md` | Autonomous repair operator for failed task verification; invoked by `execute-plan`. | `execute-plan.md` (recovery) |
 | `pause-work.md` | Create structured `.planning/HANDOFF.json` and `.continue-here.md` handoff files. | `/gsd-pause-work` |
-| `plan-milestone-gaps.md` | Create all phases necessary to close gaps identified by `/gsd-audit-milestone`. | `/gsd-plan-milestone-gaps` |
 | `plan-phase.md` | Create executable PLAN.md files with integrated research and verification loop. | `/gsd-plan-phase`, `/gsd-quick` |
 | `plan-review-convergence.md` | Cross-AI plan convergence loop — replan with review feedback until no HIGH concerns remain. | `/gsd-plan-review-convergence` |
 | `pr-branch.md` | Create a clean branch for pull requests by filtering `.planning/` commits. | `/gsd-pr-branch` |
