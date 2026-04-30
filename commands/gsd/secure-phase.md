@@ -1,35 +1,29 @@
 ---
 name: gsd:secure-phase
-description: Retroactively verify threat mitigations for a completed phase
-argument-hint: "[phase number]"
+description: "[DEPRECATED] Use /gsd-review --security instead. This stub will be removed in a future milestone."
+argument-hint: "<phase> [other flags]"
 allowed-tools:
   - Read
   - Write
-  - Edit
   - Bash
   - Glob
   - Grep
   - Task
-  - AskUserQuestion
 ---
 <objective>
-Verify threat mitigations for a completed phase. Three states:
-- (A) SECURITY.md exists — audit and verify mitigations
-- (B) No SECURITY.md, PLAN.md with threat model exists — run from artifacts
-- (C) Phase not executed — exit with guidance
+**⚠ DEPRECATED**
 
-Output: updated SECURITY.md.
+`/gsd-secure-phase` has been consolidated into `/gsd-review`.
+
+**Use:** `/gsd-review --security <phase>`
+
+This stub will be removed after a future milestone. See `CHANGELOG.md` and `commands/gsd/help.md` for the full migration table.
+
+Now dispatching to `/gsd-review --security` with your arguments...
 </objective>
 
-<execution_context>
-@~/.claude/get-shit-done/workflows/secure-phase.md
-</execution_context>
-
-<context>
-Phase: $ARGUMENTS — optional, defaults to last completed phase.
-</context>
-
 <process>
-Execute @~/.claude/get-shit-done/workflows/secure-phase.md.
-Preserve all workflow gates.
+1. Print the deprecation banner above to the user (verbatim).
+2. Forward to `/gsd-review --security $ARGUMENTS` — execute the review workflow with the consolidated flag prepended to whatever arguments the user supplied.
 </process>
+</content>

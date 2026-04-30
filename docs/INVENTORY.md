@@ -60,7 +60,7 @@ Full roster at `agents/gsd-*.md`. The "Primary doc" column flags whether [`docs/
 
 ---
 
-## Commands (93 shipped)
+## Commands (94 shipped)
 
 Full roster at `commands/gsd/*.md`. The groupings below mirror `docs/COMMANDS.md` section order; each row carries the command name, a one-line role derived from the command's frontmatter `description:`, and a link to the source file. `tests/command-count-sync.test.cjs` locks the count against the filesystem.
 
@@ -158,7 +158,8 @@ Full roster at `commands/gsd/*.md`. The groupings below mirror `docs/COMMANDS.md
 
 | Command | Role | Source |
 |---------|------|--------|
-| `/gsd-review` | Request cross-AI peer review of phase plans from external AI CLIs. | [commands/gsd/review.md](../commands/gsd/review.md) |
+| `/gsd-review` | Quality-gate review for a phase — consolidated entry point for code review, security audit, coverage validation, plan critique, and review convergence (`--code | --code-fix | --security | --coverage | --critique | --converge`). | [commands/gsd/review.md](../commands/gsd/review.md) |
+| `/gsd-phase` | Phase manipulation — `add | insert | remove` subcommands for the active milestone roadmap (consolidates `/gsd-add-phase`, `/gsd-insert-phase`, `/gsd-remove-phase`). | [commands/gsd/phase.md](../commands/gsd/phase.md) |
 | `/gsd-debug` | Systematic debugging with persistent state across context resets. | [commands/gsd/debug.md](../commands/gsd/debug.md) |
 | `/gsd-forensics` | Post-mortem investigation for failed GSD workflows — analyzes git, artifacts, state. | [commands/gsd/forensics.md](../commands/gsd/forensics.md) |
 | `/gsd-health` | Diagnose planning directory health and optionally repair issues. | [commands/gsd/health.md](../commands/gsd/health.md) |
@@ -188,7 +189,7 @@ Full roster at `commands/gsd/*.md`. The groupings below mirror `docs/COMMANDS.md
 
 ---
 
-## Workflows (93 shipped)
+## Workflows (94 shipped)
 
 Full roster at `get-shit-done/workflows/*.md`. Workflows are thin orchestrators that commands reference internally; most are not read directly by end users. Rows below map each workflow file to its role (derived from the `<purpose>` block) and, where applicable, to the command that invokes it.
 
@@ -253,7 +254,8 @@ Full roster at `get-shit-done/workflows/*.md`. Workflows are thin orchestrators 
 | `remove-workspace.md` | Remove a GSD workspace and clean up worktrees. | `/gsd-remove-workspace` |
 | `research-phase.md` | Standalone phase research workflow (usually invoked via `plan-phase`). | `/gsd-research-phase` |
 | `resume-project.md` | Resume work — restore full context from STATE.md, HANDOFF.json, and artifacts. | `/gsd-resume-work` |
-| `review.md` | Cross-AI plan review via external CLIs; produces REVIEWS.md. | `/gsd-review` |
+| `review.md` | Consolidated quality-gate review dispatcher — flag-based routing into code-review, secure-phase, validate-phase, critique, plan-review-convergence, code-review-fix workflows. | `/gsd-review` |
+| `phase.md` | Consolidated phase-manipulation dispatcher — subcommand-based routing into add-phase, insert-phase, remove-phase workflows. | `/gsd-phase` |
 | `scan.md` | Rapid single-focus codebase scan — lightweight alternative to map-codebase. | `/gsd-scan` |
 | `secure-phase.md` | Retroactive threat-mitigation audit for a completed phase. | `/gsd-secure-phase` |
 | `session-report.md` | Session report — token usage, work summary, outcomes. | `/gsd-session-report` |

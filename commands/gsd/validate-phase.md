@@ -1,35 +1,29 @@
 ---
 name: gsd:validate-phase
-description: Retroactively audit and fill Nyquist validation gaps for a completed phase
-argument-hint: "[phase number]"
+description: "[DEPRECATED] Use /gsd-review --coverage instead. This stub will be removed in a future milestone."
+argument-hint: "<phase> [other flags]"
 allowed-tools:
   - Read
   - Write
-  - Edit
   - Bash
   - Glob
   - Grep
   - Task
-  - AskUserQuestion
 ---
 <objective>
-Audit Nyquist validation coverage for a completed phase. Three states:
-- (A) VALIDATION.md exists — audit and fill gaps
-- (B) No VALIDATION.md, SUMMARY.md exists — reconstruct from artifacts
-- (C) Phase not executed — exit with guidance
+**⚠ DEPRECATED**
 
-Output: updated VALIDATION.md + generated test files.
+`/gsd-validate-phase` has been consolidated into `/gsd-review`.
+
+**Use:** `/gsd-review --coverage <phase>`
+
+This stub will be removed after a future milestone. See `CHANGELOG.md` and `commands/gsd/help.md` for the full migration table.
+
+Now dispatching to `/gsd-review --coverage` with your arguments...
 </objective>
 
-<execution_context>
-@~/.claude/get-shit-done/workflows/validate-phase.md
-</execution_context>
-
-<context>
-Phase: $ARGUMENTS — optional, defaults to last completed phase.
-</context>
-
 <process>
-Execute @~/.claude/get-shit-done/workflows/validate-phase.md.
-Preserve all workflow gates.
+1. Print the deprecation banner above to the user (verbatim).
+2. Forward to `/gsd-review --coverage $ARGUMENTS` — execute the review workflow with the consolidated flag prepended to whatever arguments the user supplied.
 </process>
+</content>
