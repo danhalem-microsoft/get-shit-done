@@ -38,6 +38,6 @@ js_test(
         "//integration/helpers:test_helpers",
     ],
     size = "enormous",
-    tags = ["integration", "local", "requires-api-key", "lifecycle"],
+    tags = ["integration", "local", "requires-api-key", "lifecycle", "phase-1-cull"],
     timeout = "eternal",
 )
