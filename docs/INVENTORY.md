@@ -34,8 +34,8 @@ Full roster at `agents/gsd-*.md`. The "Primary doc" column flags whether [`docs/
 | gsd-codebase-mapper | Explores codebase and writes structured analysis documents. | `/gsd-map-codebase` | primary |
 | gsd-debugger | Investigates bugs using scientific method with persistent state. | _(spawn surface removed in Phase 1 cull)_ | primary |
 | gsd-user-profiler | Scores developer behavior across 8 dimensions. | `/gsd-profile-user` | primary |
-| gsd-doc-writer | Writes and updates project documentation. | `/gsd-docs-update` | primary |
-| gsd-doc-verifier | Verifies factual claims in generated documentation. | `/gsd-docs-update` | primary |
+| gsd-doc-writer | Writes and updates project documentation. | _(spawn surface removed in Phase 1 cull)_ | primary |
+| gsd-doc-verifier | Verifies factual claims in generated documentation. | _(spawn surface removed in Phase 1 cull)_ | primary |
 | gsd-security-auditor | Verifies threat mitigations from PLAN.md threat model. | `/gsd-secure-phase` | primary |
 | gsd-pattern-mapper | Maps new files to closest existing analogs; writes PATTERNS.md for the planner. | `/gsd-plan-phase` (between research and planning) | advanced stub |
 | gsd-debug-session-manager | Runs the full debug checkpoint-and-continuation loop in isolated context so main stays lean. | _(spawn surface removed in Phase 1 cull)_ | advanced stub |
@@ -46,9 +46,9 @@ Full roster at `agents/gsd-*.md`. The "Primary doc" column flags whether [`docs/
 | gsd-eval-planner | Designs structured evaluation strategy for an AI phase (AI-SPEC.md §5–§7). | _(spawn surface removed in Phase 1 cull)_ | advanced stub |
 | gsd-eval-auditor | Retroactive audit of an AI phase's evaluation coverage; produces EVAL-REVIEW.md (COVERED/PARTIAL/MISSING). | _(spawn surface removed in Phase 1 cull)_ | advanced stub |
 | gsd-framework-selector | ≤6-question interactive decision matrix that scores and recommends an AI/LLM framework. | _(spawn surface removed in Phase 1 cull)_ | advanced stub |
-| gsd-intel-updater | Writes structured intel files (`.planning/intel/*.json`) used as a queryable codebase knowledge base. | `/gsd-intel` | advanced stub |
-| gsd-doc-classifier | Classifies a single planning document as ADR, PRD, SPEC, DOC, or UNKNOWN; spawned in parallel to process the doc corpus. | `/gsd-ingest-docs` | advanced stub |
-| gsd-doc-synthesizer | Synthesizes classified planning docs into a single consolidated context with precedence rules, cycle detection, and three-bucket conflicts report. | `/gsd-ingest-docs` | advanced stub |
+| gsd-intel-updater | Writes structured intel files (`.planning/intel/*.json`) used as a queryable codebase knowledge base. | _(spawn surface removed in Phase 1 cull)_ | advanced stub |
+| gsd-doc-classifier | Classifies a single planning document as ADR, PRD, SPEC, DOC, or UNKNOWN; spawned in parallel to process the doc corpus. | _(spawn surface removed in Phase 1 cull)_ | advanced stub |
+| gsd-doc-synthesizer | Synthesizes classified planning docs into a single consolidated context with precedence rules, cycle detection, and three-bucket conflicts report. | _(spawn surface removed in Phase 1 cull)_ | advanced stub |
 | gsd-critic-code | Adversarial code critic. Reviews implementation quality, security, error handling, test coverage, pattern adherence. | `/gsd-critique` | inventory only |
 | gsd-critic-discuss | Adversarial discussion critic. Reviews CONTEXT.md for blind spots, ambiguous decisions, and missing discussion areas. | `/gsd-critique` | inventory only |
 | gsd-critic-plan | Adversarial plan critic. Reviews GSD plans for gaps, contradictions, missing requirements, and scope issues. | `/gsd-critique` | inventory only |
@@ -60,7 +60,7 @@ Full roster at `agents/gsd-*.md`. The "Primary doc" column flags whether [`docs/
 
 ---
 
-## Commands (52 shipped)
+## Commands (46 shipped)
 
 Full roster at `commands/gsd/*.md`. The groupings below mirror `docs/COMMANDS.md` section order; each row carries the command name, a one-line role derived from the command's frontmatter `description:`, and a link to the source file. `tests/command-count-sync.test.cjs` locks the count against the filesystem.
 
@@ -90,13 +90,10 @@ Full roster at `commands/gsd/*.md`. The groupings below mirror `docs/COMMANDS.md
 | `/gsd-add-phase` | Add phase to end of current milestone in roadmap. | [commands/gsd/add-phase.md](../commands/gsd/add-phase.md) |
 | `/gsd-insert-phase` | Insert urgent work as decimal phase (e.g., 72.1) between existing phases. | [commands/gsd/insert-phase.md](../commands/gsd/insert-phase.md) |
 | `/gsd-remove-phase` | Remove a future phase from roadmap and renumber subsequent phases. | [commands/gsd/remove-phase.md](../commands/gsd/remove-phase.md) |
-| `/gsd-add-tests` | Generate tests for a completed phase based on UAT criteria and implementation. | [commands/gsd/add-tests.md](../commands/gsd/add-tests.md) |
-| `/gsd-analyze-dependencies` | Analyze phase dependencies and suggest `Depends on` entries for ROADMAP.md. | [commands/gsd/analyze-dependencies.md](../commands/gsd/analyze-dependencies.md) |
 | `/gsd-validate-phase` | Retroactively audit and fill Nyquist validation gaps for a completed phase. | [commands/gsd/validate-phase.md](../commands/gsd/validate-phase.md) |
 | `/gsd-secure-phase` | Retroactively verify threat mitigations for a completed phase. | [commands/gsd/secure-phase.md](../commands/gsd/secure-phase.md) |
 | `/gsd-complete-milestone` | Archive completed milestone and prepare for next version. | [commands/gsd/complete-milestone.md](../commands/gsd/complete-milestone.md) |
 | `/gsd-new-milestone` | Start a new milestone cycle — update PROJECT.md and route to requirements. | [commands/gsd/new-milestone.md](../commands/gsd/new-milestone.md) |
-| `/gsd-cleanup` | Archive accumulated phase directories from completed milestones. | [commands/gsd/cleanup.md](../commands/gsd/cleanup.md) |
 | `/gsd-workstreams` | Manage parallel workstreams — list, create, switch, status, progress, complete, resume. | [commands/gsd/workstreams.md](../commands/gsd/workstreams.md) |
 
 ### Session & Navigation
@@ -125,14 +122,11 @@ Full roster at `commands/gsd/*.md`. The groupings below mirror `docs/COMMANDS.md
 |---------|------|--------|
 | `/gsd-review` | Quality-gate review for a phase — consolidated entry point for code review, security audit, coverage validation, plan critique, and review convergence (`--code | --code-fix | --security | --coverage | --critique | --converge`). | [commands/gsd/review.md](../commands/gsd/review.md) |
 | `/gsd-phase` | Phase manipulation — `add | insert | remove` subcommands for the active milestone roadmap (consolidates `/gsd-add-phase`, `/gsd-insert-phase`, `/gsd-remove-phase`). | [commands/gsd/phase.md](../commands/gsd/phase.md) |
-| `/gsd-from-gsd2` | Import a GSD-2 (`.gsd/`) project back to GSD v1 (`.planning/`) format. | [commands/gsd/from-gsd2.md](../commands/gsd/from-gsd2.md) |
 
 ### Docs, Profile & Utilities
 
 | Command | Role | Source |
 |---------|------|--------|
-| `/gsd-docs-update` | Generate or update project documentation verified against the codebase. | [commands/gsd/docs-update.md](../commands/gsd/docs-update.md) |
-| `/gsd-ingest-docs` | Scan a repo for mixed ADRs/PRDs/SPECs/DOCs and bootstrap or merge the full `.planning/` setup with classification, synthesis, and conflicts report. | [commands/gsd/ingest-docs.md](../commands/gsd/ingest-docs.md) |
 | `/gsd-profile-user` | Generate developer behavioral profile and Claude-discoverable artifacts. | [commands/gsd/profile-user.md](../commands/gsd/profile-user.md) |
 | `/gsd-settings` | Configure GSD workflow toggles and model profile. | [commands/gsd/settings.md](../commands/gsd/settings.md) |
 | `/gsd-set-profile` | Switch model profile for GSD agents (quality/balanced/budget/inherit). | [commands/gsd/set-profile.md](../commands/gsd/set-profile.md) |
@@ -147,18 +141,15 @@ Full roster at `commands/gsd/*.md`. The groupings below mirror `docs/COMMANDS.md
 
 ---
 
-## Workflows (58 shipped)
+## Workflows (53 shipped)
 
 Full roster at `get-shit-done/workflows/*.md`. Workflows are thin orchestrators that commands reference internally; most are not read directly by end users. Rows below map each workflow file to its role (derived from the `<purpose>` block) and, where applicable, to the command that invokes it.
 
 | Workflow | Role | Invoked by |
 |----------|------|------------|
 | `add-phase.md` | Add a new integer phase to the end of the current milestone in the roadmap. | `/gsd-add-phase` |
-| `add-tests.md` | Generate unit and E2E tests for a completed phase based on its artifacts. | `/gsd-add-tests` |
 | `add-todo.md` | Capture an idea or task that surfaces during a session as a structured todo. | `/gsd-add-todo` |
-| `analyze-dependencies.md` | Analyze ROADMAP.md phases for file overlap and semantic dependencies; suggest `Depends on` edges. | `/gsd-analyze-dependencies` |
 | `check-todos.md` | List pending todos, allow selection, load context, and route to the appropriate action. | `/gsd-check-todos` |
-| `cleanup.md` | Archive accumulated phase directories from completed milestones. | `/gsd-cleanup` |
 | `code-review-fix.md` | Auto-fix issues from REVIEW.md via gsd-code-fixer with per-fix atomic commits. | `/gsd-code-review-fix` |
 | `code-review.md` | Review phase source changes via gsd-code-reviewer; produces REVIEW.md. | `/gsd-code-review` |
 | `complete-milestone.md` | Mark a shipped version as complete — MILESTONES.md entry, PROJECT.md evolution, tag. | `/gsd-complete-milestone` |
@@ -167,13 +158,11 @@ Full roster at `get-shit-done/workflows/*.md`. Workflows are thin orchestrators 
 | `discuss-phase-assumptions.md` | Assumptions-mode discuss — extract implementation decisions via codebase-first analysis. | `/gsd-discuss-phase` (when `discuss_mode=assumptions`) |
 | `discuss-phase-power.md` | Power-user discuss — pre-generate all questions into a JSON state file + HTML UI. | `/gsd-discuss-phase --power` |
 | `discuss-phase.md` | Extract implementation decisions through iterative gray-area discussion. | `/gsd-discuss-phase` |
-| `docs-update.md` | Generate, update, and verify canonical and hand-written project documentation. | `/gsd-docs-update` |
 | `execute-phase.md` | Execute all plans in a phase using wave-based parallel execution. | `/gsd-execute-phase` |
 | `execute-plan.md` | Execute a phase prompt (PLAN.md) and create the outcome summary (SUMMARY.md). | `execute-phase.md` (per-plan subagent) |
 | `extract_learnings.md` | Extract decisions, lessons, patterns, and surprises from completed phase artifacts. | `/gsd-extract-learnings` |
 | `graduation.md` | Cluster recurring LEARNINGS.md items across phases and surface HITL promotion candidates. | `transition.md` (graduation_scan step) |
 | `help.md` | Display the complete GSD command reference. | `/gsd-help` |
-| `ingest-docs.md` | Scan a repo for mixed planning docs; classify, synthesize, and bootstrap or merge into `.planning/` with a conflicts report. | `/gsd-ingest-docs` |
 | `insert-phase.md` | Insert a decimal phase for urgent work discovered mid-milestone. | `/gsd-insert-phase` |
 | `list-workspaces.md` | List all GSD workspaces found in `~/gsd-workspaces/` with their status. | `/gsd-list-workspaces` |
 | `new-milestone.md` | Start a new milestone cycle — load project context, gather goals, update PROJECT.md/STATE.md. | `/gsd-new-milestone` |
@@ -310,7 +299,7 @@ Full listing: `get-shit-done/bin/lib/*.cjs`.
 | `docs.cjs` | Docs-update workflow init, Markdown scanning, monorepo detection |
 | `frontmatter.cjs` | YAML frontmatter CRUD operations |
 | `graphify.cjs` | Knowledge-graph build/query/status/diff (legacy CLI module). |
-| `gsd2-import.cjs` | External-plan ingest for `/gsd-from-gsd2` |
+| `gsd2-import.cjs` | External-plan ingest CLI module (legacy). |
 | `identity.cjs` | Runtime identity detection and environment fingerprinting |
 | `init.cjs` | Compound context loading for each workflow type |
 | `intel.cjs` | Codebase intel store (legacy CLI module). |
