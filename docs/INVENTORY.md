@@ -60,7 +60,7 @@ Full roster at `agents/gsd-*.md`. The "Primary doc" column flags whether [`docs/
 
 ---
 
-## Commands (65 shipped)
+## Commands (62 shipped)
 
 Full roster at `commands/gsd/*.md`. The groupings below mirror `docs/COMMANDS.md` section order; each row carries the command name, a one-line role derived from the command's frontmatter `description:`, and a link to the source file. `tests/command-count-sync.test.cjs` locks the count against the filesystem.
 
@@ -80,7 +80,6 @@ Full roster at `commands/gsd/*.md`. The groupings below mirror `docs/COMMANDS.md
 | `/gsd-research-phase` | Research how to implement a phase (standalone). | [commands/gsd/research-phase.md](../commands/gsd/research-phase.md) |
 | `/gsd-execute-phase` | Execute all plans in a phase with wave-based parallelization. | [commands/gsd/execute-phase.md](../commands/gsd/execute-phase.md) |
 | `/gsd-verify-work` | Validate built features through conversational UAT with auto-diagnosis. | [commands/gsd/verify-work.md](../commands/gsd/verify-work.md) |
-| `/gsd-ship` | Create PR, run review, and prepare for merge after verification. | [commands/gsd/ship.md](../commands/gsd/ship.md) |
 | `/gsd-next` | Automatically advance to the next logical step in the GSD workflow. | [commands/gsd/next.md](../commands/gsd/next.md) |
 | `/gsd-fast` | Execute a trivial task inline — no subagents, no planning overhead. | [commands/gsd/fast.md](../commands/gsd/fast.md) |
 | `/gsd-quick` | Execute a quick task with GSD guarantees (atomic commits, state tracking) but skip optional agents. | [commands/gsd/quick.md](../commands/gsd/quick.md) |
@@ -106,7 +105,6 @@ Full roster at `commands/gsd/*.md`. The groupings below mirror `docs/COMMANDS.md
 | `/gsd-manager` | Interactive command center for managing multiple phases from one terminal. | [commands/gsd/manager.md](../commands/gsd/manager.md) |
 | `/gsd-workstreams` | Manage parallel workstreams — list, create, switch, status, progress, complete, resume. | [commands/gsd/workstreams.md](../commands/gsd/workstreams.md) |
 | `/gsd-autonomous` | Run all remaining phases autonomously — discuss → plan → execute per phase. | [commands/gsd/autonomous.md](../commands/gsd/autonomous.md) |
-| `/gsd-undo` | Safe git revert — roll back phase or plan commits using the phase manifest. | [commands/gsd/undo.md](../commands/gsd/undo.md) |
 
 ### Session & Navigation
 
@@ -138,7 +136,6 @@ Full roster at `commands/gsd/*.md`. The groupings below mirror `docs/COMMANDS.md
 | `/gsd-phase` | Phase manipulation — `add | insert | remove` subcommands for the active milestone roadmap (consolidates `/gsd-add-phase`, `/gsd-insert-phase`, `/gsd-remove-phase`). | [commands/gsd/phase.md](../commands/gsd/phase.md) |
 | `/gsd-import` | Ingest external plans with conflict detection against project decisions. | [commands/gsd/import.md](../commands/gsd/import.md) |
 | `/gsd-from-gsd2` | Import a GSD-2 (`.gsd/`) project back to GSD v1 (`.planning/`) format. | [commands/gsd/from-gsd2.md](../commands/gsd/from-gsd2.md) |
-| `/gsd-inbox` | Triage and review all open GitHub issues and PRs against project templates. | [commands/gsd/inbox.md](../commands/gsd/inbox.md) |
 
 ### Docs, Profile & Utilities
 
@@ -160,7 +157,7 @@ Full roster at `commands/gsd/*.md`. The groupings below mirror `docs/COMMANDS.md
 
 ---
 
-## Workflows (71 shipped)
+## Workflows (68 shipped)
 
 Full roster at `get-shit-done/workflows/*.md`. Workflows are thin orchestrators that commands reference internally; most are not read directly by end users. Rows below map each workflow file to its role (derived from the `<purpose>` block) and, where applicable, to the command that invokes it.
 
@@ -190,7 +187,6 @@ Full roster at `get-shit-done/workflows/*.md`. Workflows are thin orchestrators 
 | `graduation.md` | Cluster recurring LEARNINGS.md items across phases and surface HITL promotion candidates. | `transition.md` (graduation_scan step) |
 | `help.md` | Display the complete GSD command reference. | `/gsd-help` |
 | `import.md` | Ingest external plans with conflict detection against existing project decisions. | `/gsd-import` |
-| `inbox.md` | Triage open GitHub issues and PRs against project contribution templates. | `/gsd-inbox` |
 | `ingest-docs.md` | Scan a repo for mixed planning docs; classify, synthesize, and bootstrap or merge into `.planning/` with a conflicts report. | `/gsd-ingest-docs` |
 | `insert-phase.md` | Insert a decimal phase for urgent work discovered mid-milestone. | `/gsd-insert-phase` |
 | `list-phase-assumptions.md` | Surface Claude's assumptions about a phase before planning. | `/gsd-list-phase-assumptions` |
@@ -217,12 +213,10 @@ Full roster at `get-shit-done/workflows/*.md`. Workflows are thin orchestrators 
 | `secure-phase.md` | Retroactive threat-mitigation audit for a completed phase. | `/gsd-secure-phase` |
 | `session-report.md` | Session report — token usage, work summary, outcomes. | `/gsd-session-report` |
 | `settings.md` | Configure GSD workflow toggles and model profile. | `/gsd-settings`, `/gsd-set-profile` |
-| `ship.md` | Create PR, run review, and prepare for merge after verification. | `/gsd-ship` |
 | `spec-phase.md` | Socratic spec refinement with ambiguity scoring; produces SPEC.md. | `/gsd-spec-phase` |
 | `sync-skills.md` | Cross-runtime GSD skill sync — diff and apply `gsd-*` skill directories across runtime roots. | `/gsd-sync-skills` |
 | `transition.md` | Phase-boundary transition workflow — workstream checks, state advancement. | `execute-phase.md`, `/gsd-next` |
 | `ultraplan-phase.md` | [BETA] Offload planning to Claude Code's ultraplan cloud; drafts remotely and imports back via `/gsd-import`. | `/gsd-ultraplan-phase` |
-| `undo.md` | Safe git revert — phase or plan commits using the phase manifest. | `/gsd-undo` |
 | `update.md` | Update GSD to latest version with changelog display. | `/gsd-update` |
 | `validate-phase.md` | Retroactively audit and fill Nyquist validation gaps for a completed phase. | `/gsd-validate-phase` |
 | `verify-phase.md` | Verify phase goal achievement through goal-backward analysis. | `execute-phase.md` (post-execution) |
