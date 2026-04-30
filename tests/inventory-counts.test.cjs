@@ -2,11 +2,18 @@
 
 /**
  * Locks docs/INVENTORY.md's "(N shipped)" headline counts against the
- * filesystem for each of the six families. INVENTORY.md is the
- * authoritative roster — if a surface ships, its row must exist here
- * and the headline count must match ls.
+ * filesystem for each shipped family. INVENTORY.md is the authoritative
+ * roster — if a surface ships, its row must exist here and the headline
+ * count must match ls.
  *
  * Both sides are computed at test runtime — no hardcoded numbers.
+ *
+ * Per CONTEXT.md D-02 (Phase 1 cull): the 6 deprecation stubs at
+ * commands/gsd/{secure-phase,validate-phase,code-review,code-review-fix,
+ * critique,plan-review-convergence}.md are NOT counted as user-facing
+ * commands. The `Commands` family filter excludes them; the new
+ * `Deprecation Stubs` family counts them separately so the filesystem
+ * stays in sync with the canonical roster split.
  *
  * Related: docs readiness refresh, lane-12 recommendation.
  */
@@ -20,13 +27,21 @@ const ROOT = path.resolve(__dirname, '..');
 const INVENTORY_MD = path.join(ROOT, 'docs', 'INVENTORY.md');
 const INVENTORY = fs.readFileSync(INVENTORY_MD, 'utf8');
 
+// Per CONTEXT.md D-02: deprecation stubs are NOT counted as commands.
+// Single source of truth lives in tests/fixtures/cull-deletion-list.cjs.
+const { deprecationStubs } = require('./fixtures/cull-deletion-list.cjs');
+const STUB_BASENAMES = new Set(
+  deprecationStubs.map((p) => path.basename(p))
+);
+
 const FAMILIES = [
-  { label: 'Agents',      dir: 'agents',                      filter: (f) => /^gsd-.*\.md$/.test(f) },
-  { label: 'Commands',    dir: 'commands/gsd',                filter: (f) => f.endsWith('.md') },
-  { label: 'Workflows',   dir: 'get-shit-done/workflows',     filter: (f) => f.endsWith('.md') },
-  { label: 'References',  dir: 'get-shit-done/references',    filter: (f) => f.endsWith('.md') },
-  { label: 'CLI Modules', dir: 'get-shit-done/bin/lib',       filter: (f) => f.endsWith('.cjs') },
-  { label: 'Hooks',       dir: 'hooks',                       filter: (f) => /\.(js|sh)$/.test(f) },
+  { label: 'Agents',             dir: 'agents',                      filter: (f) => /^gsd-.*\.md$/.test(f) },
+  { label: 'Commands',           dir: 'commands/gsd',                filter: (f) => f.endsWith('.md') && !STUB_BASENAMES.has(f) },
+  { label: 'Deprecation Stubs',  dir: 'commands/gsd',                filter: (f) => f.endsWith('.md') && STUB_BASENAMES.has(f) },
+  { label: 'Workflows',          dir: 'get-shit-done/workflows',     filter: (f) => f.endsWith('.md') },
+  { label: 'References',         dir: 'get-shit-done/references',    filter: (f) => f.endsWith('.md') },
+  { label: 'CLI Modules',        dir: 'get-shit-done/bin/lib',       filter: (f) => f.endsWith('.cjs') },
+  { label: 'Hooks',              dir: 'hooks',                       filter: (f) => /\.(js|sh)$/.test(f) },
 ];
 
 function headlineCount(label) {

@@ -293,8 +293,8 @@ describe('convertClaudeToCopilotContent', () => {
 
   test('converts gsd: to gsd- in command names', () => {
     assert.strictEqual(
-      convertClaudeToCopilotContent('run /gsd:health or gsd:progress'),
-      'run /gsd-health or gsd-progress'
+      convertClaudeToCopilotContent('run /gsd:plan-phase or gsd:progress'),
+      'run /gsd-plan-phase or gsd-progress'
     );
   });
 
@@ -673,13 +673,13 @@ describe('copyCommandsAsCopilotSkills', () => {
     const srcContent = fs.readFileSync(path.join(srcDir, 'autonomous.md'), 'utf8');
     const result = convertClaudeToCopilotContent(srcContent);
 
-    // gsd:autonomous references should be converted to gsd-autonomous
+    // Any gsd:<name> references should be converted to gsd-<name>
     assert.ok(!result.match(/gsd:[a-z]/), 'no gsd: command references remain after conversion');
     // Specific: gsd:discuss-phase, gsd:plan-phase, gsd:execute-phase mentioned in body
     // The body references gsd-tools.cjs (not a gsd: command) — those should be unaffected
-    // But /gsd:autonomous → /gsd-autonomous, gsd:discuss-phase → gsd-discuss-phase etc.
-    if (srcContent.includes('gsd:autonomous')) {
-      assert.ok(result.includes('gsd-autonomous'), 'gsd:autonomous converted to gsd-autonomous');
+    // gsd:discuss-phase, gsd:plan-phase, etc. should convert to dashed forms.
+    if (srcContent.includes('gsd:plan-phase')) {
+      assert.ok(result.includes('gsd-plan-phase'), 'gsd:plan-phase converted to gsd-plan-phase');
     }
     // Path conversion: ~/.claude/ → .github/
     assert.ok(!result.includes('~/.claude/'), 'no ~/.claude/ paths remain');

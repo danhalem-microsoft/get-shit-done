@@ -12,16 +12,13 @@ function readAgent(name) {
 }
 
 describe('project skills awareness', () => {
+  // Phase 1 cull (Plan 08) removed gsd-debugger, gsd-nyquist-auditor,
+  // gsd-codebase-mapper, gsd-eval-auditor, gsd-intel-updater, gsd-doc-writer.
+  // The skills-awareness contract still applies to surviving agents.
   const agentsRequiringSkills = [
-    'gsd-debugger',
     'gsd-integration-checker',
     'gsd-security-auditor',
-    'gsd-nyquist-auditor',
-    'gsd-codebase-mapper',
     'gsd-roadmapper',
-    'gsd-eval-auditor',
-    'gsd-intel-updater',
-    'gsd-doc-writer',
   ];
 
   for (const agentName of agentsRequiringSkills) {
@@ -38,12 +35,4 @@ describe('project skills awareness', () => {
       );
     });
   }
-
-  test('gsd-doc-writer has security note about doc_assignment user data', () => {
-    const content = readAgent('gsd-doc-writer');
-    assert.ok(
-      content.includes('doc_assignment') && content.includes('SECURITY'),
-      'gsd-doc-writer missing security note for doc_assignment block'
-    );
-  });
 });
