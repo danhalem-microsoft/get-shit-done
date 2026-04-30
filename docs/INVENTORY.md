@@ -60,7 +60,7 @@ Full roster at `agents/gsd-*.md`. The "Primary doc" column flags whether [`docs/
 
 ---
 
-## Commands (75 shipped)
+## Commands (70 shipped)
 
 Full roster at `commands/gsd/*.md`. The groupings below mirror `docs/COMMANDS.md` section order; each row carries the command name, a one-line role derived from the command's frontmatter `description:`, and a link to the source file. `tests/command-count-sync.test.cjs` locks the count against the filesystem.
 
@@ -122,17 +122,12 @@ Full roster at `commands/gsd/*.md`. The groupings below mirror `docs/COMMANDS.md
 | `/gsd-pause-work` | Create context handoff when pausing work mid-phase. | [commands/gsd/pause-work.md](../commands/gsd/pause-work.md) |
 | `/gsd-resume-work` | Resume work from previous session with full context restoration. | [commands/gsd/resume-work.md](../commands/gsd/resume-work.md) |
 | `/gsd-do` | Route freeform text to the right GSD command automatically. | [commands/gsd/do.md](../commands/gsd/do.md) |
-| `/gsd-note` | Zero-friction idea capture — append, list, or promote notes to todos. | [commands/gsd/note.md](../commands/gsd/note.md) |
 | `/gsd-add-todo` | Capture idea or task as todo from current conversation context. | [commands/gsd/add-todo.md](../commands/gsd/add-todo.md) |
 | `/gsd-check-todos` | List pending todos and select one to work on. | [commands/gsd/check-todos.md](../commands/gsd/check-todos.md) |
-| `/gsd-add-backlog` | Add an idea to the backlog parking lot (999.x numbering). | [commands/gsd/add-backlog.md](../commands/gsd/add-backlog.md) |
-| `/gsd-review-backlog` | Review and promote backlog items to active milestone. | [commands/gsd/review-backlog.md](../commands/gsd/review-backlog.md) |
-| `/gsd-plant-seed` | Capture a forward-looking idea with trigger conditions. | [commands/gsd/plant-seed.md](../commands/gsd/plant-seed.md) |
 | `/gsd-add-mistake` | Capture a mistake pattern as a registry entry for critic review. | [commands/gsd/add-mistake.md](../commands/gsd/add-mistake.md) |
 | `/gsd-mistakes` | List all mistake registry entries. | [commands/gsd/mistakes.md](../commands/gsd/mistakes.md) |
 | `/gsd-add-taste` | Create a taste entry from guided input. | [commands/gsd/add-taste.md](../commands/gsd/add-taste.md) |
 | `/gsd-extract-taste` | Extract taste patterns from decision logs. | [commands/gsd/extract-taste.md](../commands/gsd/extract-taste.md) |
-| `/gsd-thread` | Manage persistent context threads for cross-session work. | [commands/gsd/thread.md](../commands/gsd/thread.md) |
 
 ### Codebase Intelligence
 
@@ -170,7 +165,7 @@ Full roster at `commands/gsd/*.md`. The groupings below mirror `docs/COMMANDS.md
 
 ---
 
-## Workflows (78 shipped)
+## Workflows (76 shipped)
 
 Full roster at `get-shit-done/workflows/*.md`. Workflows are thin orchestrators that commands reference internally; most are not read directly by end users. Rows below map each workflow file to its role (derived from the `<purpose>` block) and, where applicable, to the command that invokes it.
 
@@ -213,12 +208,10 @@ Full roster at `get-shit-done/workflows/*.md`. Workflows are thin orchestrators 
 | `new-workspace.md` | Create an isolated workspace with repo worktrees/clones and an independent `.planning/`. | `/gsd-new-workspace` |
 | `next.md` | Detect current project state and automatically advance to the next logical step. | `/gsd-next` |
 | `node-repair.md` | Autonomous repair operator for failed task verification; invoked by `execute-plan`. | `execute-plan.md` (recovery) |
-| `note.md` | Zero-friction idea capture — one Write call, one confirmation line. | `/gsd-note` |
 | `pause-work.md` | Create structured `.planning/HANDOFF.json` and `.continue-here.md` handoff files. | `/gsd-pause-work` |
 | `plan-milestone-gaps.md` | Create all phases necessary to close gaps identified by `/gsd-audit-milestone`. | `/gsd-plan-milestone-gaps` |
 | `plan-phase.md` | Create executable PLAN.md files with integrated research and verification loop. | `/gsd-plan-phase`, `/gsd-quick` |
 | `plan-review-convergence.md` | Cross-AI plan convergence loop — replan with review feedback until no HIGH concerns remain. | `/gsd-plan-review-convergence` |
-| `plant-seed.md` | Capture a forward-looking idea as a structured seed file with trigger conditions. | `/gsd-plant-seed` |
 | `pr-branch.md` | Create a clean branch for pull requests by filtering `.planning/` commits. | `/gsd-pr-branch` |
 | `profile-user.md` | Orchestrate the full developer profiling flow — consent, session scan, profile generation. | `/gsd-profile-user` |
 | `progress.md` | Progress rendering — project context, position, and next-action routing. | `/gsd-progress` |
