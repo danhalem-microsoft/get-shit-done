@@ -43,7 +43,7 @@ Full roster at `agents/gsd-*.md`. The "Primary doc" column flags whether [`docs/
 
 ---
 
-## Commands (43 shipped)
+## Commands (37 shipped)
 
 Full roster at `commands/gsd/*.md`. The groupings below mirror `docs/COMMANDS.md` section order; each row carries the command name, a one-line role derived from the command's frontmatter `description:`, and a link to the source file. `tests/command-count-sync.test.cjs` locks the count against the filesystem.
 
@@ -57,21 +57,15 @@ Full roster at `commands/gsd/*.md`. The groupings below mirror `docs/COMMANDS.md
 | `/gsd-remove-workspace` | Remove a GSD workspace and clean up worktrees. | [commands/gsd/remove-workspace.md](../commands/gsd/remove-workspace.md) |
 | `/gsd-discuss-phase` | Gather phase context through adaptive questioning before planning. | [commands/gsd/discuss-phase.md](../commands/gsd/discuss-phase.md) |
 | `/gsd-plan-phase` | Create detailed phase plan (PLAN.md) with verification loop. | [commands/gsd/plan-phase.md](../commands/gsd/plan-phase.md) |
-| `/gsd-plan-review-convergence` | Cross-AI plan convergence loop — replan with review feedback until no HIGH concerns remain (max 3 cycles). | [commands/gsd/plan-review-convergence.md](../commands/gsd/plan-review-convergence.md) |
 | `/gsd-research-phase` | Research how to implement a phase (standalone). | [commands/gsd/research-phase.md](../commands/gsd/research-phase.md) |
 | `/gsd-execute-phase` | Execute all plans in a phase with wave-based parallelization. | [commands/gsd/execute-phase.md](../commands/gsd/execute-phase.md) |
 | `/gsd-verify-work` | Validate built features through conversational UAT with auto-diagnosis. | [commands/gsd/verify-work.md](../commands/gsd/verify-work.md) |
 | `/gsd-quick` | Execute a quick task with GSD guarantees (atomic commits, state tracking) but skip optional agents. | [commands/gsd/quick.md](../commands/gsd/quick.md) |
-| `/gsd-code-review` | Review source files changed during a phase for bugs, security, and code-quality problems. | [commands/gsd/code-review.md](../commands/gsd/code-review.md) |
-| `/gsd-code-review-fix` | Auto-fix issues found by `/gsd-code-review`, committing each fix atomically. | [commands/gsd/code-review-fix.md](../commands/gsd/code-review-fix.md) |
-| `/gsd-critique` | Run adversarial critics against phase artifacts. | [commands/gsd/critique.md](../commands/gsd/critique.md) |
 
 ### Phase & Milestone Management
 
 | Command | Role | Source |
 |---------|------|--------|
-| `/gsd-validate-phase` | Retroactively audit and fill Nyquist validation gaps for a completed phase. | [commands/gsd/validate-phase.md](../commands/gsd/validate-phase.md) |
-| `/gsd-secure-phase` | Retroactively verify threat mitigations for a completed phase. | [commands/gsd/secure-phase.md](../commands/gsd/secure-phase.md) |
 | `/gsd-complete-milestone` | Archive completed milestone and prepare for next version. | [commands/gsd/complete-milestone.md](../commands/gsd/complete-milestone.md) |
 | `/gsd-new-milestone` | Start a new milestone cycle — update PROJECT.md and route to requirements. | [commands/gsd/new-milestone.md](../commands/gsd/new-milestone.md) |
 | `/gsd-workstreams` | Manage parallel workstreams — list, create, switch, status, progress, complete, resume. | [commands/gsd/workstreams.md](../commands/gsd/workstreams.md) |
@@ -118,6 +112,22 @@ Full roster at `commands/gsd/*.md`. The groupings below mirror `docs/COMMANDS.md
 | `/gsd-join-discord` | Join the GSD Discord community. | [commands/gsd/join-discord.md](../commands/gsd/join-discord.md) |
 | `/gsd-sync-upstream` | Sync fork with upstream get-shit-done changes. | [commands/gsd/sync-upstream.md](../commands/gsd/sync-upstream.md) |
 | `/gsd-team-status` | Show what each team member is working on across the monorepo. | [commands/gsd/team-status.md](../commands/gsd/team-status.md) |
+| `/gsd-switch` | Switch active project context. | [commands/gsd/switch.md](../commands/gsd/switch.md) |
+
+---
+
+## Deprecation Stubs (6 shipped)
+
+Per CONTEXT.md D-02: deprecation stubs are NOT counted as user-facing commands. They keep their old `gsd:<name>` so legacy invocations resolve, print a deprecation banner, and forward to the consolidated `/gsd-review --<flag>` entry point introduced in Plan 07. Counted separately so the user-facing command roster remains exactly 37.
+
+| Stub | Forwards to | Source |
+|------|-------------|--------|
+| `/gsd-secure-phase` | `/gsd-review --security` | [commands/gsd/secure-phase.md](../commands/gsd/secure-phase.md) |
+| `/gsd-validate-phase` | `/gsd-review --coverage` | [commands/gsd/validate-phase.md](../commands/gsd/validate-phase.md) |
+| `/gsd-code-review` | `/gsd-review --code` | [commands/gsd/code-review.md](../commands/gsd/code-review.md) |
+| `/gsd-code-review-fix` | `/gsd-review --code-fix` | [commands/gsd/code-review-fix.md](../commands/gsd/code-review-fix.md) |
+| `/gsd-critique` | `/gsd-review --critique` | [commands/gsd/critique.md](../commands/gsd/critique.md) |
+| `/gsd-plan-review-convergence` | `/gsd-review --converge` | [commands/gsd/plan-review-convergence.md](../commands/gsd/plan-review-convergence.md) |
 
 ---
 
