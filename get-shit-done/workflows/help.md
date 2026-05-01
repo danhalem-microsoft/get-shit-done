@@ -48,16 +48,6 @@ Creates all `.planning/` artifacts:
 
 Usage: `/gsd-new-project`
 
-**`/gsd-map-codebase`**
-Map an existing codebase for brownfield projects.
-
-- Analyzes codebase with parallel Explore agents
-- Creates `.planning/codebase/` with 7 focused documents
-- Covers stack, architecture, structure, conventions, testing, integrations, concerns
-- Use before `/gsd-new-project` on existing codebases
-
-Usage: `/gsd-map-codebase`
-
 ### Phase Planning
 
 **`/gsd-discuss-phase <number>`**
@@ -81,15 +71,6 @@ Comprehensive ecosystem research for niche/complex domains.
 - Goes beyond "which library" to ecosystem knowledge
 
 Usage: `/gsd-research-phase 3`
-
-**`/gsd-list-phase-assumptions <number>`**
-See what Claude is planning to do before it starts.
-
-- Shows Claude's intended approach for a phase
-- Lets you course-correct if Claude misunderstood your vision
-- No files created - conversational output only
-
-Usage: `/gsd-list-phase-assumptions 3`
 
 **`/gsd-plan-phase <number>`**
 Create detailed execution plan for a specific phase.
@@ -118,20 +99,6 @@ Execute all plans in a phase, or run a specific wave.
 Usage: `/gsd-execute-phase 5`
 Usage: `/gsd-execute-phase 5 --wave 2`
 
-### Smart Router
-
-**`/gsd-do <description>`**
-Route freeform text to the right GSD command automatically.
-
-- Analyzes natural language input to find the best matching GSD command
-- Acts as a dispatcher — never does the work itself
-- Resolves ambiguity by asking you to pick between top matches
-- Use when you know what you want but don't know which `/gsd-*` command to run
-
-Usage: `/gsd-do fix the login button`
-Usage: `/gsd-do refactor the auth system`
-Usage: `/gsd-do I want to start a new milestone`
-
 ### Quick Mode
 
 **`/gsd-quick [--full] [--validate] [--discuss] [--research]`**
@@ -154,21 +121,6 @@ Usage: `/gsd-quick`
 Usage: `/gsd-quick --full`
 Usage: `/gsd-quick --research --validate`
 Result: Creates `.planning/quick/NNN-slug/PLAN.md`, `.planning/quick/NNN-slug/SUMMARY.md`
-
----
-
-**`/gsd-fast [description]`**
-Execute a trivial task inline — no subagents, no planning files, no overhead.
-
-For tasks too small to justify planning: typo fixes, config changes, forgotten commits, simple additions. Runs in the current context, makes the change, commits, and logs to STATE.md.
-
-- No PLAN.md or SUMMARY.md created
-- No subagent spawned (runs inline)
-- ≤ 3 file edits — redirects to `/gsd-quick` if task is non-trivial
-- Atomic commit with conventional message
-
-Usage: `/gsd-fast "fix the typo in README"`
-Usage: `/gsd-fast "add .env to gitignore"`
 
 ### Roadmap Management
 
@@ -262,86 +214,6 @@ Create context handoff when pausing work mid-phase.
 
 Usage: `/gsd-pause-work`
 
-### Debugging
-
-**`/gsd-debug [issue description]`**
-Systematic debugging with persistent state across context resets.
-
-- Gathers symptoms through adaptive questioning
-- Creates `.planning/debug/[slug].md` to track investigation
-- Investigates using scientific method (evidence → hypothesis → test)
-- Survives `/clear` — run `/gsd-debug` with no args to resume
-- Archives resolved issues to `.planning/debug/resolved/`
-
-Usage: `/gsd-debug "login button doesn't work"`
-Usage: `/gsd-debug` (resume active session)
-
-### Spiking & Sketching
-
-**`/gsd-spike [idea] [--quick]`**
-Rapidly spike an idea with throwaway experiments to validate feasibility.
-
-- Decomposes idea into 2-5 focused experiments (risk-ordered)
-- Each spike answers one specific Given/When/Then question
-- Builds minimum code, runs it, captures verdict (VALIDATED/INVALIDATED/PARTIAL)
-- Saves to `.planning/spikes/` with MANIFEST.md tracking
-- Does not require `/gsd-new-project` — works in any repo
-- `--quick` skips decomposition, builds immediately
-
-Usage: `/gsd-spike "can we stream LLM output over WebSockets?"`
-Usage: `/gsd-spike --quick "test if pdfjs extracts tables"`
-
-**`/gsd-sketch [idea] [--quick]`**
-Rapidly sketch UI/design ideas using throwaway HTML mockups with multi-variant exploration.
-
-- Conversational mood/direction intake before building
-- Each sketch produces 2-3 variants as tabbed HTML pages
-- User compares variants, cherry-picks elements, iterates
-- Shared CSS theme system compounds across sketches
-- Saves to `.planning/sketches/` with MANIFEST.md tracking
-- Does not require `/gsd-new-project` — works in any repo
-- `--quick` skips mood intake, jumps to building
-
-Usage: `/gsd-sketch "dashboard layout for the admin panel"`
-Usage: `/gsd-sketch --quick "form card grouping"`
-
-**`/gsd-spike-wrap-up`**
-Package spike findings into a persistent project skill.
-
-- Curates each spike one-at-a-time (include/exclude/partial/UAT)
-- Groups findings by feature area
-- Generates `./.claude/skills/spike-findings-[project]/` with references and sources
-- Writes summary to `.planning/spikes/WRAP-UP-SUMMARY.md`
-- Adds auto-load routing line to project CLAUDE.md
-
-Usage: `/gsd-spike-wrap-up`
-
-**`/gsd-sketch-wrap-up`**
-Package sketch design findings into a persistent project skill.
-
-- Curates each sketch one-at-a-time (include/exclude/partial/revisit)
-- Groups findings by design area
-- Generates `./.claude/skills/sketch-findings-[project]/` with design decisions, CSS patterns, HTML structures
-- Writes summary to `.planning/sketches/WRAP-UP-SUMMARY.md`
-- Adds auto-load routing line to project CLAUDE.md
-
-Usage: `/gsd-sketch-wrap-up`
-
-### Quick Notes
-
-**`/gsd-note <text>`**
-Zero-friction idea capture — one command, instant save, no questions.
-
-- Saves timestamped note to `.planning/notes/` (or `~/.claude/notes/` globally)
-- Three subcommands: append (default), list, promote
-- Promote converts a note into a structured todo
-- Works without a project (falls back to global scope)
-
-Usage: `/gsd-note refactor the hook system`
-Usage: `/gsd-note list`
-Usage: `/gsd-note promote 3`
-Usage: `/gsd-note --global cross-project idea`
-
 ### Todo Management
 
 **`/gsd-add-todo [description]`**
@@ -380,20 +252,6 @@ Validate built features through conversational UAT.
 
 Usage: `/gsd-verify-work 3`
 
-### Ship Work
-
-**`/gsd-ship [phase]`**
-Create a PR from completed phase work with an auto-generated body.
-
-- Pushes branch to remote
-- Creates PR with summary from SUMMARY.md, VERIFICATION.md, REQUIREMENTS.md
-- Optionally requests code review
-- Updates STATE.md with shipping status
-
-Prerequisites: Phase verified, `gh` CLI installed and authenticated.
-
-Usage: `/gsd-ship 4` or `/gsd-ship 4 --draft`
-
 ---
 
 **`/gsd-review --phase N [--gemini] [--claude] [--codex] [--coderabbit] [--opencode] [--qwen] [--cursor] [--all]`**
@@ -418,50 +276,6 @@ Create a clean branch for pull requests by filtering out .planning/ commits.
 
 Usage: `/gsd-pr-branch` or `/gsd-pr-branch main`
 
----
-
-**`/gsd-plant-seed [idea]`**
-Capture a forward-looking idea with trigger conditions for automatic surfacing.
-
-- Seeds preserve WHY, WHEN to surface, and breadcrumbs to related code
-- Auto-surfaces during `/gsd-new-milestone` when trigger conditions match
-- Better than deferred items — triggers are checked, not forgotten
-
-Usage: `/gsd-plant-seed "add real-time notifications when we build the events system"`
-
----
-
-**`/gsd-audit-uat`**
-Cross-phase audit of all outstanding UAT and verification items.
-- Scans every phase for pending, skipped, blocked, and human_needed items
-- Cross-references against codebase to detect stale documentation
-- Produces prioritized human test plan grouped by testability
-- Use before starting a new milestone to clear verification debt
-
-Usage: `/gsd-audit-uat`
-
-### Milestone Auditing
-
-**`/gsd-audit-milestone [version]`**
-Audit milestone completion against original intent.
-
-- Reads all phase VERIFICATION.md files
-- Checks requirements coverage
-- Spawns integration checker for cross-phase wiring
-- Creates MILESTONE-AUDIT.md with gaps and tech debt
-
-Usage: `/gsd-audit-milestone`
-
-**`/gsd-plan-milestone-gaps`**
-Create phases to close gaps identified by audit.
-
-- Reads MILESTONE-AUDIT.md and groups gaps into phases
-- Prioritizes by requirement priority (must/should/nice)
-- Adds gap closure phases to ROADMAP.md
-- Ready for `/gsd-plan-phase` on new phases
-
-Usage: `/gsd-plan-milestone-gaps`
-
 ### Configuration
 
 **`/gsd-settings`**
@@ -484,16 +298,6 @@ Quick switch model profile for GSD agents.
 Usage: `/gsd-set-profile budget`
 
 ### Utility Commands
-
-**`/gsd-cleanup`**
-Archive accumulated phase directories from completed milestones.
-
-- Identifies phases from completed milestones still in `.planning/phases/`
-- Shows dry-run summary before moving anything
-- Moves phase dirs to `.planning/milestones/v{X.Y}-phases/`
-- Use after multiple milestones to reduce `.planning/phases/` clutter
-
-Usage: `/gsd-cleanup`
 
 **`/gsd-help`**
 Show this command reference.
@@ -627,7 +431,7 @@ Example config:
 **Adding urgent mid-milestone work:**
 
 ```
-/gsd-insert-phase 5 "Critical security fix"
+/gsd-phase insert 5 "Critical security fix"
 /gsd-plan-phase 5.1
 /gsd-execute-phase 5.1
 ```
@@ -647,15 +451,6 @@ Example config:
 /gsd-add-todo Fix modal z-index  # Capture with explicit description
 /gsd-check-todos                 # Review and work on todos
 /gsd-check-todos api             # Filter by area
-```
-
-**Debugging an issue:**
-
-```
-/gsd-debug "form submission fails silently"  # Start debug session
-# ... investigation happens, context fills up ...
-/clear
-/gsd-debug                                    # Resume from where you left off
 ```
 
 ## Getting Help
