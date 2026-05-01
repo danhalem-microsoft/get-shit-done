@@ -247,3 +247,53 @@ describe('TEST-01: no orphan references to deleted commands/agents', () => {
       `Found ${allFindings.length} orphan reference(s):\n  ` + allFindings.join('\n  '));
   });
 });
+
+// CR-01 guard (Plan 01-10): ALLOW_LIST is intended for migration-table prose, not
+// live command docs. The body of an allow-listed file MUST NOT contain
+// `Usage: /gsd-<deleted-command>` patterns — those are live command-reference
+// blocks that contradict the migration table at the bottom of the same file.
+//
+// The migration-table rows themselves use `Removed`/`/gsd-review --…` syntax,
+// not `Usage:` syntax — so this regex does not collide with legitimate migration
+// prose. The carve-out (`slashMentionExcludes`, currently `['review']`) applies
+// here too: the NEW /gsd-review IS a live consolidated command and its Usage
+// block is legitimate.
+//
+// Per CONTEXT.md D-04 (per-test concurrency contract): read-only fs access,
+// own-scope locals, no process.chdir, no shared-state mutation.
+describe('CR-01 guard: ALLOW_LIST files have no live Usage blocks for deleted commands', () => {
+  const cr01Findings = [];
+  // Build the carve-out set locally (own-scope, no shared mutation).
+  const carveOut = new Set(slashMentionExcludes || []);
+  // deletedCommands minus slashMentionExcludes — the set of names whose
+  // `Usage: /gsd-<name>` blocks must NOT appear in any allow-listed file body.
+  const guardedCommands = deletedCommands.filter((cmd) => !carveOut.has(cmd));
+
+  for (const relPath of ALLOW_LIST) {
+    const absPath = path.join(ROOT, relPath);
+    if (!fs.existsSync(absPath)) continue;  // some allow-listed files may not yet exist (Plan 09 may add them)
+    const content = fs.readFileSync(absPath, 'utf8');
+    const lines = content.split('\n');
+    for (const cmd of guardedCommands) {
+      // Match `Usage: /gsd-<cmd>` or `Usage: \`/gsd-<cmd>\`` (backticks optional),
+      // with word-boundary at end so `/gsd-do` does not match `/gsd-docs-update`.
+      const usageRe = new RegExp(`Usage:\\s*\`?/gsd-${cmd}\\b`, 'g');
+      lines.forEach((line, i) => {
+        if (usageRe.test(line)) {
+          cr01Findings.push(
+            `${relPath}:${i + 1} (allow-listed file contains live Usage block for deleted command /gsd-${cmd}): ${line.trim()}`
+          );
+        }
+      });
+    }
+  }
+
+  test('ALLOW_LIST files have no live Usage blocks for deleted commands (CR-01 guard)', () => {
+    assert.deepStrictEqual(cr01Findings, [],
+      `ALLOW_LIST is intended for migration-table prose, not live command docs.\n` +
+      `Bodies of allow-listed files MUST NOT contain \`Usage: /gsd-<deleted>\` patterns.\n` +
+      `The migration-table rows themselves use \`Removed\`/\`/gsd-review --…\` syntax,\n` +
+      `not \`Usage:\` syntax — so this regex does not collide with legitimate migration prose.\n\n` +
+      `Found ${cr01Findings.length} violation(s):\n  ` + cr01Findings.join('\n  '));
+  });
+});
