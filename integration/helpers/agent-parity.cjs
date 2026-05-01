@@ -46,6 +46,21 @@ function median(values) {
   return n % 2 === 0 ? (sorted[n/2 - 1] + sorted[n/2]) / 2 : sorted[Math.floor(n/2)];
 }
 
+/**
+ * Pick the median run from successful[] by duration_ms (CR-04 fix).
+ * Sorts a COPY of successful so the source array is not mutated; for an even-N
+ * array, picks index Math.floor(N/2) of the sorted copy (matches the behavior
+ * the COMPARE-mode return previously CLAIMED via comment but did not implement).
+ * Exported for unit testing in tests/agent-parity-helper-shape.test.cjs.
+ */
+function pickMedianByDuration(successful) {
+  if (!Array.isArray(successful) || successful.length === 0) return undefined;
+  const sortedByDuration = [...successful].sort(
+    (a, b) => (a.duration_ms ?? 0) - (b.duration_ms ?? 0)
+  );
+  return sortedByDuration[Math.floor(sortedByDuration.length / 2)];
+}
+
 function loadBaseline(agentName, fixtureId) {
   const file = path.join(BASELINES_DIR, agentName, `${fixtureId}.json`);
   if (!fs.existsSync(file)) return null;
@@ -150,7 +165,7 @@ async function runAgentParity(agentName, fixture, schema, opts = {}) {
   return {
     pass: deltas.pass,
     baseline,
-    current: successful[Math.floor(successful.length / 2)],  // median run by index after sort
+    current: pickMedianByDuration(successful),  // sorted-median by duration_ms (CR-04 fix)
     deltas,
     walltime_ms: { p50: median(walltimes), p95: walltimes.sort((a,b)=>a-b)[Math.ceil(walltimes.length*0.95)-1] || median(walltimes) },
     cost_usd: totalCost,
@@ -208,4 +223,4 @@ function computeSchemaConformanceDeltas(schema, baseline, runs) {
   };
 }
 
-module.exports = { runAgentParity, SCHEMAS, BASELINES_DIR, loadBaseline, saveBaseline };
+module.exports = { runAgentParity, SCHEMAS, BASELINES_DIR, loadBaseline, saveBaseline, pickMedianByDuration };
