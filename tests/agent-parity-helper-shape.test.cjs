@@ -66,4 +66,45 @@ describe('TEST-02: runAgentParity helper shape', () => {
     assert.strictEqual(typeof helper.BASELINES_DIR, 'string');
     assert.match(helper.BASELINES_DIR, /integration\/test-fixtures\/baselines$/);
   });
+
+  test('pickMedianByDuration returns sorted-median, not array-index-N/2 (CR-04 guard)', () => {
+    const { pickMedianByDuration } = require(HELPER_PATH);
+
+    // 5 runs in completion order with non-monotonic durations.
+    // Sorted by duration_ms: [50, 100, 150, 200, 300]; median index 2 -> 150 (run-4).
+    // Pre-fix bug picked runs[2] = run-3 (duration 300). Post-fix returns run-4.
+    const runs = [
+      { id: 'run-1', duration_ms: 100, success: true },
+      { id: 'run-2', duration_ms: 50,  success: true },
+      { id: 'run-3', duration_ms: 300, success: true },
+      { id: 'run-4', duration_ms: 150, success: true },
+      { id: 'run-5', duration_ms: 200, success: true },
+    ];
+    const median = pickMedianByDuration(runs);
+    assert.strictEqual(median.duration_ms, 150,
+      `expected median duration 150 (run-4), got ${median.duration_ms} (${median.id})`);
+    assert.strictEqual(median.id, 'run-4',
+      'pickMedianByDuration must return the sorted-median run, not the index-2 run from completion order');
+  });
+
+  test('pickMedianByDuration handles even-N (4 runs) (CR-04 guard)', () => {
+    const { pickMedianByDuration } = require(HELPER_PATH);
+    // Sorted: [10, 20, 30, 40]. Math.floor(4/2) = 2 -> 30 (id 'b').
+    const runs = [
+      { id: 'a', duration_ms: 10, success: true },
+      { id: 'b', duration_ms: 30, success: true },
+      { id: 'c', duration_ms: 20, success: true },
+      { id: 'd', duration_ms: 40, success: true },
+    ];
+    const median = pickMedianByDuration(runs);
+    assert.strictEqual(median.duration_ms, 30, `expected duration 30, got ${median.duration_ms}`);
+    assert.strictEqual(median.id, 'b');
+  });
+
+  test('pickMedianByDuration returns undefined for empty input (CR-04 guard)', () => {
+    const { pickMedianByDuration } = require(HELPER_PATH);
+    assert.strictEqual(pickMedianByDuration([]), undefined);
+    assert.strictEqual(pickMedianByDuration(null), undefined);
+    assert.strictEqual(pickMedianByDuration(undefined), undefined);
+  });
 });

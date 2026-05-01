@@ -14,7 +14,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
-const LEDGER = path.resolve(__dirname, '..', 'test-fixtures', 'walltime-ledger.jsonl');
+let LEDGER = path.resolve(__dirname, '..', 'test-fixtures', 'walltime-ledger.jsonl');
 
 /**
  * Append one JSONL entry to the ledger.
@@ -23,8 +23,12 @@ const LEDGER = path.resolve(__dirname, '..', 'test-fixtures', 'walltime-ledger.j
 function recordWalltime(entry) {
   if (!entry || typeof entry.test !== 'string' ||
       typeof entry.walltime_ms !== 'number' ||
-      typeof entry.phase !== 'string') {
-    throw new Error('recordWalltime: entry must have {test, walltime_ms, cost_usd, phase}');
+      typeof entry.phase !== 'string' ||
+      typeof entry.cost_usd !== 'number') {
+    throw new Error(
+      'recordWalltime: entry must have {test: string, walltime_ms: number, cost_usd: number, phase: string}. ' +
+      'Pass cost_usd (not cost) — the silent-zero coercion of missing cost_usd was the CR-05 bug.'
+    );
   }
   if (!fs.existsSync(path.dirname(LEDGER))) {
     fs.mkdirSync(path.dirname(LEDGER), { recursive: true });
@@ -33,11 +37,23 @@ function recordWalltime(entry) {
     date: new Date().toISOString().slice(0, 10),
     test: entry.test,
     walltime_ms: entry.walltime_ms,
-    cost_usd: entry.cost_usd ?? 0,
+    cost_usd: entry.cost_usd,
     phase: entry.phase,
   };
   fs.appendFileSync(LEDGER, JSON.stringify(record) + '\n');
   return record;
 }
 
-module.exports = { recordWalltime, LEDGER };
+/**
+ * Test-only: swap the LEDGER path so unit tests can write to a temp file
+ * without polluting integration/test-fixtures/walltime-ledger.jsonl.
+ * Returns a restore function that resets LEDGER to its previous value.
+ * Production callers MUST NOT use this — leading underscore signals test-only.
+ */
+function _setLedgerForTest(p) {
+  const prev = LEDGER;
+  LEDGER = p;
+  return () => { LEDGER = prev; };
+}
+
+module.exports = { recordWalltime, LEDGER, _setLedgerForTest };

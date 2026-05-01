@@ -1,0 +1,19 @@
+load("@aspect_rules_js//js:defs.bzl", "js_test")
+
+# Static unit tests over integration/helpers/. No live API, no shared state
+# mutation — each test uses local-scope vars and (where applicable) a temp
+# ledger path. Pattern mirrors integration/BUILD.bazel's "fast integration
+# tests" block.
+[js_test(
+    name = test_file.replace(".test.cjs", ""),
+    entry_point = test_file,
+    data = [
+        "//integration/helpers:test_helpers",
+    ],
+    size = "small",
+    tags = ["unit", "local", "phase-1-cull"],
+    timeout = "short",
+) for test_file in [
+    "agent-parity-helper-shape.test.cjs",
+    "walltime-recorder.test.cjs",
+]]
