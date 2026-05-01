@@ -16,4 +16,5 @@ load("@aspect_rules_js//js:defs.bzl", "js_test")
 ) for test_file in [
     "agent-parity-helper-shape.test.cjs",
     "walltime-recorder.test.cjs",
+    "gsd-tools-dispatcher-reachable.test.cjs",
 ]]
