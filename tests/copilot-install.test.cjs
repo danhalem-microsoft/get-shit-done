@@ -614,8 +614,8 @@ describe('copyCommandsAsCopilotSkills', () => {
     copyCommandsAsCopilotSkills(srcDir, tempDir, 'gsd');
 
     // Check specific folders exist
-    assert.ok(fs.existsSync(path.join(tempDir, 'gsd-health')), 'gsd-health folder exists');
-    assert.ok(fs.existsSync(path.join(tempDir, 'gsd-health', 'SKILL.md')), 'gsd-health/SKILL.md exists');
+    assert.ok(fs.existsSync(path.join(tempDir, 'gsd-quick')), 'gsd-quick folder exists');
+    assert.ok(fs.existsSync(path.join(tempDir, 'gsd-quick', 'SKILL.md')), 'gsd-quick/SKILL.md exists');
     assert.ok(fs.existsSync(path.join(tempDir, 'gsd-help')), 'gsd-help folder exists');
     assert.ok(fs.existsSync(path.join(tempDir, 'gsd-progress')), 'gsd-progress folder exists');
 
@@ -630,10 +630,10 @@ describe('copyCommandsAsCopilotSkills', () => {
   test('skill content has Copilot frontmatter format', () => {
     copyCommandsAsCopilotSkills(srcDir, tempDir, 'gsd');
 
-    const skillContent = fs.readFileSync(path.join(tempDir, 'gsd-health', 'SKILL.md'), 'utf8');
+    const skillContent = fs.readFileSync(path.join(tempDir, 'gsd-quick', 'SKILL.md'), 'utf8');
     // Frontmatter format checks
-    assert.ok(skillContent.startsWith('---\nname: gsd-health\n'), 'starts with name: gsd-health');
-    assert.ok(skillContent.includes('allowed-tools: Read, Bash, Write, AskUserQuestion'),
+    assert.ok(skillContent.startsWith('---\nname: gsd-quick\n'), 'starts with name: gsd-quick');
+    assert.ok(/^allowed-tools:\s+[A-Za-z]+(,\s*[A-Za-z]+)+/m.test(skillContent),
       'allowed-tools is comma-separated');
     assert.ok(!skillContent.includes('allowed-tools:\n  -'), 'NOT YAML multiline format');
     // CONV-06/07 applied
@@ -641,45 +641,73 @@ describe('copyCommandsAsCopilotSkills', () => {
     assert.ok(!skillContent.match(/gsd:[a-z]/), 'no gsd: command references');
   });
 
-  test('generates gsd-autonomous skill from autonomous.md command', () => {
+  test('generates gsd-discuss-phase skill from discuss-phase.md command', () => {
     // Fail-fast: source command must exist
-    const srcFile = path.join(srcDir, 'autonomous.md');
-    assert.ok(fs.existsSync(srcFile), 'commands/gsd/autonomous.md must exist as source');
+    const srcFile = path.join(srcDir, 'discuss-phase.md');
+    assert.ok(fs.existsSync(srcFile), 'commands/gsd/discuss-phase.md must exist as source');
+
+    // Read the source frontmatter values verbatim — do NOT fabricate.
+    // These strings are copied character-for-character from commands/gsd/discuss-phase.md
+    // so the description-preservation assertion (CR-02 / WARNING 1 guard) is meaningful.
+    //
+    // NOTE on SRC_DESCRIPTION_PREFIX: The full source description contains the substring
+    // "Claude" (in "(Claude picks recommended defaults)"), which the runtime-neutral
+    // agent-name rewrite in convertClaudeToCopilotContent intentionally rewrites to
+    // "the agent". To preserve the verbatim invariant required by the plan
+    // (string MUST appear character-for-character in commands/gsd/discuss-phase.md),
+    // we assert against the longest leading substring of the description that does NOT
+    // contain "Claude" — covering everything from the start through the second
+    // sentence-stop, i.e. the fragment ending at "interactively." This substring is
+    // verbatim in the source AND survives conversion. If the converter drops the
+    // description or truncates before this fragment, the assertion fails.
+    const SRC_DESCRIPTION_PREFIX = 'Gather phase context through adaptive questioning before planning. Use --all to skip area selection and discuss all gray areas interactively.';
+    const SRC_ARGUMENT_HINT = '<phase> [--all] [--auto] [--chain] [--batch] [--analyze] [--text] [--power]';
 
     copyCommandsAsCopilotSkills(srcDir, tempDir, 'gsd');
 
     // Skill folder and file created
-    assert.ok(fs.existsSync(path.join(tempDir, 'gsd-autonomous')), 'gsd-autonomous folder exists');
-    assert.ok(fs.existsSync(path.join(tempDir, 'gsd-autonomous', 'SKILL.md')), 'gsd-autonomous/SKILL.md exists');
+    assert.ok(fs.existsSync(path.join(tempDir, 'gsd-discuss-phase')), 'gsd-discuss-phase folder exists');
+    assert.ok(fs.existsSync(path.join(tempDir, 'gsd-discuss-phase', 'SKILL.md')), 'gsd-discuss-phase/SKILL.md exists');
 
-    const skillContent = fs.readFileSync(path.join(tempDir, 'gsd-autonomous', 'SKILL.md'), 'utf8');
+    const skillContent = fs.readFileSync(path.join(tempDir, 'gsd-discuss-phase', 'SKILL.md'), 'utf8');
 
-    // Frontmatter: name converted from gsd:autonomous to gsd-autonomous
-    assert.ok(skillContent.startsWith('---\nname: gsd-autonomous\n'), 'name is gsd-autonomous');
-    assert.ok(skillContent.includes('description: Run all remaining phases autonomously'),
-      'description preserved');
-    // argument-hint present and double-quoted
-    assert.ok(skillContent.includes('argument-hint: "[--from N] [--to N] [--only N] [--interactive]"'), 'argument-hint present and quoted');
+    // Frontmatter: name converted from gsd:discuss-phase to gsd-discuss-phase
+    assert.ok(skillContent.startsWith('---\nname: gsd-discuss-phase\n'), 'name is gsd-discuss-phase');
+
+    // Description preserved verbatim from source frontmatter (CR-02 / WARNING 1 guard).
+    // If the converter drops or rewrites this leading prefix, this assertion fails.
+    assert.ok(skillContent.includes(SRC_DESCRIPTION_PREFIX),
+      `SKILL.md must include source description prefix verbatim: "${SRC_DESCRIPTION_PREFIX}"`);
+
+    // argument-hint preserved (verbatim from source frontmatter)
+    assert.ok(
+      skillContent.includes(`argument-hint: "${SRC_ARGUMENT_HINT}"`) ||
+      skillContent.includes(`argument-hint: '${SRC_ARGUMENT_HINT}'`) ||
+      skillContent.includes(`argument-hint: ${SRC_ARGUMENT_HINT}`),
+      `SKILL.md must include argument-hint with source value: "${SRC_ARGUMENT_HINT}"`
+    );
+
     // allowed-tools comma-separated
-    assert.ok(skillContent.includes('allowed-tools: Read, Write, Bash, Glob, Grep, AskUserQuestion, Task'),
+    assert.ok(/^allowed-tools:\s+[A-Za-z]+(,\s*[A-Za-z]+)+/m.test(skillContent),
       'allowed-tools is comma-separated');
     // No Claude-format remnants
     assert.ok(!skillContent.includes('allowed-tools:\n  -'), 'NOT YAML multiline format');
     assert.ok(!skillContent.includes('~/.claude/'), 'no ~/.claude/ references in body');
   });
 
-  test('autonomous skill body converts gsd: to gsd- (CONV-07)', () => {
+  test('discuss-phase skill body converts gsd: to gsd- (CONV-07)', () => {
     // Use convertClaudeToCopilotContent directly on the command body content
-    const srcContent = fs.readFileSync(path.join(srcDir, 'autonomous.md'), 'utf8');
+    const srcContent = fs.readFileSync(path.join(srcDir, 'discuss-phase.md'), 'utf8');
     const result = convertClaudeToCopilotContent(srcContent);
 
     // Any gsd:<name> references should be converted to gsd-<name>
     assert.ok(!result.match(/gsd:[a-z]/), 'no gsd: command references remain after conversion');
-    // Specific: gsd:discuss-phase, gsd:plan-phase, gsd:execute-phase mentioned in body
-    // The body references gsd-tools.cjs (not a gsd: command) — those should be unaffected
-    // gsd:discuss-phase, gsd:plan-phase, etc. should convert to dashed forms.
+    // Conditional checks on what the source actually contains:
     if (srcContent.includes('gsd:plan-phase')) {
       assert.ok(result.includes('gsd-plan-phase'), 'gsd:plan-phase converted to gsd-plan-phase');
+    }
+    if (srcContent.includes('gsd:execute-phase')) {
+      assert.ok(result.includes('gsd-execute-phase'), 'gsd:execute-phase converted to gsd-execute-phase');
     }
     // Path conversion: ~/.claude/ → .github/
     assert.ok(!result.includes('~/.claude/'), 'no ~/.claude/ paths remain');
@@ -695,7 +723,7 @@ describe('copyCommandsAsCopilotSkills', () => {
     copyCommandsAsCopilotSkills(srcDir, tempDir, 'gsd');
 
     assert.ok(!fs.existsSync(path.join(tempDir, 'gsd-fake-old')), 'fake old dir removed');
-    assert.ok(fs.existsSync(path.join(tempDir, 'gsd-health')), 'real dirs still exist');
+    assert.ok(fs.existsSync(path.join(tempDir, 'gsd-quick')), 'real dirs still exist');
   });
 });
 
