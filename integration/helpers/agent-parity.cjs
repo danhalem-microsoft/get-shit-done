@@ -189,16 +189,93 @@ function computeDeltas(schema, baseline, runs) {
   }
 }
 
+/**
+ * Severity-bucketed key set-diff for critic-findings parity (CRIT-10).
+ *
+ * Bucket key scheme (RESEARCH §Pitfall-4):
+ *   primary:    (severity, category, lane)
+ *   secondary:  file_path  (disambiguates same-bucket findings across different files)
+ *   forward-compatible with Phase 1 baselines because `extractCategoryFromTitle`
+ *   heuristically backfills missing `category` fields.
+ *
+ * Returns:
+ *   pass            — overlap ≥ schema.threshold AND no missing critical findings
+ *   overlap         — |intersection| / |baseline|
+ *   threshold       — echoed from schema
+ *   missingCritical — baseline-critical findings absent from candidate
+ *   extraFindings   — candidate keys absent from baseline (informational)
+ *   baseFindingCount, currFindingCount — diagnostic counts
+ */
 function computeCriticFindingsDeltas(schema, baseline, runs) {
-  // Stub for Phase 2 calibration. Returns shape that Phase 2 will exercise;
-  // for Phase 1 (capture mode only) this is not invoked at runtime.
+  const candidate = pickMedianByDuration(runs);
+  if (!candidate) return { pass: false, error: 'no successful runs' };
+
+  const baseFindings = (baseline.result && baseline.result.findings) || extractFindingsFromText(baseline.result || '');
+  const currFindings = (candidate.result && candidate.result.findings) || extractFindingsFromText(candidate.result || '');
+
+  function bucketKey(f) {
+    const sev  = (f.severity || 'unknown').toLowerCase();
+    const lane = (f.lane || 'primary').toLowerCase();
+    const cat  = (f.category || extractCategoryFromTitle(f.title)).toLowerCase();
+    const file = f.file || 'N/A';
+    return `${sev}:${cat}:${lane}|${file}`;
+  }
+
+  const baseKeys = new Set(baseFindings.map(bucketKey));
+  const currKeys = new Set(currFindings.map(bucketKey));
+  const intersection = [...baseKeys].filter((k) => currKeys.has(k));
+  const overlap = baseKeys.size === 0 ? 1.0 : intersection.length / baseKeys.size;
+
+  const missingCritical = [...baseFindings]
+    .filter((f) => (f.severity || '').toLowerCase() === 'critical')
+    .filter((f) => !currKeys.has(bucketKey(f)));
+
+  const extra = [...currKeys].filter((k) => !baseKeys.has(k));
+  const pass = (overlap >= schema.threshold) && (missingCritical.length === 0);
+
   return {
-    pass: true,
-    overlap: 1.0,
-    missingCritical: [],
-    extraFindings: [],
-    note: 'stub — Phase 2 implements full critic-findings comparison',
+    pass,
+    overlap,
+    threshold: schema.threshold,
+    missingCritical: missingCritical.map((f) => ({ id: f.id, title: f.title, severity: f.severity })),
+    extraFindings: extra,
+    baseFindingCount: baseFindings.length,
+    currFindingCount: currFindings.length,
   };
+}
+
+// Helper: parse findings out of textual result if structured object isn't returned.
+// Format expected: critic-card markdown blocks like
+//   ### [CRITICAL] Some finding title — short summary
+//   - **ID:** `F-001`
+//   - **File:** `src/foo.ts:42`
+//   - **Severity:** critical
+//   - **Lane:** primary
+function extractFindingsFromText(text) {
+  if (typeof text !== 'string' || text.length === 0) return [];
+  const findings = [];
+  const cardRe = /###\s+\[([A-Z]+)\][^\n]*?\n[\s\S]*?\*\*ID:\*\*\s+`?([^`\s]+)`?[\s\S]*?\*\*File:\*\*\s+`?([^`\n]+)`?[\s\S]*?\*\*Severity:\*\*\s+(\w+)[\s\S]*?\*\*Lane:\*\*\s+(\w+)/g;
+  let m;
+  while ((m = cardRe.exec(text)) !== null) {
+    findings.push({
+      id: m[2].trim(),
+      severity: m[4].toLowerCase(),
+      file: m[3].trim(),
+      lane: m[5].toLowerCase(),
+      title: m[0].split('\n')[0].replace(/###\s+\[[A-Z]+\]\s+/, '').replace(/\s+—.*$/, '').trim(),
+    });
+  }
+  return findings;
+}
+
+// Heuristic: derive a category bucket from a finding title when the structured
+// `category` field is missing (Phase 1 baselines lack it). Takes the first two
+// whitespace-separated words, lowercases, and joins with a hyphen.
+//   "Missing requirement coverage in PLAN.md"  -> "missing-requirement"
+//   "Dependency cycle between Plans 4 and 6"   -> "dependency-cycle"
+// Stability: deterministic — pure function of input string.
+function extractCategoryFromTitle(title) {
+  return (title || 'unknown').toLowerCase().split(/\s+/).slice(0, 2).join('-');
 }
 
 function computePlanStructuralDeltas(schema, baseline, runs) {
@@ -223,4 +300,14 @@ function computeSchemaConformanceDeltas(schema, baseline, runs) {
   };
 }
 
-module.exports = { runAgentParity, SCHEMAS, BASELINES_DIR, loadBaseline, saveBaseline, pickMedianByDuration };
+module.exports = {
+  runAgentParity,
+  SCHEMAS,
+  BASELINES_DIR,
+  loadBaseline,
+  saveBaseline,
+  pickMedianByDuration,
+  // _internal: exposed for tests/critic-findings-delta-shape.test.cjs (B6 / verify-C-003).
+  // Do NOT use these from non-test code; they are heuristics with backfill semantics.
+  _internal: { extractFindingsFromText, extractCategoryFromTitle },
+};
