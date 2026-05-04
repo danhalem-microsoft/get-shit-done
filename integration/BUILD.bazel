@@ -30,6 +30,16 @@ load("@aspect_rules_js//js:defs.bzl", "js_test")
     "skill-execution.test.cjs",
 ]]
 
+# Phase 2 critic refactor — live spike (CRIT-01). Canary @-reference resolution.
+js_test(
+    name = "critic-spike-passes",
+    entry_point = "critic-spike-passes.test.cjs",
+    data = ["//integration/helpers:test_helpers"],
+    size = "large",
+    tags = ["integration", "local", "requires-api-key", "phase-2-critic"],
+    timeout = "long",
+)
+
 load("@aspect_rules_js//js:defs.bzl", "js_library")
 
 js_library(
