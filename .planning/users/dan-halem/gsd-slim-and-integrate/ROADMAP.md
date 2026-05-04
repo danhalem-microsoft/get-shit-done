@@ -58,7 +58,19 @@ Wave 1 — cull (gated on Wave 0 complete; baseline capture must come first):
   3. User can run any orchestrator that fires critics (e.g., `/gsd-review --critique`) and observe that all 6 critics are spawned in a single message with parallel `Task` calls, with `integration/critic-batch-walltime.test.cjs` verifying that the timestamp delta of the 6 Task spawns is <2 seconds (catches the [#7406 "claims parallel, executes serial" bug](https://github.com/anthropics/claude-code/issues/7406)) and total wall-clock ≈ max(critics); the orchestrator reads each critic's `CRITIQUE.md` from disk after spawning (not from the parent's text summary) via `gsd-tools.cjs critic-aggregate`, mitigating the parallel-Task hallucination bug ([anthropics/claude-code#29181](https://github.com/anthropics/claude-code/issues/29181)).
   4. User can deliberately misconfigure one critic (1-of-N failure injection) and observe that the orchestrator's skip-and-continue policy aggregates findings from the remaining 5 critics, logs the missing critic as `info`-severity finding, and continues to the next stage; user can run `integration/critic-parity.test.cjs` (N=5 median against Phase 1 wave 0 baseline) and observe ≥85% finding overlap by severity-bucketed key with hard fail on any missing critical-severity finding.
   5. User can find a walltime ledger at `integration/test-fixtures/walltime-ledger.jsonl` with one JSONL entry per live critic test invocation containing `{ date, test, walltime_ms, cost_usd, phase: 'phase-2-critic' }`, scoped via `bazel test //integration/... --test_tag_filters=phase-2-critic`; phase exits with git tag `gsd-slim-phase-2-critic` only after both static and live test suites pass.
-**Plans**: TBD
+**Plans**: 8 plans across 2 waves
+
+Wave 0 — test scaffolding + spike + base prompt + parity stub fill (lands before any bulk trim):
+- [ ] 02-01-PLAN.md — Wave-0 RED tests: critic-line-budget + critic-no-base-shadowing + critic-spike-passes [CRIT-01, CRIT-04, CRIT-05]
+- [ ] 02-02-PLAN.md — Author agents/_shared/critic-base.md + run live spike + capture spawn-timestamp shape [CRIT-01, CRIT-02]
+- [ ] 02-03-PLAN.md — Fill computeCriticFindingsDeltas + extend bin/install.js manifest builder + extend orphan-scan to agents/_shared/ [CRIT-10]
+- [ ] 02-04-PLAN.md — Pilot trim: gsd-critic-strategy.md (256 → ≤100 lines) [CRIT-03, CRIT-05]
+
+Wave 1 — bulk trim + orchestrator wiring + live tests + phase exit (depends on Wave 0):
+- [ ] 02-05-PLAN.md — Bulk trim 5 critics (plan, code, scope, verify, discuss) [CRIT-03, CRIT-04, CRIT-05]
+- [ ] 02-06-PLAN.md — Author workflows/critique.md + gsd-tools.cjs critic-aggregate subcommand + handler module + INVENTORY entry [CRIT-06, CRIT-07]
+- [ ] 02-07-PLAN.md — 3 live tests (critic-batch-walltime, critic-fault-injection, critic-parity) + walltime-ledger-schema [CRIT-08, CRIT-09, CRIT-10, XCUT-03]
+- [ ] 02-08-PLAN.md — Phase exit: full Bazel suite green + CHANGELOG entry + git tag gsd-slim-phase-2-critic [XCUT-03]
 
 ### Phase 3: Plan-phase chain merge
 **Goal**: `agents/gsd-research-synthesizer.md` is deleted and its content is merged into `agents/gsd-planner.md` under a `<synthesis-step>` anchor with the previous planner content under `<planning-step>`, `pattern-mapper` and `phase-researcher` fire as a single parallel `Task` batch with wall-clock equal to max rather than sum, plan-phase has 1 fewer agent and 1 fewer hop than baseline, plan-structural parity is verified with N=5 median against Phase 1 wave 0 baseline (task count within ±10%, must-haves set equality, dependency graph isomorphic by content, every implementation task has a RED test sub-step), and merged-planner token budget under realistic input does not exceed 100K tokens — if it does, Posture B trim of the planner is executed within Phase 3 rather than deferred.
@@ -116,7 +128,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Cull (with Wave 0 test infrastructure) | 0/9 | Not started | - |
-| 2. Critic refactor (with commit-0 spike) | 0/TBD | Not started | - |
+| 2. Critic refactor (with commit-0 spike) | 0/8 | Not started | - |
 | 3. Plan-phase chain merge | 0/TBD | Not started | - |
 | 4. TDD hardening (3 layers) | 0/TBD | Not started | - |
 | 5. SP integration | 0/TBD | Not started | - |
