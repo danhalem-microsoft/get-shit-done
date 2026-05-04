@@ -30,15 +30,22 @@ load("@aspect_rules_js//js:defs.bzl", "js_test")
     "skill-execution.test.cjs",
 ]]
 
-# Phase 2 critic refactor — live spike (CRIT-01). Canary @-reference resolution.
-js_test(
-    name = "critic-spike-passes",
-    entry_point = "critic-spike-passes.test.cjs",
+# Phase 2 critic refactor — spike pair: positive + inverse (B2/O5, 02-REVIEWS.md).
+# Inverse test eliminates the false-positive PASS surface for the canary spike.
+# Both targets carry the phase-2-critic Bazel tag so
+#   bazel query 'attr(tags, "phase-2-critic", //integration/...)'
+# lists critic-spike-passes AND critic-spike-inverse together.
+[js_test(
+    name = test_file.replace(".test.cjs", ""),
+    entry_point = test_file,
     data = ["//integration/helpers:test_helpers"],
     size = "large",
     tags = ["integration", "local", "requires-api-key", "phase-2-critic"],
     timeout = "long",
-)
+) for test_file in [
+    "critic-spike-passes.test.cjs",
+    "critic-spike-inverse.test.cjs",
+]]
 
 load("@aspect_rules_js//js:defs.bzl", "js_library")
 
