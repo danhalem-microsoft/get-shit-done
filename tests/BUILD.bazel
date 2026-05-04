@@ -34,5 +34,6 @@ load("@aspect_rules_js//js:defs.bzl", "js_test")
     "critic-line-budget.test.cjs",
     "critic-no-base-shadowing.test.cjs",
     "critic-findings-delta-shape.test.cjs",
+    "install-shared-dir.test.cjs",
     "walltime-ledger-schema.test.cjs",
 ]]

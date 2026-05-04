@@ -5316,6 +5316,20 @@ function writeManifest(configDir, runtime = 'claude') {
         manifest.files['agents/' + file] = fileHash(path.join(agentsDir, file));
       }
     }
+    // Phase 2: track agents/_shared/*.md so reapply-patches can detect user mods
+    // to shared agent fragments. The directory is created by Phase 2 Plan 02
+    // (agents/_shared/critic-base.md). copyWithPathReplacement already recurses
+    // into subdirs for the Claude runtime; the manifest extension below makes
+    // the files tracked. Multi-runtime parity (Codex/Cursor/etc.) deferred per
+    // RESEARCH §Open-Q-4 (see REQUIREMENTS.md Future Requirements).
+    const sharedDir = path.join(agentsDir, '_shared');
+    if (fs.existsSync(sharedDir)) {
+      for (const file of fs.readdirSync(sharedDir)) {
+        if (file.endsWith('.md')) {
+          manifest.files['agents/_shared/' + file] = fileHash(path.join(sharedDir, file));
+        }
+      }
+    }
   }
   // Track .clinerules file in manifest for Cline installs
   if (isCline) {
