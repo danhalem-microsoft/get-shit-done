@@ -330,6 +330,21 @@ Full listing: `hooks/`.
 
 ---
 
+## CLI Subcommands
+
+Internal subcommands of `get-shit-done/bin/gsd-tools.cjs` that have no user-facing slash command but are reachable via direct CLI invocation (e.g. `gsd-tools <case>` or `gsd-sdk query <case>`). These are documented here so the CR-03 dispatcher-reachability guard (`tests/gsd-tools-dispatcher-reachable.test.cjs`) recognises them as intentionally retained.
+
+| Subcommand | Purpose |
+|---|---|
+| `from-gsd2` | Legacy GSD-2 (`.gsd/`) → GSD-1 (`.planning/`) reverse migration. Implemented in `lib/gsd2-import.cjs`. Per `sdk/src/query/QUERY-HANDLERS.md`: explicitly not registered in the SDK — remains CLI-only. |
+| `config-resolve` | Fork-only resolver for a single config key (per `FORK.md` § Files Modified). Implemented in `lib/core.cjs::cmdConfigResolve`. |
+| `archive-project` | Archives a multi-user project directory. Implemented in `lib/init.cjs::cmdArchiveProject`. |
+| `restore-project` | Restores a previously archived project. Implemented in `lib/init.cjs::cmdRestoreProject`. |
+| `update-taste-counters` | Updates the taste-decision counters from a JSON payload. Implemented in `lib/taste.cjs::updateTasteCounters`. |
+| `migrate` | Legacy-format migration helper (`--auto`, `--project-name`). Implemented in `lib/commands.cjs::cmdMigrate`. |
+
+---
+
 ## Maintenance
 
 - When a new command, agent, workflow, reference, CLI module, or hook ships, update the corresponding section here before the release is cut.
