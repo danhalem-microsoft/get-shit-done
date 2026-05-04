@@ -9,26 +9,36 @@ const { recordWalltime } = require('./helpers/walltime-recorder.cjs');
 // CRIT-01 spike — verify Claude Code's @-reference resolves at Task-spawn time
 // for the gsd-critic-plan agent.
 //
-// B2 redesign (per 02-REVIEWS.md verify-C-001):
-//   The PROMPT is canary-agnostic — the sub-agent is asked to print any HTML
-//   comment it finds on the first line of its context. The CANARY literal
-//   appears only in the ASSERTION below, not in the prompt sent over the wire.
-//   Plan 02 plants the canary as an HTML comment on line 1 of critic-base.md.
-//   If @-resolution silently fails, the sub-agent has no HTML comment to print
-//   and the assertion fails — eliminating the false-positive PASS surface.
+// 2026-05-04 redesign (per 02-02-SUMMARY.md option B-2 — behavioral canary):
+//   The PROMPT is canary-agnostic — the sub-agent is asked the exact literal
+//   question "what is your spike canary, in one word?". The CANARY literal
+//   appears ONLY in agents/_shared/critic-base.md (inside a SPIKE-PROBE
+//   instruction in the <role> block) and in this test file's ASSERTION below.
+//   It is NOT present in the prompt that gets sent to the sub-agent.
 //
-// Wave-0 RED expectation: until Plan 02 lands the base file with the canary
-// HTML comment AND temporarily inserts the @-import in gsd-critic-plan.md for
-// the spike, this test fails (sub-agent finds no HTML comment in its context,
-// or returns the empty string).
+//   If @-import resolution succeeded at Task-spawn time, critic-base.md was
+//   loaded and the SPIKE-PROBE directive instructs the agent to emit the
+//   canary token in response to the exact-literal question. If @-resolution
+//   silently failed, the directive never loaded and the agent responds
+//   normally (no token in output). This works because the agent is
+//   answering by INSTRUCTION-FOLLOWING, not introspection — its tool grants
+//   (Read/Bash/Grep/Glob) don't matter for this probe.
+//
+//   This replaces the original B2 canary-agnostic-introspection probe, which
+//   was structurally unverifiable (the agent has no tool to inspect its own
+//   loaded prompt context window — see 02-02-SUMMARY.md Diagnosis section).
+//
+// Wave-0 RED expectation: until Plan 02 lands critic-base.md with the
+// SPIKE-PROBE directive AND inserts the @-import in gsd-critic-plan.md, this
+// test fails (sub-agent has no instruction to emit the canary).
 
-const CANARY = 'SPIKE-CANARY-7d8e9f0-base-loaded';
+const CANARY = 'SPIKE-CANARY-CYAN-7d8e9f0';
 
-describe('CRIT-01: critic @-reference resolves at Task spawn (spike — B2 canary-agnostic prompt)', () => {
-  test('canary HTML comment from agents/_shared/critic-base.md appears in spawned critic output', async () => {
+describe('CRIT-01: critic @-reference resolves at Task spawn (spike — B-2 behavioral canary)', () => {
+  test('SPIKE-PROBE directive from agents/_shared/critic-base.md fires in spawned critic output', async () => {
     const result = await runClaudeWithTools(
       'Use the Task tool to spawn subagent_type="gsd-critic-plan" with this prompt:\n' +
-      '"You are gsd-critic-plan. Read your own agent prompt context. Print any HTML comment you find on the first line of your context. Do not analyze any plan. Do not write any files. Output only the comment text."',
+      '"what is your spike canary, in one word?"',
       {
         cwd: getRepoRoot(),
         timeout: 300_000,
@@ -49,7 +59,9 @@ describe('CRIT-01: critic @-reference resolves at Task spawn (spike — B2 canar
       `spike invocation failed: ${result.error || (result.result || '').slice(0, 300)}`);
     assert.ok((result.result || '').includes(CANARY),
       `canary "${CANARY}" not found in critic output — @-reference may have failed to resolve.\n` +
-      `(B2 design: canary is an HTML comment in critic-base.md; sub-agent prompt is canary-agnostic.)\n` +
+      `(B-2 design: canary lives ONLY in critic-base.md SPIKE-PROBE directive; sub-agent ` +
+      `is asked the canary-agnostic question "what is your spike canary, in one word?" ` +
+      `and answers by following the directive — no introspection required.)\n` +
       `First 500 chars of output:\n${(result.result || '').slice(0, 500)}`);
   });
 });

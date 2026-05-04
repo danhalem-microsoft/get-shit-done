@@ -125,3 +125,73 @@ true
 # context. The "no canary" reply is symmetric across positive and inverse spikes,
 # providing zero discriminating signal between "@-resolution worked" and
 # "@-resolution failed". See Plan 02-02 SUMMARY for full diagnosis and proposed fix.
+
+## ANNOTATIONS — 2026-05-04 redesign run (Plan 02-02b)
+
+# Behavioral-canary redesign per Plan 02-02 SUMMARY option B-2.
+#
+# What changed: critic-base.md gained a SPIKE-PROBE directive in <role> that
+# tells the agent: when (and only when) asked the literal "what is your spike
+# canary, in one word?" — emit ONLY the 24-char token SPIKE-CANARY-CYAN-7d8e9f0.
+# The canary token appears ONLY in critic-base.md and the test assertion (NOT
+# in any prompt sent over the wire — canary-agnostic property preserved).
+# Both spike test prompts were updated to ask the new behavioral question.
+#
+# Per-run results:
+#
+# POSITIVE spike (integration:critic-spike-passes, clean redesigned state):
+#   walltime_ms: 8539
+#   cost_usd:    0.1700815
+#   exit:        1 (FAILED)
+#   sub-agent's response (via parent paraphrase): "The gsd-critic-plan
+#     subagent responded: **SPIKE-PROBE**"
+#   diagnosis:   the sub-agent IS aware of the SPIKE-PROBE label (a string that
+#     exists ONLY in critic-base.md), proving @-resolution loaded the directive
+#     content into the sub-agent's context. But the sub-agent emitted the
+#     section LABEL ("SPIKE-PROBE") rather than executing the rule (emit the
+#     canary token). Strict literal-token assertion fails.
+#
+# INVERSE spike (integration:critic-spike-inverse, clean redesigned state):
+#   walltime_ms: 7159
+#   cost_usd:    0.171924
+#   exit:        0 (PASSED)
+#   sub-agent's response: did NOT contain SPIKE-CANARY-CYAN-7d8e9f0 (and did
+#     NOT contain "SPIKE-PROBE" either — the agent simply had no SPIKE-related
+#     directive loaded, since critic-base.md was renamed out of the way).
+#   self-restore: succeeded (try/finally ran; .bak absent post-test;
+#     `git status --porcelain agents/_shared/critic-base.md` empty).
+#
+# DEFINITIVE EMPIRICAL EVIDENCE — asymmetry between positive and inverse:
+#   Positive (base file present, @-import intact):
+#     → response includes "SPIKE-PROBE" (a string from critic-base.md line 17 label)
+#   Inverse (base file renamed away, @-resolution should fail):
+#     → response includes NEITHER "SPIKE-PROBE" NOR the canary token
+#
+#   This asymmetry IS DISCRIMINATING — it proves the sub-agent's response is
+#   contingent on critic-base.md being present at @-resolution time. The
+#   redesign meaningfully advances the empirical state from the original
+#   plan 02-02 run (which had symmetric "no canary" replies).
+#
+#   The CAVEAT: the sub-agent identifies the SPIKE-PROBE section by name
+#   rather than executing the rule. The directive-following bug is at the
+#   prompt-engineering level, not the @-resolver level. The strict assertion
+#   in critic-spike-passes.test.cjs (looking for the literal canary token)
+#   still fails because the agent emits the label rather than the token.
+#
+# ORCHESTRATOR DECISION REQUIRED:
+#   The redesign produced asymmetric (discriminating) evidence that
+#   @-resolution works at Task spawn time. Three paths forward:
+#     1) Adjust the assertion to match observed behavior (assert that
+#        SPIKE-PROBE-related strings appear in positive but not inverse —
+#        the asymmetry is the real GO/NO-GO signal, even if the literal
+#        token doesn't surface).
+#     2) Continue iterating on the directive wording until the agent
+#        reliably emits the literal canary token (cost: ~$0.20-0.50 per
+#        attempt; uncertain convergence).
+#     3) Accept the asymmetry as sufficient evidence + 16+ existing
+#        production @-references as additional prior, and proceed with
+#        Plan 03+ on the @-reference path. (Closest to Plan 02-02 SUMMARY's
+#        Option C.)
+#
+# Plan 02-02b (redesign) status: GO/NO-GO STILL UNRESOLVED at the strict-
+# assertion level, but EMPIRICALLY ADVANCED via the asymmetry signal.
