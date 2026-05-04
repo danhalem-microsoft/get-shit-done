@@ -9,14 +9,27 @@ const { recordWalltime } = require('./helpers/walltime-recorder.cjs');
 
 // CRIT-01 inverse spike — false-positive guard.
 //
-// Per 02-REVIEWS.md B2 / O5: the canary-only spike (critic-spike-passes) can
-// produce a false-positive PASS if Claude Code's @-resolver silently fails but
-// some other path injects the canary literal into the sub-agent's context.
-// This test ELIMINATES that surface by temporarily renaming the base file out
-// of the way and asserting the canary is ABSENT in the sub-agent's output.
+// 2026-05-04 redesign (per 02-02-SUMMARY.md option B-2 — behavioral canary):
+//   This is the inverse counterpart to integration/critic-spike-passes.test.cjs.
+//   The positive spike asks the canary-agnostic question "what is your spike
+//   canary, in one word?" and asserts the SPIKE-CANARY-CYAN-7d8e9f0 token IS
+//   PRESENT in the response (because the SPIKE-PROBE directive in critic-base.md
+//   loaded via @-import). This inverse spike asks the SAME question after
+//   renaming critic-base.md out of the way — and asserts the token is ABSENT
+//   in the response (because the directive never loaded).
+//
+//   If the inverse PASSES (no token), it confirms the positive spike's PASS
+//   was driven by @-resolution and not by some unrelated path (cached prompt,
+//   alternate include, hallucination, etc).
+//
+//   The original B2 canary-agnostic-introspection design produced a symmetric
+//   "no canary" reply across positive and inverse — see 02-02-SUMMARY.md
+//   Diagnosis. The behavioral-canary redesign breaks that symmetry: positive
+//   sees the directive and follows it, inverse sees no directive and answers
+//   freely (no canary token in output).
 //
 // Setup: fs.renameSync(BASE, BASE + '.bak')   // i.e. agents/_shared/critic-base.md.bak
-// Run:   spawn gsd-critic-plan with the SAME canary-agnostic prompt
+// Run:   spawn gsd-critic-plan with the SAME canary-agnostic question
 // Assert: result.success === true AND result.result does NOT include CANARY
 // Teardown (try/finally): fs.renameSync(BASE + '.bak', BASE) — ALWAYS, even on
 // assertion fail. The .bak file (agents/_shared/critic-base.md.bak) must NEVER
@@ -27,7 +40,7 @@ const { recordWalltime } = require('./helpers/walltime-recorder.cjs');
 // agents/_shared/critic-base.md does not exist. Plan 02 lands the base file,
 // which makes both this inverse test AND the positive spike runnable.
 
-const CANARY = 'SPIKE-CANARY-7d8e9f0-base-loaded';
+const CANARY = 'SPIKE-CANARY-CYAN-7d8e9f0';
 const BASE = path.join(getRepoRoot(), 'agents', '_shared', 'critic-base.md');
 const BAK = BASE + '.bak';
 
@@ -50,7 +63,7 @@ describe('CRIT-01 inverse: critic @-reference fails closed when base file is hid
     try {
       result = await runClaudeWithTools(
         'Use the Task tool to spawn subagent_type="gsd-critic-plan" with this prompt:\n' +
-        '"You are gsd-critic-plan. Read your own agent prompt context. Print any HTML comment you find on the first line of your context. Do not analyze any plan. Do not write any files. Output only the comment text."',
+        '"what is your spike canary, in one word?"',
         {
           cwd: getRepoRoot(),
           timeout: 300_000,
@@ -75,9 +88,10 @@ describe('CRIT-01 inverse: critic @-reference fails closed when base file is hid
       `inverse spike invocation failed (this should still succeed; we only assert on output content): ` +
       `${result.error || (result.result || '').slice(0, 300)}`);
     assert.ok(!(result.result || '').includes(CANARY),
-      `canary "${CANARY}" UNEXPECTEDLY APPEARED in critic output despite base file being renamed out of the way. ` +
-      `This indicates @-resolution is succeeding via some non-obvious path (e.g., cached prompt, alternate include), ` +
-      `which means the positive spike (critic-spike-passes) is producing a false-positive PASS.\n` +
+      `canary "${CANARY}" UNEXPECTEDLY APPEARED in critic output despite agents/_shared/critic-base.md ` +
+      `being renamed out of the way. This indicates the SPIKE-PROBE directive loaded into the agent ` +
+      `via some non-obvious path (cached prompt, alternate include, hallucination), which means the ` +
+      `positive spike (critic-spike-passes) is producing a false-positive PASS.\n` +
       `First 500 chars of output:\n${(result.result || '').slice(0, 500)}`);
   });
 });
