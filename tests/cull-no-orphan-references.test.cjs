@@ -135,6 +135,27 @@ function sanityCheckCliCoverage(allFiles) {
   }
 }
 
+// Phase 2 (Plan 03 of phase 02-critic-refactor) per Phase 1 RESEARCH §5.6
+// explicit handoff: also scan agents/_shared/*.md alongside agents/gsd-*.md.
+// The recursive walkFiles('agents') already descends into _shared/ today;
+// this explicit assertion locks that coverage so a future refactor of
+// walkFiles (e.g. adding a "skip dot-prefixed dirs" filter) cannot silently
+// drop _shared/ from scope. Hard-fails if the walk misses the dir.
+function assertSharedDirCoverage(allFiles) {
+  const sharedDir = path.join(ROOT, 'agents', '_shared');
+  if (!fs.existsSync(sharedDir)) return; // dir not yet created in some branches; ALLOW soft-skip
+  const sharedFiles = fs.readdirSync(sharedDir).filter((f) => f.endsWith('.md'));
+  for (const f of sharedFiles) {
+    const rel = path.join('agents', '_shared', f);
+    if (!allFiles.includes(rel)) {
+      throw new Error(
+        `[cull-no-orphan-references] Phase 2 §5.6 handoff: SCAN_ROOTS walk missed ` +
+        `${rel}. agents/_shared/*.md MUST be scanned for orphan refs to deleted ` +
+        `command/agent names.`);
+    }
+  }
+}
+
 // Context 1: @-references resolving to deleted command/agent files.
 // Pattern: @<anything>/(commands/gsd/<cmd>.md|agents/<agent>.md)
 function scanContext1(rel, content) {
@@ -231,6 +252,7 @@ function scanContext5(rel, content) {
 describe('TEST-01: no orphan references to deleted commands/agents', () => {
   const allFiles = readScannableFiles();
   sanityCheckCliCoverage(allFiles);
+  assertSharedDirCoverage(allFiles); // Phase 2 / Plan 03 / RESEARCH §5.6 handoff
 
   const allFindings = [];
   for (const rel of allFiles) {
