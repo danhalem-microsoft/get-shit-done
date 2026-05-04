@@ -18,3 +18,20 @@ load("@aspect_rules_js//js:defs.bzl", "js_test")
     "walltime-recorder.test.cjs",
     "gsd-tools-dispatcher-reachable.test.cjs",
 ]]
+
+# Phase 2 critic refactor — static tests (added Phase 2 Wave 0).
+# Plans 03 and 06 will EXTEND this list-comprehension with their own static
+# tests. Spike + inverse spike live in integration/BUILD.bazel (B8 — no
+# cross-directory entry_point).
+[js_test(
+    name = test_file.replace(".test.cjs", ""),
+    entry_point = test_file,
+    data = ["//integration/helpers:test_helpers"],
+    size = "small",
+    tags = ["unit", "local", "phase-2-critic"],
+    timeout = "short",
+) for test_file in [
+    "critic-line-budget.test.cjs",
+    "critic-no-base-shadowing.test.cjs",
+    "walltime-ledger-schema.test.cjs",
+]]
