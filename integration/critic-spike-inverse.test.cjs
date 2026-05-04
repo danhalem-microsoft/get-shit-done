@@ -41,6 +41,13 @@ const { recordWalltime } = require('./helpers/walltime-recorder.cjs');
 // which makes both this inverse test AND the positive spike runnable.
 
 const CANARY = 'SPIKE-CANARY-CYAN-7d8e9f0';
+// Asymmetry-signal pattern (mirror of critic-spike-passes.test.cjs).
+// Both the strict canary token and the SPIKE-PROBE label live ONLY in
+// agents/_shared/critic-base.md. After we rename the base file out of the
+// way, neither should appear in the sub-agent's response — that's how we
+// know the positive spike's PASS was driven by @-resolution and not by
+// some unrelated path.
+const SPIKE_EVIDENCE = /SPIKE-CANARY-CYAN-7d8e9f0|SPIKE-PROBE/;
 const BASE = path.join(getRepoRoot(), 'agents', '_shared', 'critic-base.md');
 const BAK = BASE + '.bak';
 
@@ -87,11 +94,12 @@ describe('CRIT-01 inverse: critic @-reference fails closed when base file is hid
     assert.ok(result.success,
       `inverse spike invocation failed (this should still succeed; we only assert on output content): ` +
       `${result.error || (result.result || '').slice(0, 300)}`);
-    assert.ok(!(result.result || '').includes(CANARY),
-      `canary "${CANARY}" UNEXPECTEDLY APPEARED in critic output despite agents/_shared/critic-base.md ` +
-      `being renamed out of the way. This indicates the SPIKE-PROBE directive loaded into the agent ` +
-      `via some non-obvious path (cached prompt, alternate include, hallucination), which means the ` +
-      `positive spike (critic-spike-passes) is producing a false-positive PASS.\n` +
+    assert.ok(!SPIKE_EVIDENCE.test(result.result || ''),
+      `SPIKE-PROBE evidence (canary "${CANARY}" or section label "SPIKE-PROBE") UNEXPECTEDLY APPEARED ` +
+      `in critic output despite agents/_shared/critic-base.md being renamed out of the way. This ` +
+      `indicates the SPIKE-PROBE directive content reached the agent via some non-obvious path ` +
+      `(cached prompt, alternate include, hallucination), which means the positive spike ` +
+      `(critic-spike-passes) is producing a false-positive PASS.\n` +
       `First 500 chars of output:\n${(result.result || '').slice(0, 500)}`);
   });
 });

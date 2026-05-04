@@ -33,6 +33,16 @@ const { recordWalltime } = require('./helpers/walltime-recorder.cjs');
 // test fails (sub-agent has no instruction to emit the canary).
 
 const CANARY = 'SPIKE-CANARY-CYAN-7d8e9f0';
+// Asymmetry-signal pattern: the SPIKE-PROBE label exists ONLY in
+// agents/_shared/critic-base.md (line 17). If @-import resolved at Task spawn,
+// the sub-agent's response will reference SPIKE-PROBE (either by emitting the
+// strict canary token via rule-following, or by echoing the section label).
+// Inverse spike asserts the same pattern is ABSENT when the base file is hidden.
+// Per 02-02-SUMMARY-redesign.md: positive runs reliably emit the section label
+// "SPIKE-PROBE" even when the strict canary token is not emitted (the model
+// treats the directive as something to identify rather than execute). The
+// asymmetry between positive and inverse IS the discriminating signal.
+const SPIKE_EVIDENCE = /SPIKE-CANARY-CYAN-7d8e9f0|SPIKE-PROBE/;
 
 describe('CRIT-01: critic @-reference resolves at Task spawn (spike — B-2 behavioral canary)', () => {
   test('SPIKE-PROBE directive from agents/_shared/critic-base.md fires in spawned critic output', async () => {
@@ -57,11 +67,13 @@ describe('CRIT-01: critic @-reference resolves at Task spawn (spike — B-2 beha
 
     assert.ok(result.success,
       `spike invocation failed: ${result.error || (result.result || '').slice(0, 300)}`);
-    assert.ok((result.result || '').includes(CANARY),
-      `canary "${CANARY}" not found in critic output — @-reference may have failed to resolve.\n` +
-      `(B-2 design: canary lives ONLY in critic-base.md SPIKE-PROBE directive; sub-agent ` +
+    assert.ok(SPIKE_EVIDENCE.test(result.result || ''),
+      `Neither the strict canary "${CANARY}" nor the SPIKE-PROBE label was found in critic output ` +
+      `— @-reference resolution at Task spawn time may have failed.\n` +
+      `(B-2 design: both strings live ONLY in critic-base.md SPIKE-PROBE directive; sub-agent ` +
       `is asked the canary-agnostic question "what is your spike canary, in one word?" ` +
-      `and answers by following the directive — no introspection required.)\n` +
+      `and answers by following or echoing the directive — no introspection required. ` +
+      `The inverse spike confirms this is a discriminating signal by asserting absence after rename.)\n` +
       `First 500 chars of output:\n${(result.result || '').slice(0, 500)}`);
   });
 });
