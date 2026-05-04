@@ -26,3 +26,8 @@
 {"date":"2026-04-29","test":"agent-parity:gsd-user-profiler:standard","walltime_ms":68025,"cost_usd":0.48261125,"phase":"phase-1-cull"}
 {"date":"2026-05-04","test":"integration:critic-spike-passes","walltime_ms":14915,"cost_usd":0.33684400000000003,"phase":"phase-2-critic"}
 {"date":"2026-05-04","test":"integration:critic-spike-inverse","walltime_ms":10060,"cost_usd":0.17959825000000001,"phase":"phase-2-critic"}
+{"date":"2026-05-04","test":"integration:critic-spike-passes","walltime_ms":7833,"cost_usd":0.31955825000000004,"phase":"phase-2-critic"}
+{"date":"2026-05-04","test":"integration:critic-spike-passes","walltime_ms":7507,"cost_usd":0.170826,"phase":"phase-2-critic"}
+{"date":"2026-05-04","test":"integration:critic-spike-passes","walltime_ms":7313,"cost_usd":0.12270725,"phase":"phase-2-critic"}
+{"date":"2026-05-04","test":"integration:critic-spike-passes","walltime_ms":8539,"cost_usd":0.1700815,"phase":"phase-2-critic"}
+{"date":"2026-05-04","test":"integration:critic-spike-inverse","walltime_ms":7159,"cost_usd":0.17192400000000002,"phase":"phase-2-critic"}
