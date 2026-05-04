@@ -10,6 +10,7 @@ commands.html
 
 # Build artifacts (committed to npm, not git)
 hooks/dist/
+sdk/dist/
 
 # Coverage artifacts
 coverage/
@@ -37,3 +38,6 @@ philosophy.md
 /bazel-*
 MODULE.bazel.lock
 .bazel/
+
+# GSD active project context (per-user, machine-specific)
+**/.active
