@@ -62,7 +62,7 @@ Wave 1 — cull (gated on Wave 0 complete; baseline capture must come first):
 
 Wave 0 — test scaffolding + spike + base prompt + parity stub fill (lands before any bulk trim):
 - [x] 02-01-PLAN.md — Wave-0 RED tests: critic-line-budget + critic-no-base-shadowing + critic-spike-passes [CRIT-01, CRIT-04, CRIT-05]
-- [ ] 02-02-PLAN.md — Author agents/_shared/critic-base.md + run live spike + capture spawn-timestamp shape [CRIT-01, CRIT-02]
+- [x] 02-02-PLAN.md — Author agents/_shared/critic-base.md + run live spike + capture spawn-timestamp shape [CRIT-01, CRIT-02]
 - [ ] 02-03-PLAN.md — Fill computeCriticFindingsDeltas + extend bin/install.js manifest builder + extend orphan-scan to agents/_shared/ [CRIT-10]
 - [ ] 02-04-PLAN.md — Pilot trim: gsd-critic-strategy.md (256 → ≤100 lines) [CRIT-03, CRIT-05]
 
@@ -128,7 +128,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Cull (with Wave 0 test infrastructure) | 0/9 | Not started | - |
-| 2. Critic refactor (with commit-0 spike) | 1/8 | In Progress|  |
+| 2. Critic refactor (with commit-0 spike) | 2/8 | In Progress|  |
 | 3. Plan-phase chain merge | 0/TBD | Not started | - |
 | 4. TDD hardening (3 layers) | 0/TBD | Not started | - |
 | 5. SP integration | 0/TBD | Not started | - |
