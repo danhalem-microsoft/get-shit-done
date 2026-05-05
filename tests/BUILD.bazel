@@ -36,4 +36,5 @@ load("@aspect_rules_js//js:defs.bzl", "js_test")
     "critic-findings-delta-shape.test.cjs",
     "install-shared-dir.test.cjs",
     "walltime-ledger-schema.test.cjs",
+    "critic-aggregate-shape.test.cjs",
 ]]
