@@ -47,6 +47,31 @@ load("@aspect_rules_js//js:defs.bzl", "js_test")
     "critic-spike-inverse.test.cjs",
 ]]
 
+# Phase 2 critic batch — live tests (CRIT-08 walltime, CRIT-09 fault-injection)
+# added Plan 02-07. Both consume the test-managed fixture phase directory at
+# integration/test-fixtures/fixture-phase-2-critic/ (B7 fix per 02-REVIEWS.md).
+[js_test(
+    name = test_file.replace(".test.cjs", ""),
+    entry_point = test_file,
+    data = ["//integration/helpers:test_helpers"] + glob(["test-fixtures/fixture-phase-2-critic/*.md"]),
+    size = "large",
+    tags = ["integration", "local", "requires-api-key", "phase-2-critic"],
+    timeout = "long",
+) for test_file in [
+    "critic-batch-walltime.test.cjs",
+    "critic-fault-injection.test.cjs",
+]]
+
+# Phase 2 CRIT-10 parity — expensive (~$25, ~30min); nightly + phase-exit only.
+js_test(
+    name = "critic-parity",
+    entry_point = "critic-parity.test.cjs",
+    data = ["//integration/helpers:test_helpers"] + glob(["test-fixtures/baselines/critic-*/*"]),
+    size = "enormous",
+    tags = ["integration", "local", "requires-api-key", "phase-2-critic", "nightly"],
+    timeout = "eternal",
+)
+
 load("@aspect_rules_js//js:defs.bzl", "js_library")
 
 js_library(
@@ -64,6 +89,6 @@ js_test(
         "//integration/helpers:test_helpers",
     ],
     size = "enormous",
-    tags = ["integration", "local", "requires-api-key", "lifecycle", "phase-1-cull"],
+    tags = ["integration", "local", "requires-api-key", "lifecycle", "phase-1-cull", "phase-2-critic"],
     timeout = "eternal",
 )
