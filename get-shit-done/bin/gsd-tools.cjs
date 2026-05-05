@@ -188,6 +188,8 @@ const workstream = require('./lib/workstream.cjs');
 const docs = require('./lib/docs.cjs');
 const learnings = require('./lib/learnings.cjs');
 const taste = require('./lib/taste.cjs');
+// Phase 2 (Plan 02-06): disk-based critic-output aggregator handler.
+const criticAggregate = require('./lib/critic-aggregate.cjs');
 
 // ─── Arg parsing helpers ──────────────────────────────────────────────────────
 
@@ -438,7 +440,7 @@ async function main() {
   const command = args[0];
 
   if (!command) {
-    error('Usage: gsd-tools <command> [args] [--raw] [--pick <field>] [--cwd <path>] [--ws <name>]\nCommands: state, resolve-model, find-phase, commit, verify-summary, verify, frontmatter, template, generate-slug, current-timestamp, list-todos, verify-path-exists, config-ensure-section, config-new-project, init, workstream, docs-init');
+    error('Usage: gsd-tools <command> [args] [--raw] [--pick <field>] [--cwd <path>] [--ws <name>]\nCommands: state, resolve-model, find-phase, commit, verify-summary, critic-aggregate, verify, frontmatter, template, generate-slug, current-timestamp, list-todos, verify-path-exists, config-ensure-section, config-new-project, init, workstream, docs-init');
   }
 
   // Reject flags that are never valid for any gsd-tools command. AI agents
@@ -648,6 +650,25 @@ async function runCommand(command, args, cwd, raw, defaultValue) {
       const countIndex = args.indexOf('--check-count');
       const checkCount = countIndex !== -1 ? parseInt(args[countIndex + 1], 10) : 2;
       verify.cmdVerifySummary(cwd, summaryPath, checkCount, raw);
+      break;
+    }
+
+    case 'critic-aggregate': {
+      // Phase 2 (Plan 02-06) — disk-based critic-output aggregator.
+      // Args: --phase <N> [--phase-dir <path>] [--json]
+      // Globs CRITIQUE-{plan,code,scope,verify,discuss,strategy}.md in the
+      // phase dir, parses YAML frontmatter, returns aggregated JSON. Mitigates
+      // anthropics/claude-code#29181 by reading critic output from disk
+      // instead of trusting the parent agent's text summary.
+      const { phase: phaseArg, 'phase-dir': phaseDirOverride } =
+        parseNamedArgs(args, ['phase', 'phase-dir']);
+      const useJson = args.includes('--json');
+      criticAggregate.cmdCriticAggregate(cwd, {
+        phase: phaseArg,
+        phaseDirOverride,
+        useJson,
+        raw,
+      });
       break;
     }
 
