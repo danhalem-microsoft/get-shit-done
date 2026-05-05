@@ -40,6 +40,8 @@ import { commit, checkCommit } from './commit.js';
 import { templateFill, templateSelect } from './template.js';
 import { verifyPlanStructure, verifyPhaseCompleteness, verifyArtifacts, verifyCommits, verifyReferences, verifySummary, verifyPathExists } from './verify.js';
 import { verifyKeyLinks, validateConsistency, validateHealth, validateAgents } from './validate.js';
+// Phase 2 (Plan 02-06 / B1 — scope-C-001): disk-based critic-output aggregator.
+import { criticAggregate } from './critic-aggregate.js';
 import {
   phaseAdd, phaseAddBatch, phaseInsert, phaseRemove, phaseComplete,
   phaseScaffold, phasesClear, phasesArchive,
@@ -356,6 +358,12 @@ export function createRegistry(
   registry.register('verify-summary', verifySummary);
   registry.register('verify.summary', verifySummary);
   registry.register('verify summary', verifySummary);
+  // Phase 2 (Plan 02-06 / B1 fix per 02-REVIEWS.md scope-C-001): expose
+  // `gsd-sdk query critic-aggregate` as a registered native handler so the
+  // critique workflow's Bash invocation resolves natively (rather than via
+  // the GSD_QUERY_FALLBACK transparent bridge) AND the drift-guard at
+  // tests/gsd-sdk-query-registry-integration.test.cjs passes at Plan 02-08.
+  registry.register('critic-aggregate', criticAggregate);
   registry.register('verify-path-exists', verifyPathExists);
   registry.register('verify.path-exists', verifyPathExists);
   registry.register('verify path-exists', verifyPathExists);

@@ -342,6 +342,7 @@ Internal subcommands of `get-shit-done/bin/gsd-tools.cjs` that have no user-faci
 | `restore-project` | Restores a previously archived project. Implemented in `lib/init.cjs::cmdRestoreProject`. |
 | `update-taste-counters` | Updates the taste-decision counters from a JSON payload. Implemented in `lib/taste.cjs::updateTasteCounters`. |
 | `migrate` | Legacy-format migration helper (`--auto`, `--project-name`). Implemented in `lib/commands.cjs::cmdMigrate`. |
+| `critic-aggregate` | Phase 2 disk-based critic-output aggregator. Globs `CRITIQUE-{plan,code,scope,verify,discuss,strategy}.md` in a phase dir, parses YAML frontmatter, returns aggregated JSON. Mitigates anthropics/claude-code#29181 (parallel-Task hallucination) by avoiding trust in the parent agent's text summary. Implemented in `lib/critic-aggregate.cjs`; registered in `sdk/src/query/index.ts` per Plan 02-06 B1. Reachable via `gsd-sdk query critic-aggregate` (called from `get-shit-done/workflows/critique.md`). |
 
 ---
 
