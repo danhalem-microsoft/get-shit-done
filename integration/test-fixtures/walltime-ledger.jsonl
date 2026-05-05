@@ -31,3 +31,5 @@
 {"date":"2026-05-04","test":"integration:critic-spike-passes","walltime_ms":7313,"cost_usd":0.12270725,"phase":"phase-2-critic"}
 {"date":"2026-05-04","test":"integration:critic-spike-passes","walltime_ms":8539,"cost_usd":0.1700815,"phase":"phase-2-critic"}
 {"date":"2026-05-04","test":"integration:critic-spike-inverse","walltime_ms":7159,"cost_usd":0.17192400000000002,"phase":"phase-2-critic"}
+{"date":"2026-05-05","test":"integration:critic-batch-walltime","walltime_ms":476377,"cost_usd":3.5685877499999994,"phase":"phase-2-critic"}
+{"date":"2026-05-05","test":"integration:critic-batch-walltime","walltime_ms":283811,"cost_usd":3.1371330000000004,"phase":"phase-2-critic"}
