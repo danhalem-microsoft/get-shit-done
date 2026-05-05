@@ -68,7 +68,7 @@ Wave 0 — test scaffolding + spike + base prompt + parity stub fill (lands befo
 
 Wave 1 — bulk trim + orchestrator wiring + live tests + phase exit (depends on Wave 0):
 - [x] 02-05-PLAN.md — Bulk trim 5 critics (plan, code, scope, verify, discuss) [CRIT-03, CRIT-04, CRIT-05]
-- [ ] 02-06-PLAN.md — Author workflows/critique.md + gsd-tools.cjs critic-aggregate subcommand + handler module + INVENTORY entry [CRIT-06, CRIT-07]
+- [x] 02-06-PLAN.md — Author workflows/critique.md + gsd-tools.cjs critic-aggregate subcommand + handler module + INVENTORY entry [CRIT-06, CRIT-07]
 - [ ] 02-07-PLAN.md — 3 live tests (critic-batch-walltime, critic-fault-injection, critic-parity) + walltime-ledger-schema [CRIT-08, CRIT-09, CRIT-10, XCUT-03]
 - [ ] 02-08-PLAN.md — Phase exit: full Bazel suite green + CHANGELOG entry + git tag gsd-slim-phase-2-critic [XCUT-03]
 
@@ -128,7 +128,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Cull (with Wave 0 test infrastructure) | 0/9 | Not started | - |
-| 2. Critic refactor (with commit-0 spike) | 5/8 | In Progress|  |
+| 2. Critic refactor (with commit-0 spike) | 6/8 | In Progress|  |
 | 3. Plan-phase chain merge | 0/TBD | Not started | - |
 | 4. TDD hardening (3 layers) | 0/TBD | Not started | - |
 | 5. SP integration | 0/TBD | Not started | - |
