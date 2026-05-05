@@ -270,7 +270,7 @@ The `gsd-planner` agent is decomposed into a core agent plus reference modules t
 
 ---
 
-## CLI Modules (29 shipped)
+## CLI Modules (30 shipped)
 
 Full listing: `get-shit-done/bin/lib/*.cjs`.
 
@@ -283,6 +283,7 @@ Full listing: `get-shit-done/bin/lib/*.cjs`.
 | `config.cjs` | `config.json` read/write, section initialization; imports validator from `config-schema.cjs` |
 | `core.cjs` | Error handling, output formatting, shared utilities, runtime fallbacks |
 | `context.cjs` | Context window tracking and budget management |
+| `critic-aggregate.cjs` | Disk-based aggregator for `/gsd-review --critique` — reads CRITIQUE-{lens}.md per phase, emits JSON contract; mitigates parallel-Task hallucination via filesystem source of truth (Phase 2 CRIT-07) |
 | `docs.cjs` | Docs-update workflow init, Markdown scanning, monorepo detection |
 | `frontmatter.cjs` | YAML frontmatter CRUD operations |
 | `graphify.cjs` | Knowledge-graph build/query/status/diff (legacy CLI module). |

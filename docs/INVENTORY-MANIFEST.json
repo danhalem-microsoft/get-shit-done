@@ -1,5 +1,5 @@
 {
-  "generated": "2026-04-30",
+  "generated": "2026-05-05",
   "families": {
     "agents": [
       "gsd-advisor-researcher",
@@ -181,6 +181,7 @@
       "config.cjs",
       "context.cjs",
       "core.cjs",
+      "critic-aggregate.cjs",
       "docs.cjs",
       "frontmatter.cjs",
       "graphify.cjs",
