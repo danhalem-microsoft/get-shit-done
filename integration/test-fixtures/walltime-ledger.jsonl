@@ -72,3 +72,5 @@
 {"date":"2026-05-06","test":"agent-parity:critic-strategy:strategy-with-tradeoffs:issue-b-followup-sonnet","walltime_ms":56004,"cost_usd":0.154389,"phase":"phase-2-critic"}
 {"date":"2026-05-06","test":"agent-parity:critic-strategy:strategy-with-tradeoffs:issue-b-followup-opus-529","walltime_ms":11872,"cost_usd":0,"phase":"phase-2-critic"}
 {"date":"2026-05-06","test":"agent-parity:critic-strategy:strategy-with-tradeoffs:issue-b-followup-opus","walltime_ms":70669,"cost_usd":0.32938249999999997,"phase":"phase-2-critic"}
+{"date":"2026-05-06","test":"integration:critic-batch-walltime","walltime_ms":133417,"cost_usd":3.3518045,"phase":"phase-2-critic"}
+{"date":"2026-05-06","test":"integration:critic-batch-walltime","walltime_ms":116157,"cost_usd":2.8011315,"phase":"phase-2-critic"}

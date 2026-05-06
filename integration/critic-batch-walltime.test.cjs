@@ -173,22 +173,51 @@ describe('CRIT-08: critic batch walltime is parallel-shaped (process-level)', ()
       `spawn-delta ${spawnDelta}ms >= ${SPAWN_DELTA_HARD_MS}ms — ` +
       `process-level parallelism workaround did not deliver concurrent spawn (#7406 not bypassed)`);
 
-    // Total walltime sanity: with true parallel dispatch, the batch should
-    // complete in roughly max(per-critic) + small spawn overhead. The H6
-    // dynamic bound is 6× the median single-critic time — if total walltime
-    // STILL approaches 6× median, the workaround is not actually parallelizing.
-    assert.ok(parsed.walltime_ms < TOTAL_WALLTIME_SANITY_MS,
-      `walltime ${parsed.walltime_ms}ms >= ${TOTAL_WALLTIME_SANITY_MS}ms ` +
-      `(H6 dynamic = 6× median single-critic) — process-level workaround is serial`);
+    // Total walltime SHAPE assertion: with true parallel dispatch, total
+    // walltime ≈ max(per-critic) + small spawn overhead. With serial
+    // dispatch, total walltime ≈ sum(per-critic) ≈ 6 × min(per-critic).
+    //
+    // The PRIMARY parallelism-shape assertion is `total < 1.5 × max(per-critic)`:
+    //   - parallel: total ≈ max → ratio ≈ 1.0  → PASS
+    //   - serial:   total ≈ sum ≈ 5-6 × max     → ratio >> 1.5 → FAIL
+    // 1.5× headroom absorbs spawn overhead + finishing-tail variance without
+    // letting a partial-serial regression pass silently.
+    //
+    // The H6 dynamic bound (TOTAL_WALLTIME_SANITY_MS = 6 × median spike) is
+    // RETAINED as a soft sanity stderr warning — it was tuned for tiny spike
+    // probes (<10s each), so on a substantive critic run it can be misleading
+    // when reported as a hard threshold. The 1.5× max(per-critic) shape
+    // assertion is what actually proves parallelism on real workloads.
+    const perCriticWalls = parsed.per_critic.map((r) => r.walltime_ms);
+    const maxPerCritic = Math.max(...perCriticWalls);
+    const sumPerCritic = perCriticWalls.reduce((a, b) => a + b, 0);
+    const parallelismRatio = parsed.walltime_ms / maxPerCritic;
 
-    // Diagnostic: log the per-critic walltimes so failure forensics is rich.
-    const perCriticWalls = parsed.per_critic
+    if (parsed.walltime_ms > TOTAL_WALLTIME_SANITY_MS) {
+      process.stderr.write(
+        `WARN: walltime ${parsed.walltime_ms}ms > H6 spike-derived bound ${TOTAL_WALLTIME_SANITY_MS}ms ` +
+        `— this is informational only when per-critic times exceed spike sizes; ` +
+        `the parallelism-shape assertion (total / max-per-critic) is what gates the test.\n`
+      );
+    }
+
+    assert.ok(parallelismRatio < 1.5,
+      `total walltime ${parsed.walltime_ms}ms / max(per-critic) ${maxPerCritic}ms = ` +
+      `${parallelismRatio.toFixed(2)} >= 1.5 — process-level workaround is serial. ` +
+      `(For reference: sum(per-critic) = ${sumPerCritic}ms — if total ≈ sum, batch ran serially.)`);
+
+    // Diagnostic: log the per-critic walltimes + parallelism ratio so success
+    // and failure forensics are equally rich.
+    const perCriticDiag = parsed.per_critic
       .map((r) => `${r.lens}=${r.walltime_ms}ms`)
       .join(' ');
     process.stderr.write(
-      `# CRIT-08 result: spawn_delta=${spawnDelta}ms walltime=${parsed.walltime_ms}ms ` +
+      `# CRIT-08 result: spawn_delta=${spawnDelta}ms ` +
+      `total_walltime=${parsed.walltime_ms}ms ` +
+      `max_per_critic=${maxPerCritic}ms ` +
+      `parallelism_ratio=${parallelismRatio.toFixed(2)} ` +
       `cost=${parsed.cost_usd_total?.toFixed(4) ?? '?'} status=${parsed.status} ` +
-      `per_critic=[${perCriticWalls}]\n`
+      `per_critic=[${perCriticDiag}]\n`
     );
   });
 });
