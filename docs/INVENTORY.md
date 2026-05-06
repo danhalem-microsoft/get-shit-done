@@ -284,6 +284,7 @@ Full listing: `get-shit-done/bin/lib/*.cjs`.
 | `core.cjs` | Error handling, output formatting, shared utilities, runtime fallbacks |
 | `context.cjs` | Context window tracking and budget management |
 | `critic-aggregate.cjs` | Disk-based aggregator for `/gsd-review --critique` — reads CRITIQUE-{lens}.md per phase, emits JSON contract; mitigates parallel-Task hallucination via filesystem source of truth (Phase 2 CRIT-07) |
+| `critic-spawn-batch.cjs` | Process-level parallelism workaround for CRIT-08 (#7406): spawns 6 parallel `claude --print` subprocesses (one per critic lens) via `child_process.spawn` + `Promise.all`. Sidesteps in-process Task scheduler serialization; total walltime ≈ max(per-critic), not sum. Per-critic CRITIQUE-{lens}.md written to phase_dir; caller chains `critic-aggregate` for fan-in (Phase 2 02-07-fixes) |
 | `docs.cjs` | Docs-update workflow init, Markdown scanning, monorepo detection |
 | `frontmatter.cjs` | YAML frontmatter CRUD operations |
 | `graphify.cjs` | Knowledge-graph build/query/status/diff (legacy CLI module). |
@@ -344,6 +345,7 @@ Internal subcommands of `get-shit-done/bin/gsd-tools.cjs` that have no user-faci
 | `update-taste-counters` | Updates the taste-decision counters from a JSON payload. Implemented in `lib/taste.cjs::updateTasteCounters`. |
 | `migrate` | Legacy-format migration helper (`--auto`, `--project-name`). Implemented in `lib/commands.cjs::cmdMigrate`. |
 | `critic-aggregate` | Phase 2 disk-based critic-output aggregator. Globs `CRITIQUE-{plan,code,scope,verify,discuss,strategy}.md` in a phase dir, parses YAML frontmatter, returns aggregated JSON. Mitigates anthropics/claude-code#29181 (parallel-Task hallucination) by avoiding trust in the parent agent's text summary. Implemented in `lib/critic-aggregate.cjs`; registered in `sdk/src/query/index.ts` per Plan 02-06 B1. Reachable via `gsd-sdk query critic-aggregate` (called from `get-shit-done/workflows/critique.md`). |
+| `critic-spawn-batch` | Phase 2 02-07-fixes — CRIT-08 process-level parallelism workaround for anthropics/claude-code#7406 (in-process Task scheduler serialization). Spawns 6 parallel `claude --print` subprocesses (one per critic lens) via Node `child_process.spawn` + `Promise.all`; total walltime is `max(per-critic)`, not `sum`. Per-critic CRITIQUE-{lens}.md is written to phase_dir; the workflow chains `critic-aggregate` afterward for fan-in. Implemented in `lib/critic-spawn-batch.cjs`; registered in `sdk/src/query/index.ts`. Reachable via `gsd-sdk query critic-spawn-batch --phase <N> [--budget <usd>] [--timeout <ms>]`. |
 
 ---
 
