@@ -190,6 +190,8 @@ const learnings = require('./lib/learnings.cjs');
 const taste = require('./lib/taste.cjs');
 // Phase 2 (Plan 02-06): disk-based critic-output aggregator handler.
 const criticAggregate = require('./lib/critic-aggregate.cjs');
+// Phase 2 (02-07-fixes): process-level parallelism workaround for CRIT-08.
+const criticSpawnBatch = require('./lib/critic-spawn-batch.cjs');
 
 // ─── Arg parsing helpers ──────────────────────────────────────────────────────
 
@@ -440,7 +442,7 @@ async function main() {
   const command = args[0];
 
   if (!command) {
-    error('Usage: gsd-tools <command> [args] [--raw] [--pick <field>] [--cwd <path>] [--ws <name>]\nCommands: state, resolve-model, find-phase, commit, verify-summary, critic-aggregate, verify, frontmatter, template, generate-slug, current-timestamp, list-todos, verify-path-exists, config-ensure-section, config-new-project, init, workstream, docs-init');
+    error('Usage: gsd-tools <command> [args] [--raw] [--pick <field>] [--cwd <path>] [--ws <name>]\nCommands: state, resolve-model, find-phase, commit, verify-summary, critic-aggregate, critic-spawn-batch, verify, frontmatter, template, generate-slug, current-timestamp, list-todos, verify-path-exists, config-ensure-section, config-new-project, init, workstream, docs-init');
   }
 
   // Reject flags that are never valid for any gsd-tools command. AI agents
@@ -668,6 +670,35 @@ async function runCommand(command, args, cwd, raw, defaultValue) {
         phaseDirOverride,
         useJson,
         raw,
+      });
+      break;
+    }
+
+    case 'critic-spawn-batch': {
+      // Phase 2 (02-07-fixes) — CRIT-08 process-level parallelism workaround.
+      // Args: --phase <N> [--phase-dir <path>] [--budget <usd>] [--timeout <ms>] [--json]
+      // Spawns 6 parallel `claude --print` subprocesses (one per critic lens)
+      // via child_process.spawn + Promise.all. Total walltime = max(per-critic),
+      // not sum. Sidesteps the in-process Task-tool serialization that #7406
+      // describes; the OS process scheduler does the real fan-out. Each
+      // subprocess writes CRITIQUE-{lens}.md to phase_dir; the caller then
+      // chains `gsd-sdk query critic-aggregate` to merge them.
+      const {
+        phase: phaseArg,
+        'phase-dir': phaseDirOverride,
+        budget: budgetArg,
+        timeout: timeoutArg,
+      } = parseNamedArgs(args, ['phase', 'phase-dir', 'budget', 'timeout']);
+      const useJson = args.includes('--json');
+      // Top-level await is unavailable in the CommonJS dispatcher; the
+      // surrounding runCommand is async, so awaiting here is the right shape.
+      await criticSpawnBatch.cmdCriticSpawnBatch(cwd, {
+        phase: phaseArg,
+        phaseDirOverride,
+        useJson,
+        raw,
+        budget: budgetArg !== null ? parseFloat(budgetArg) : undefined,
+        timeout: timeoutArg !== null ? parseInt(timeoutArg, 10) : undefined,
       });
       break;
     }

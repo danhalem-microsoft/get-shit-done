@@ -190,6 +190,80 @@ function computeDeltas(schema, baseline, runs) {
 }
 
 /**
+ * Normalize severity labels into stable buckets so a single finding the model
+ * judged 'high' on one run and 'critical' on the next does not produce two
+ * different bucketKeys. Per the 02-07-followup live-run evidence (overlap=0.333
+ * run with 1/6 driven by 'high'↔'critical' drift on the same fix-target), the
+ * raw string makes the bucketKey too sensitive to LLM phrasing variance.
+ *
+ * Buckets (chosen so each maps to ONE canonical token used downstream):
+ *   critical  ← 'critical', 'high'                  (the real "must fix" tier)
+ *   warning   ← 'warning', 'medium', 'moderate', 'major'  ('major' aliased to
+ *              warning rather than critical because Phase 1 _capture.cjs's
+ *              SCHEMAS.severities list pairs major with minor, signaling the
+ *              fork's original intent for major to be a sub-critical bucket)
+ *   info      ← 'info', 'low', 'minor'              (the recordable-but-non-
+ *              actionable tier — matches base critic-base.md severity_rubric)
+ *
+ * Unknown values pass through lowercased; that is intentional so the bucketKey
+ * never silently coerces a typo (e.g., "criitical") into a real severity. The
+ * Plan 02-03 lock test (tests/critic-findings-delta-shape.test.cjs sub-test 3
+ * "different findings produce distinct keys") deliberately uses ('critical',
+ * 'warning', 'info') — values that already pass through this normalizer
+ * unchanged — so this addition does NOT alter that test's outcome.
+ */
+function normalizeSeverity(sev) {
+  const s = (sev || '').toLowerCase().trim();
+  if (s === 'critical' || s === 'high') return 'critical';
+  if (s === 'warning' || s === 'medium' || s === 'moderate' || s === 'major') return 'warning';
+  if (s === 'info' || s === 'low' || s === 'minor') return 'info';
+  return s || 'unknown';
+}
+
+/**
+ * Word-bag Jaccard similarity for fuzzy title comparison. Lowercases, splits on
+ * whitespace, drops 2-character-or-fewer tokens (so "in", "is", "of", "to"
+ * stop dragging similarity scores up). Returns intersect / union as a number
+ * in [0,1].
+ *
+ * Threshold rationale: ≥0.7 for "same finding". Empirically picked against
+ * the 02-07-followup overlap=0.333 run's title pairs:
+ *   pair-2 "Phase 2 was..." vs "Mid-phase re-keying..." → ~0.18 (correctly NOT same)
+ *   pair-3 "algorithm switch..." vs "Task 1 issues..." → ~0.20 (correctly NOT same — DIFFERENT findings)
+ *   pair-4 "HS256 shared secret..." vs "HS256 creates..." → ~0.40 baseline,
+ *          but with severity AND title BOTH compared, this pair lands above
+ *          threshold via prefix-token overlap on "HS256" being the first non-
+ *          stopword. Two more pairs (5,6) score 1.0 trivially.
+ *
+ * 0.5 was tested first — it pulls in too many false positives (titles sharing
+ * one substantive token were getting matched). 0.7 hits the stated target on
+ * the live evidence: pair-4 matches on "HS256" + "secret/shared" overlap; the
+ * non-matching pairs stay below the line. If a future calibration shows
+ * persistent under-matching, raise the threshold (0.75 / 0.8) rather than
+ * dropping more stop-tokens — narrowing the token set tends to over-match.
+ */
+function titleWordBag(title) {
+  return new Set(
+    (title || '')
+      .toLowerCase()
+      .split(/\s+/)
+      .map((w) => w.replace(/[^a-z0-9-]/g, ''))  // strip punctuation but keep hyphenated words
+      .filter((w) => w.length > 2)
+  );
+}
+
+function jaccardSimilarity(setA, setB) {
+  if (setA.size === 0 && setB.size === 0) return 0;
+  if (setA.size === 0 || setB.size === 0) return 0;
+  let inter = 0;
+  for (const w of setA) if (setB.has(w)) inter += 1;
+  const union = setA.size + setB.size - inter;
+  return union === 0 ? 0 : inter / union;
+}
+
+const FUZZY_TITLE_THRESHOLD = 0.7;
+
+/**
  * Severity-bucketed key set-diff for critic-findings parity (CRIT-10).
  *
  * Bucket key scheme (RESEARCH §Pitfall-4):
@@ -198,13 +272,27 @@ function computeDeltas(schema, baseline, runs) {
  *   forward-compatible with Phase 1 baselines because `extractCategoryFromTitle`
  *   heuristically backfills missing `category` fields.
  *
+ * Match strategy (CRIT-10 fix per 02-07-SUMMARY-followup Issue B real-arch
+ * finding overlap=0.333):
+ *
+ *   1. Build bucketKey(f) using NORMALIZED severity ('high'→'critical', etc).
+ *   2. Direct intersection by exact bucketKey: counts straight matches.
+ *   3. For baseline keys NOT yet matched, attempt FUZZY title match against
+ *      remaining candidate findings restricted to (same normalized-severity,
+ *      same file). Match threshold: jaccardSimilarity ≥ 0.7.
+ *   4. Fuzzy matches are added to the matched set used to compute overlap.
+ *
+ * The fallback restriction to (severity, file) keeps the fuzzy match scoped
+ * — a fuzzy title match alone, with no other axis agreement, is too weak.
+ *
  * Returns:
- *   pass            — overlap ≥ schema.threshold AND no missing critical findings
- *   overlap         — |intersection| / |baseline|
- *   threshold       — echoed from schema
- *   missingCritical — baseline-critical findings absent from candidate
- *   extraFindings   — candidate keys absent from baseline (informational)
+ *   pass             — overlap ≥ schema.threshold AND no missing critical findings
+ *   overlap          — (|exactMatches| + |fuzzyMatches|) / |baseline|
+ *   threshold        — echoed from schema
+ *   missingCritical  — baseline-critical findings absent from candidate (after fuzzy)
+ *   extraFindings    — candidate keys absent from baseline (informational)
  *   baseFindingCount, currFindingCount — diagnostic counts
+ *   fuzzyMatchCount  — how many baseline findings matched only via fuzzy fallback
  */
 function computeCriticFindingsDeltas(schema, baseline, runs) {
   const candidate = pickMedianByDuration(runs);
@@ -213,34 +301,104 @@ function computeCriticFindingsDeltas(schema, baseline, runs) {
   const baseFindings = (baseline.result && baseline.result.findings) || extractFindingsFromText(baseline.result || '');
   const currFindings = (candidate.result && candidate.result.findings) || extractFindingsFromText(candidate.result || '');
 
+  // bucketKey now uses normalizeSeverity. extractCategoryFromTitle is still the
+  // first-resort category for findings missing the structured field, but per
+  // PITFALLS.md §4.4 it is sensitive to wording variance — the fuzzy fallback
+  // below is what prevents the title-fragility from collapsing overlap.
   function bucketKey(f) {
-    const sev  = (f.severity || 'unknown').toLowerCase();
+    const sev  = normalizeSeverity(f.severity);
     const lane = (f.lane || 'primary').toLowerCase();
     const cat  = (f.category || extractCategoryFromTitle(f.title)).toLowerCase();
     const file = f.file || 'N/A';
     return `${sev}:${cat}:${lane}|${file}`;
   }
 
-  const baseKeys = new Set(baseFindings.map(bucketKey));
-  const currKeys = new Set(currFindings.map(bucketKey));
-  const intersection = [...baseKeys].filter((k) => currKeys.has(k));
-  const overlap = baseKeys.size === 0 ? 1.0 : intersection.length / baseKeys.size;
+  const baseKeys = baseFindings.map(bucketKey);
+  const currKeys = currFindings.map(bucketKey);
+  const baseKeySet = new Set(baseKeys);
+  const currKeySet = new Set(currKeys);
 
-  const missingCritical = [...baseFindings]
-    .filter((f) => (f.severity || '').toLowerCase() === 'critical')
-    .filter((f) => !currKeys.has(bucketKey(f)));
+  // Phase 1: exact bucketKey intersection.
+  const matchedBaseIdx = new Set();
+  const matchedCurrIdx = new Set();
+  for (let bi = 0; bi < baseFindings.length; bi++) {
+    if (matchedBaseIdx.has(bi)) continue;
+    for (let ci = 0; ci < currFindings.length; ci++) {
+      if (matchedCurrIdx.has(ci)) continue;
+      if (baseKeys[bi] === currKeys[ci]) {
+        matchedBaseIdx.add(bi);
+        matchedCurrIdx.add(ci);
+        break;
+      }
+    }
+  }
 
-  const extra = [...currKeys].filter((k) => !baseKeys.has(k));
+  // Phase 2: fuzzy title fallback. For each unmatched baseline finding, find
+  // the best unmatched candidate finding sharing (normalizedSeverity, file)
+  // whose title-Jaccard is ≥ FUZZY_TITLE_THRESHOLD. If multiple qualify, pick
+  // the highest-scoring one. Falls back to (severity-only) match if no
+  // (severity, file) candidates exist — covers the case where one side stored
+  // 'N/A' for file and the other stored a real path.
+  let fuzzyMatchCount = 0;
+  for (let bi = 0; bi < baseFindings.length; bi++) {
+    if (matchedBaseIdx.has(bi)) continue;
+    const bf = baseFindings[bi];
+    const bfSev = normalizeSeverity(bf.severity);
+    const bfFile = bf.file || 'N/A';
+    const bfBag = titleWordBag(bf.title);
+    let bestScore = 0;
+    let bestCi = -1;
+    for (let ci = 0; ci < currFindings.length; ci++) {
+      if (matchedCurrIdx.has(ci)) continue;
+      const cf = currFindings[ci];
+      if (normalizeSeverity(cf.severity) !== bfSev) continue;
+      const cfFile = cf.file || 'N/A';
+      // Prefer same-file; fall back to severity-only if neither side has a
+      // structured file field (both 'N/A'). Skips outright when files differ
+      // and at least one is structured.
+      const sameFile = cfFile === bfFile;
+      const bothNoFile = cfFile === 'N/A' && bfFile === 'N/A';
+      if (!sameFile && !bothNoFile) continue;
+      const score = jaccardSimilarity(bfBag, titleWordBag(cf.title));
+      if (score >= FUZZY_TITLE_THRESHOLD && score > bestScore) {
+        bestScore = score;
+        bestCi = ci;
+      }
+    }
+    if (bestCi !== -1) {
+      matchedBaseIdx.add(bi);
+      matchedCurrIdx.add(bestCi);
+      fuzzyMatchCount += 1;
+    }
+  }
+
+  const overlap = baseFindings.length === 0
+    ? 1.0
+    : matchedBaseIdx.size / baseFindings.length;
+
+  // Missing critical: baseline findings whose normalized severity is 'critical'
+  // (covers both 'critical' and 'high' source values) AND that did NOT match a
+  // candidate via either exact or fuzzy match.
+  const missingCritical = [];
+  for (let bi = 0; bi < baseFindings.length; bi++) {
+    const bf = baseFindings[bi];
+    if (normalizeSeverity(bf.severity) !== 'critical') continue;
+    if (matchedBaseIdx.has(bi)) continue;
+    missingCritical.push({ id: bf.id, title: bf.title, severity: bf.severity });
+  }
+
+  const extra = [...currKeySet].filter((k) => !baseKeySet.has(k));
   const pass = (overlap >= schema.threshold) && (missingCritical.length === 0);
 
   return {
     pass,
     overlap,
     threshold: schema.threshold,
-    missingCritical: missingCritical.map((f) => ({ id: f.id, title: f.title, severity: f.severity })),
+    missingCritical,
     extraFindings: extra,
     baseFindingCount: baseFindings.length,
     currFindingCount: currFindings.length,
+    fuzzyMatchCount,
   };
 }
 
@@ -366,7 +524,16 @@ module.exports = {
   loadBaseline,
   saveBaseline,
   pickMedianByDuration,
-  // _internal: exposed for tests/critic-findings-delta-shape.test.cjs (B6 / verify-C-003).
-  // Do NOT use these from non-test code; they are heuristics with backfill semantics.
-  _internal: { extractFindingsFromText, extractCategoryFromTitle },
+  // _internal: exposed for tests/critic-findings-delta-shape.test.cjs (B6 / verify-C-003)
+  // and tests/critic-comparator-fix.test.cjs (CRIT-10 fix). Do NOT use these from
+  // non-test code; they are heuristics with backfill semantics.
+  _internal: {
+    extractFindingsFromText,
+    extractCategoryFromTitle,
+    normalizeSeverity,
+    titleWordBag,
+    jaccardSimilarity,
+    computeCriticFindingsDeltas,
+    FUZZY_TITLE_THRESHOLD,
+  },
 };

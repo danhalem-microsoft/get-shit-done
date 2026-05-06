@@ -42,6 +42,7 @@ import { verifyPlanStructure, verifyPhaseCompleteness, verifyArtifacts, verifyCo
 import { verifyKeyLinks, validateConsistency, validateHealth, validateAgents } from './validate.js';
 // Phase 2 (Plan 02-06 / B1 — scope-C-001): disk-based critic-output aggregator.
 import { criticAggregate } from './critic-aggregate.js';
+import { criticSpawnBatch } from './critic-spawn-batch.js';
 import {
   phaseAdd, phaseAddBatch, phaseInsert, phaseRemove, phaseComplete,
   phaseScaffold, phasesClear, phasesArchive,
@@ -364,6 +365,12 @@ export function createRegistry(
   // the GSD_QUERY_FALLBACK transparent bridge) AND the drift-guard at
   // tests/gsd-sdk-query-registry-integration.test.cjs passes at Plan 02-08.
   registry.register('critic-aggregate', criticAggregate);
+  // Phase 2 (02-07-fixes — CRIT-08 workaround): expose
+  // `gsd-sdk query critic-spawn-batch` as a registered native handler so the
+  // critique workflow can fan out 6 parallel `claude --print` subprocesses
+  // via Node's child_process.spawn + Promise.all, sidestepping the in-process
+  // Task scheduler serialization documented in #7406.
+  registry.register('critic-spawn-batch', criticSpawnBatch);
   registry.register('verify-path-exists', verifyPathExists);
   registry.register('verify.path-exists', verifyPathExists);
   registry.register('verify path-exists', verifyPathExists);
