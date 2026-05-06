@@ -245,14 +245,73 @@ function computeCriticFindingsDeltas(schema, baseline, runs) {
 }
 
 // Helper: parse findings out of textual result if structured object isn't returned.
-// Format expected: critic-card markdown blocks like
-//   ### [CRITICAL] Some finding title — short summary
-//   - **ID:** `F-001`
-//   - **File:** `src/foo.ts:42`
-//   - **Severity:** critical
-//   - **Lane:** primary
+//
+// Two formats supported (in order):
+//
+// 1. JSON-fenced block (Phase 1 baseline format used by 5 of 6 critic baselines —
+//    critic-{code,scope,verify,discuss,strategy}). Looks like:
+//      ```json
+//      { "findings": [ { "severity": "critical", "lane": "...", "title": "...", ... }, ... ] }
+//      ```
+//    The JSON object's `findings` array is returned. Per-finding fields are normalized:
+//    severity is lowercased; missing `id` is synthesized as `extracted-<idx>` so bucketKey
+//    has something stable; `file` defaults to 'N/A' (only one baseline puts file paths in
+//    evidence rather than a structured field). Multiple fences in one text are concatenated.
+//
+// 2. Critic-card markdown blocks (used by some live agent outputs):
+//      ### [CRITICAL] Some finding title — short summary
+//      - **ID:** `F-001`
+//      - **File:** `src/foo.ts:42`
+//      - **Severity:** critical
+//      - **Lane:** primary
+//
+// If JSON-fence parsing yields ≥1 finding, those are returned and the markdown-card
+// regex is NOT run (mixing the two would double-count when an agent emits both forms).
+// If no JSON fence is found OR the JSON parse fails OR the parsed payload has no
+// `findings` array, the markdown-card extractor runs on the original text.
+//
+// One baseline (critic-plan/plan-with-known-issues.json) has neither shape — its
+// `result` is an English-prose summary with no structured findings. That baseline
+// returns []; CRIT-10 parity for critic-plan will therefore continue to overlap=1.0
+// trivially (baseFindingCount=0 → overlap=|∅|/|∅| → 1.0 by the helper's own zero-div
+// guard). The fix is honest about this: it does not paper over the missing structured
+// data; it only unblocks the 5 of 6 critics that DO have parseable baselines.
 function extractFindingsFromText(text) {
   if (typeof text !== 'string' || text.length === 0) return [];
+
+  // (1) JSON-fenced block. Lazy-match the body so multiple fences in one string each
+  // get their own pass. The closing ``` is required (avoids consuming the rest of the
+  // document if the model emitted only an opening fence).
+  const jsonFenceRe = /```json\s*([\s\S]*?)```/g;
+  const jsonFindings = [];
+  let jm;
+  while ((jm = jsonFenceRe.exec(text)) !== null) {
+    let parsed;
+    try {
+      parsed = JSON.parse(jm[1]);
+    } catch (_err) {
+      // Malformed fence — skip this fence, try the next.
+      continue;
+    }
+    if (parsed && Array.isArray(parsed.findings)) {
+      for (let i = 0; i < parsed.findings.length; i++) {
+        const f = parsed.findings[i] || {};
+        jsonFindings.push({
+          id: f.id || `extracted-${jsonFindings.length}`,
+          severity: (f.severity || 'unknown').toLowerCase(),
+          file: f.file || 'N/A',
+          lane: (f.lane || 'primary').toLowerCase(),
+          title: f.title || '',
+          // category preserved if present so bucketKey doesn't fall back to the
+          // first-two-words heuristic when the agent emitted a real category.
+          category: f.category || undefined,
+        });
+      }
+    }
+  }
+  if (jsonFindings.length > 0) return jsonFindings;
+
+  // (2) Markdown critic-card fallback (live-agent shape that some agents emit).
   const findings = [];
   const cardRe = /###\s+\[([A-Z]+)\][^\n]*?\n[\s\S]*?\*\*ID:\*\*\s+`?([^`\s]+)`?[\s\S]*?\*\*File:\*\*\s+`?([^`\n]+)`?[\s\S]*?\*\*Severity:\*\*\s+(\w+)[\s\S]*?\*\*Lane:\*\*\s+(\w+)/g;
   let m;
