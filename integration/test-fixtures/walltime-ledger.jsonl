@@ -66,3 +66,9 @@
 {"date":"2026-05-05","test":"agent-parity:critic-strategy:strategy-with-tradeoffs","walltime_ms":29716,"cost_usd":0.20190975,"phase":"phase-2-critic"}
 {"date":"2026-05-05","test":"agent-parity:critic-strategy:strategy-with-tradeoffs","walltime_ms":28412,"cost_usd":0.20117975000000002,"phase":"phase-2-critic"}
 {"date":"2026-05-05","test":"agent-parity:critic-strategy:strategy-with-tradeoffs","walltime_ms":29842,"cost_usd":0.2017895,"phase":"phase-2-critic"}
+{"date":"2026-05-06","test":"agent-parity:critic-strategy:strategy-with-tradeoffs","walltime_ms":10086,"cost_usd":0,"phase":"phase-2-critic"}
+{"date":"2026-05-06","test":"agent-parity:critic-strategy:strategy-with-tradeoffs","walltime_ms":12126,"cost_usd":0,"phase":"phase-2-critic"}
+{"date":"2026-05-06","test":"agent-parity:critic-strategy:strategy-with-tradeoffs","walltime_ms":15394,"cost_usd":0,"phase":"phase-2-critic"}
+{"date":"2026-05-06","test":"agent-parity:critic-strategy:strategy-with-tradeoffs:issue-b-followup-sonnet","walltime_ms":56004,"cost_usd":0.154389,"phase":"phase-2-critic"}
+{"date":"2026-05-06","test":"agent-parity:critic-strategy:strategy-with-tradeoffs:issue-b-followup-opus-529","walltime_ms":11872,"cost_usd":0,"phase":"phase-2-critic"}
+{"date":"2026-05-06","test":"agent-parity:critic-strategy:strategy-with-tradeoffs:issue-b-followup-opus","walltime_ms":70669,"cost_usd":0.32938249999999997,"phase":"phase-2-critic"}
