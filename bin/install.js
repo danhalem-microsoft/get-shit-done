@@ -1,5 +1,78 @@
 #!/usr/bin/env node
 
+// =====================================================================
+// AUTONOMOUS-EXECUTION SAFEGUARD (added 2026-05-08)
+// =====================================================================
+// Prevents bin/install.js from running during agent-driven sessions
+// without explicit user authorization. Background:
+//   On 2026-05-01 17:11:50, this script ran inside an autonomous Claude
+//   Code session and overwrote ~/.claude/get-shit-done/workflows/review.md
+//   (cross-AI peer review) with the new consolidated quality-gate
+//   dispatcher. The user had not typed any install command — the script
+//   was invoked by an assistant or test as a "verification" step. The
+//   user-mod backup at ~/.claude/gsd-local-patches/ was preserved BUT
+//   /gsd-reapply-patches was never run, so the regression was invisible
+//   until the user noticed lost functionality days later.
+//
+// Guard rule: if the runtime looks like an autonomous agent session
+// (CLAUDECODE=1, CI, GITHUB_ACTIONS, or a parent process whose argv0
+// matches `claude`), refuse to install unless GSD_INSTALL_AUTHORIZED=1
+// is set. The user must explicitly authorize by exporting that env var
+// in the SAME shell, OR by running install.js outside any agent session.
+//
+// To bypass: set GSD_INSTALL_AUTHORIZED=1 (and read this comment first).
+// =====================================================================
+
+(function autonomousExecutionGuard() {
+  // Allow the user to bypass explicitly.
+  if (process.env.GSD_INSTALL_AUTHORIZED === '1' ||
+      process.env.GSD_INSTALL_AUTHORIZED === 'true') {
+    return;
+  }
+
+  // Allow non-mutating help/dry-run/version flags through.
+  const argv = (process.argv || []).slice(2);
+  const benignFlags = new Set(['--help', '-h', '--version', '-v',
+                                '--dry-run', '--manifest-only', '--skills-root']);
+  if (argv.length > 0 && argv.every(a => benignFlags.has(a) ||
+                                          benignFlags.has(a.split('=')[0]))) {
+    return;
+  }
+
+  // Detection: am I running inside an autonomous agent context?
+  const triggers = [];
+  if (process.env.CLAUDECODE === '1') triggers.push('CLAUDECODE=1');
+  if (process.env.CLAUDE_CODE_ENTRYPOINT) triggers.push('CLAUDE_CODE_ENTRYPOINT set');
+  if (process.env.CI === 'true' || process.env.CI === '1') triggers.push('CI=true');
+  if (process.env.GITHUB_ACTIONS === 'true') triggers.push('GITHUB_ACTIONS=true');
+  if (process.env.CURSOR_SESSION_ID) triggers.push('CURSOR_SESSION_ID set');
+  if (process.env.CODEX_SESSION_ID) triggers.push('CODEX_SESSION_ID set');
+  if (process.env.OPENCODE_SESSION_ID) triggers.push('OPENCODE_SESSION_ID set');
+
+  if (triggers.length === 0) {
+    return; // Looks like a real interactive shell — proceed.
+  }
+
+  // Refuse with clear message.
+  const RED = '\x1b[31m';
+  const YELLOW = '\x1b[33m';
+  const RESET = '\x1b[0m';
+  const BOLD = '\x1b[1m';
+  process.stderr.write(`${RED}${BOLD}\n` +
+    'GSD install BLOCKED — autonomous-execution guard\n' +
+    `${RESET}${RED}\n` +
+    'bin/install.js is a destructive sync (it overwrites files in ~/.claude\n' +
+    'and other runtime config dirs). It detected one or more agent-context\n' +
+    'environment variables that suggest this is NOT a user-typed command:\n\n' +
+    `  • ${triggers.join('\n  • ')}\n\n` +
+    `${YELLOW}If you are the user and you typed this on purpose, run:\n\n` +
+    `  ${BOLD}GSD_INSTALL_AUTHORIZED=1 node bin/install.js${RESET}${YELLOW} ...\n\n` +
+    'If you are an assistant: STOP. Tell the user this is a destructive\n' +
+    'global install. Ask them to run it themselves with the env var set.\n' +
+    `${RESET}\n`);
+  process.exit(2);
+})();
+
 const fs = require('fs');
 const path = require('path');
 const os = require('os');

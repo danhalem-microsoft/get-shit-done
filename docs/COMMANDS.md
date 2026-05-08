@@ -573,18 +573,21 @@ Auto-fix issues found by `/gsd-code-review`. Reads `REVIEW.md`, spawns a fixer a
 
 ## Fast & Inline Commands
 
-### `/gsd-review`
+### `/gsd-peer-review`
 
 Cross-AI peer review of phase plans from external AI CLIs.
 
+> **Note.** Distinct from `/gsd-review` (the consolidated quality-gate dispatcher with `--code | --security | --critique | --converge` for GSD's internal critic agents). `/gsd-peer-review` invokes EXTERNAL AI CLIs as independent reviewers.
+
 | Argument | Required | Description |
 |----------|----------|-------------|
-| `--phase N` | **Yes** | Phase number to review |
+| `N` | **Yes** | Phase number to review (first positional arg) |
 
 | Flag | Description |
 |------|-------------|
+| `--copilot` | Include GitHub Copilot CLI review (preferred default; supports `--model` for multi-model) |
 | `--gemini` | Include Gemini CLI review |
-| `--claude` | Include Claude CLI review (separate session) |
+| `--claude` | Include Claude CLI review (separate session — auto-skipped inside Claude Code) |
 | `--codex` | Include Codex CLI review |
 | `--coderabbit` | Include CodeRabbit review |
 | `--opencode` | Include OpenCode review (via GitHub Copilot) |
@@ -595,8 +598,8 @@ Cross-AI peer review of phase plans from external AI CLIs.
 **Produces:** `{phase}-REVIEWS.md` — consumable by `/gsd-plan-phase --reviews`
 
 ```bash
-/gsd-review --phase 3 --all
-/gsd-review --phase 2 --gemini
+/gsd-peer-review 3 --all
+/gsd-peer-review 2 --gemini
 ```
 
 ---

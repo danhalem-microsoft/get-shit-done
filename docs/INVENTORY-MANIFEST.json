@@ -1,5 +1,5 @@
 {
-  "generated": "2026-05-05",
+  "generated": "2026-05-08",
   "families": {
     "agents": [
       "gsd-advisor-researcher",
@@ -46,6 +46,7 @@
       "/gsd-new-project",
       "/gsd-new-workspace",
       "/gsd-pause-work",
+      "/gsd-peer-review",
       "/gsd-phase",
       "/gsd-plan-phase",
       "/gsd-plan-review-convergence",
@@ -97,6 +98,7 @@
       "new-workspace.md",
       "node-repair.md",
       "pause-work.md",
+      "peer-review.md",
       "phase.md",
       "plan-phase.md",
       "plan-review-convergence.md",
@@ -182,6 +184,7 @@
       "context.cjs",
       "core.cjs",
       "critic-aggregate.cjs",
+      "critic-spawn-batch.cjs",
       "docs.cjs",
       "frontmatter.cjs",
       "graphify.cjs",

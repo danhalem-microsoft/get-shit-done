@@ -81,7 +81,7 @@ Error:
 ```
 No REVIEWS.md found for Phase {N}. Run reviews first:
 
-/gsd-review --phase {N}
+/gsd-peer-review {N}
 
 Then re-run /gsd-plan-phase {N} --reviews
 ```
@@ -1169,7 +1169,7 @@ Verification: {Passed | Passed with override | Skipped}
 **Also available:**
 - cat .planning/phases/{phase-dir}/*-PLAN.md — review plans
 - /gsd-plan-phase {X} --research — re-research first
-- /gsd-review --phase {X} --all — peer review plans with external AIs
+- /gsd-peer-review {X} --all — cross-AI peer review of plans (Copilot, Gemini, Codex, OpenCode, Qwen, Cursor, Claude)
 - /gsd-plan-phase {X} --reviews — replan incorporating review feedback
 
 ───────────────────────────────────────────────────────────────

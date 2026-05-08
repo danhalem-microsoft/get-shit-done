@@ -43,7 +43,7 @@ Full roster at `agents/gsd-*.md`. The "Primary doc" column flags whether [`docs/
 
 ---
 
-## Commands (37 shipped)
+## Commands (38 shipped)
 
 Full roster at `commands/gsd/*.md`. The groupings below mirror `docs/COMMANDS.md` section order; each row carries the command name, a one-line role derived from the command's frontmatter `description:`, and a link to the source file. `tests/command-count-sync.test.cjs` locks the count against the filesystem.
 
@@ -95,6 +95,7 @@ Full roster at `commands/gsd/*.md`. The groupings below mirror `docs/COMMANDS.md
 | Command | Role | Source |
 |---------|------|--------|
 | `/gsd-review` | Quality-gate review for a phase — consolidated entry point for code review, security audit, coverage validation, plan critique, and review convergence (`--code | --code-fix | --security | --coverage | --critique | --converge`). | [commands/gsd/review.md](../commands/gsd/review.md) |
+| `/gsd-peer-review` | Cross-AI peer review of phase plans — invoke external AI CLIs (Copilot, Gemini, Codex, OpenCode, Qwen, Cursor, Claude) for independent adversarial review; produces REVIEWS.md the planner can incorporate via `--reviews`. | [commands/gsd/peer-review.md](../commands/gsd/peer-review.md) |
 | `/gsd-phase` | Phase manipulation — `add | insert | remove` subcommands for the active milestone roadmap (consolidates `/gsd-add-phase`, `/gsd-insert-phase`, `/gsd-remove-phase`). | [commands/gsd/phase.md](../commands/gsd/phase.md) |
 
 ### Docs, Profile & Utilities
@@ -131,7 +132,7 @@ Per CONTEXT.md D-02: deprecation stubs are NOT counted as user-facing commands. 
 
 ---
 
-## Workflows (50 shipped)
+## Workflows (51 shipped)
 
 Full roster at `get-shit-done/workflows/*.md`. Workflows are thin orchestrators that commands reference internally; most are not read directly by end users. Rows below map each workflow file to its role (derived from the `<purpose>` block) and, where applicable, to the command that invokes it.
 
@@ -168,6 +169,7 @@ Full roster at `get-shit-done/workflows/*.md`. Workflows are thin orchestrators 
 | `research-phase.md` | Standalone phase research workflow (usually invoked via `plan-phase`). | `/gsd-research-phase` |
 | `resume-project.md` | Resume work — restore full context from STATE.md, HANDOFF.json, and artifacts. | `/gsd-resume-work` |
 | `review.md` | Consolidated quality-gate review dispatcher — flag-based routing into code-review, secure-phase, validate-phase, critique, plan-review-convergence, code-review-fix workflows. | `/gsd-review` |
+| `peer-review.md` | Cross-AI peer review — invoke external AI CLIs (Copilot, Gemini, Codex, OpenCode, Qwen, Cursor, Claude) to independently review phase plans; writes structured REVIEWS.md. | `/gsd-peer-review` |
 | `phase.md` | Consolidated phase-manipulation dispatcher — subcommand-based routing into add-phase, insert-phase, remove-phase workflows. | `/gsd-phase` |
 | `secure-phase.md` | Retroactive threat-mitigation audit for a completed phase. | `/gsd-secure-phase` |
 | `settings.md` | Configure GSD workflow toggles and model profile. | `/gsd-settings`, `/gsd-set-profile` |
@@ -270,7 +272,7 @@ The `gsd-planner` agent is decomposed into a core agent plus reference modules t
 
 ---
 
-## CLI Modules (30 shipped)
+## CLI Modules (31 shipped)
 
 Full listing: `get-shit-done/bin/lib/*.cjs`.
 

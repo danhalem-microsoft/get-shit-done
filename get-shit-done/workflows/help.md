@@ -254,16 +254,17 @@ Usage: `/gsd-verify-work 3`
 
 ---
 
-**`/gsd-review --phase N [--gemini] [--claude] [--codex] [--coderabbit] [--opencode] [--qwen] [--cursor] [--all]`**
+**`/gsd-peer-review N [--copilot] [--gemini] [--claude] [--codex] [--coderabbit] [--opencode] [--qwen] [--cursor] [--all]`**
 Cross-AI peer review — invoke external AI CLIs to independently review phase plans.
 
-- Detects available CLIs (gemini, claude, codex, coderabbit)
+- Detects available CLIs (copilot, gemini, claude, codex, coderabbit, opencode, qwen, cursor)
 - Each CLI reviews plans independently with the same structured prompt
 - CodeRabbit reviews the current git diff (not a prompt) — may take up to 5 minutes
 - Produces REVIEWS.md with per-reviewer feedback and consensus summary
 - Feed reviews back into planning: `/gsd-plan-phase N --reviews`
+- Distinct from `/gsd-review` (the consolidated quality-gate dispatcher with `--code | --security | --critique | --converge` for GSD's internal critic agents)
 
-Usage: `/gsd-review --phase 3 --all`
+Usage: `/gsd-peer-review 3 --all`
 
 ---
 
