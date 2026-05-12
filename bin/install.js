@@ -30,6 +30,16 @@
     return;
   }
 
+  // Allow test-mode: when GSD_TEST_MODE=1, the test is require()-ing
+  // install.js to access test-only exports (e.g., writeManifest). It is
+  // NOT performing the destructive install pipeline. Project convention:
+  // tests set GSD_TEST_MODE=1 before requiring install.js. This is
+  // distinct from running install.js as a CLI — the test process is
+  // already a node test runner, not an install execution.
+  if (process.env.GSD_TEST_MODE === '1' || process.env.GSD_TEST_MODE === 'true') {
+    return;
+  }
+
   // Allow non-mutating help/dry-run/version flags through.
   const argv = (process.argv || []).slice(2);
   const benignFlags = new Set(['--help', '-h', '--version', '-v',

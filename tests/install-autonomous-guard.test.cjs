@@ -70,4 +70,16 @@ describe('bin/install.js autonomous-execution safeguard', () => {
     assert.strictEqual(r.status, 0);
     assert.doesNotMatch(r.stderr, /GSD install BLOCKED/);
   });
+
+  test('ALLOWS GSD_TEST_MODE=1 (test require()-ing install.js for test-only exports)', () => {
+    // Tests that require() install.js to access writeManifest etc. set
+    // GSD_TEST_MODE=1 BEFORE requiring. The guard must let them through
+    // because they are not actually performing an install — they are
+    // calling internal helpers in process. Verified empirically by
+    // tests/install-shared-dir.test.cjs (Phase 2 Plan 03 Task 3).
+    const r = runInstall({ CLAUDECODE: '1', GSD_TEST_MODE: '1' }, ['--help']);
+    assert.strictEqual(r.status, 0,
+      'expected exit code 0 when GSD_TEST_MODE=1; got ' + r.status + '\nstderr: ' + r.stderr);
+    assert.doesNotMatch(r.stderr, /GSD install BLOCKED/);
+  });
 });
