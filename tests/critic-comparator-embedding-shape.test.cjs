@@ -469,3 +469,216 @@ describe('Phase 2.1 RED: Group F — perFindingDiagnosis shape', () => {
     }
   });
 });
+
+// =============================================================================
+// Group G — embedding-client.cjs Azure / OpenAI provider detection + routing
+// =============================================================================
+//
+// These sub-tests cover the Azure adaptation added on top of Plan 02.1-02:
+// `integration/helpers/embedding-client.cjs` now reads either an Azure OpenAI
+// triple (key + endpoint + embedding-deployment) OR the legacy vanilla
+// OPENAI_API_KEY and routes the request through the appropriate SDK client.
+//
+// All env-var mutation is SCOPED to this describe block via before/after hooks
+// that snapshot and restore the original values — concurrency-safe per
+// D-CTX-15 / Phase 1 D-04 (no leak outside this block, no chdir, no shared
+// module mutation outside the explicit `_setClientFactory` test seam which is
+// reset to null in `after()`).
+//
+// The "embed call shape" sub-test (G5) injects a fake client via
+// `_setClientFactory(fn)` and asserts the create() call payload — NO real API
+// call is made.
+// =============================================================================
+describe('Phase 2.1 (Azure-fixup): Group G — embedding-client.cjs provider detection + routing', () => {
+  const embeddingClient = require('../integration/helpers/embedding-client.cjs');
+
+  // Env vars this group reads. Each value is snapshotted at describe-block
+  // load time and restored in `after()` so this block plays well with the
+  // rest of the suite (and with whatever the developer happens to have set
+  // in their shell at test-run time).
+  const ENV_KEYS = [
+    'OPENAI_API_KEY',
+    'AZURE_OPENAI_API_KEY',
+    'AZURE_OPENAI_KEY',
+    'AZURE_OPENAI_ENDPOINT',
+    'AZURE_OPENAI_API_VERSION',
+    'AZURE_OPENAI_EMBEDDING_DEPLOYMENT',
+  ];
+  /** @type {Record<string, {present: boolean, value: string|undefined}>} */
+  const SNAPSHOT = {};
+  for (const k of ENV_KEYS) {
+    SNAPSHOT[k] = {
+      present: Object.prototype.hasOwnProperty.call(process.env, k),
+      value: process.env[k],
+    };
+  }
+
+  function clearAllEnvKeys() {
+    for (const k of ENV_KEYS) delete process.env[k];
+  }
+  function restoreSnapshot() {
+    for (const k of ENV_KEYS) {
+      const snap = SNAPSHOT[k];
+      if (snap.present) process.env[k] = snap.value;
+      else delete process.env[k];
+    }
+  }
+
+  before(() => {
+    // Start every G-test from a fully cleared slate; each test sets exactly
+    // the env vars it cares about.
+    clearAllEnvKeys();
+  });
+  after(() => {
+    restoreSnapshot();
+    // Restore the production client-factory state too.
+    embeddingClient._setClientFactory(null);
+  });
+
+  test('G1: detectMode returns mode="azure" when Azure triple is set', () => {
+    assert.strictEqual(typeof embeddingClient.detectMode, 'function',
+      `expected typeof embeddingClient.detectMode === 'function', got '${typeof embeddingClient.detectMode}'`);
+    clearAllEnvKeys();
+    process.env.AZURE_OPENAI_API_KEY = 'fake-azure-key';
+    process.env.AZURE_OPENAI_ENDPOINT = 'https://example.openai.azure.com';
+    process.env.AZURE_OPENAI_EMBEDDING_DEPLOYMENT = 'my-embedding-deployment';
+    process.env.AZURE_OPENAI_API_VERSION = '2024-02-15-preview';
+
+    const cfg = embeddingClient.detectMode();
+    assert.strictEqual(cfg.mode, 'azure',
+      `expected detectMode().mode === 'azure', got ${JSON.stringify(cfg.mode)} (cfg=${JSON.stringify(cfg)})`);
+    assert.strictEqual(cfg.azureKey, 'fake-azure-key',
+      `expected cfg.azureKey === 'fake-azure-key', got ${JSON.stringify(cfg.azureKey)}`);
+    assert.strictEqual(cfg.azureEndpoint, 'https://example.openai.azure.com',
+      `expected cfg.azureEndpoint to round-trip, got ${JSON.stringify(cfg.azureEndpoint)}`);
+    assert.strictEqual(cfg.azureEmbeddingDeployment, 'my-embedding-deployment',
+      `expected cfg.azureEmbeddingDeployment to round-trip, got ${JSON.stringify(cfg.azureEmbeddingDeployment)}`);
+    assert.strictEqual(cfg.azureApiVersion, '2024-02-15-preview',
+      `expected cfg.azureApiVersion to round-trip, got ${JSON.stringify(cfg.azureApiVersion)}`);
+  });
+
+  test('G2: detectMode returns mode="openai" when only OPENAI_API_KEY is set', () => {
+    clearAllEnvKeys();
+    process.env.OPENAI_API_KEY = 'sk-fake-vanilla-key';
+
+    const cfg = embeddingClient.detectMode();
+    assert.strictEqual(cfg.mode, 'openai',
+      `expected detectMode().mode === 'openai', got ${JSON.stringify(cfg.mode)} (cfg=${JSON.stringify(cfg)})`);
+    assert.strictEqual(cfg.apiKey, 'sk-fake-vanilla-key',
+      `expected cfg.apiKey === 'sk-fake-vanilla-key', got ${JSON.stringify(cfg.apiKey)}`);
+  });
+
+  test('G3: detectMode returns mode="none" when neither Azure nor vanilla is configured', () => {
+    clearAllEnvKeys();
+    const cfg = embeddingClient.detectMode();
+    assert.strictEqual(cfg.mode, 'none',
+      `expected detectMode().mode === 'none' on empty env, got ${JSON.stringify(cfg)}`);
+  });
+
+  test('G4: detectMode prefers Azure when both Azure triple and OPENAI_API_KEY are set', () => {
+    clearAllEnvKeys();
+    process.env.OPENAI_API_KEY = 'sk-vanilla-key';
+    process.env.AZURE_OPENAI_API_KEY = 'fake-azure-key';
+    process.env.AZURE_OPENAI_ENDPOINT = 'https://example.openai.azure.com';
+    process.env.AZURE_OPENAI_EMBEDDING_DEPLOYMENT = 'my-embedding-deployment';
+
+    const cfg = embeddingClient.detectMode();
+    assert.strictEqual(cfg.mode, 'azure',
+      `expected Azure to win when both are present (deliberate-config precedence), got mode=${JSON.stringify(cfg.mode)}`);
+  });
+
+  test('G5: embedTitles routes through AzureOpenAI client and passes deployment as model field', async () => {
+    assert.strictEqual(typeof embeddingClient._setClientFactory, 'function',
+      `expected embeddingClient._setClientFactory to be a test seam function, got '${typeof embeddingClient._setClientFactory}'`);
+    assert.strictEqual(typeof embeddingClient.embedTitles, 'function',
+      `expected embeddingClient.embedTitles to be a function, got '${typeof embeddingClient.embedTitles}'`);
+
+    clearAllEnvKeys();
+    process.env.AZURE_OPENAI_API_KEY = 'fake-azure-key';
+    process.env.AZURE_OPENAI_ENDPOINT = 'https://example.openai.azure.com';
+    process.env.AZURE_OPENAI_EMBEDDING_DEPLOYMENT = 'my-embedding-deployment';
+    process.env.AZURE_OPENAI_API_VERSION = '2024-02-15-preview';
+
+    // Capture all create()-call payloads so we can assert the request shape.
+    const createCalls = [];
+    let constructorCfg = null;
+    embeddingClient._setClientFactory((cfg) => {
+      constructorCfg = cfg;
+      return {
+        embeddings: {
+          create: async ({ model, input }) => {
+            createCalls.push({ model, input });
+            // Return one embedding per input. Use a small synthetic vector so
+            // we don't pay 1536-dim memory cost in unit tests.
+            return {
+              data: input.map((_t, i) => ({ embedding: [1, 0, 0], index: i })),
+            };
+          },
+        },
+      };
+    });
+
+    // Use a unique cacheBucket per run so prior runs' cache files don't
+    // short-circuit the create() call. Clean it up in `finally` so the test
+    // does not pollute the on-disk cache tree with synthetic vectors.
+    const cacheBucket = `g5-azure-shape-${process.pid}-${Date.now()}`;
+    let result;
+    try {
+      result = await embeddingClient.embedTitles(
+        ['[CRITICAL] First title', '[high] Second title'],
+        { cacheBucket },
+      );
+    } finally {
+      embeddingClient._setClientFactory(null);
+      // Best-effort cleanup of the test's cache bucket. `fs.rmSync` with
+      // `recursive: true` swallows ENOENT, so this is safe even if the
+      // production code path changes where it writes.
+      const fsMod = require('node:fs');
+      const pathMod = require('node:path');
+      const bucketDir = pathMod.join(embeddingClient.EMBEDDINGS_CACHE_DIR, cacheBucket);
+      try { fsMod.rmSync(bucketDir, { recursive: true, force: true }); } catch (_e) { /* swallow */ }
+    }
+
+    // Constructor saw mode='azure' with the deployment name.
+    assert.ok(constructorCfg, 'expected client factory to be invoked at least once');
+    assert.strictEqual(constructorCfg.mode, 'azure',
+      `expected factory cfg.mode === 'azure', got ${JSON.stringify(constructorCfg.mode)}`);
+    assert.strictEqual(constructorCfg.azureEmbeddingDeployment, 'my-embedding-deployment',
+      `expected factory cfg.azureEmbeddingDeployment === 'my-embedding-deployment', got ${JSON.stringify(constructorCfg.azureEmbeddingDeployment)}`);
+
+    // The create() call must use the DEPLOYMENT NAME as the `model` field
+    // (Azure routes by deployment, but the SDK still requires a non-empty
+    // model on the request).
+    assert.strictEqual(createCalls.length, 1,
+      `expected exactly one batched create() call for 2 inputs, got ${createCalls.length} calls`);
+    assert.strictEqual(createCalls[0].model, 'my-embedding-deployment',
+      `expected create() call's 'model' field to be the deployment name 'my-embedding-deployment', got ${JSON.stringify(createCalls[0].model)}`);
+    assert.deepStrictEqual(createCalls[0].input, ['first title', 'second title'],
+      `expected create() input to be the normalized titles (lowercased, severity-stripped), got ${JSON.stringify(createCalls[0].input)}`);
+
+    // Result map is keyed by normalized title and contains the vectors.
+    assert.ok(result.has('first title'),
+      `expected result map to have key 'first title' (normalized), keys=${JSON.stringify([...result.keys()])}`);
+    assert.ok(result.has('second title'),
+      `expected result map to have key 'second title' (normalized), keys=${JSON.stringify([...result.keys()])}`);
+    assert.deepStrictEqual(result.get('first title'), [1, 0, 0],
+      `expected result.get('first title') === [1,0,0], got ${JSON.stringify(result.get('first title'))}`);
+  });
+
+  test('G6: embedTitles throws OpenAIKeyUnsetError when neither Azure nor vanilla is configured', async () => {
+    clearAllEnvKeys();
+    embeddingClient._setClientFactory(null);
+
+    let caught = null;
+    try {
+      await embeddingClient.embedTitles(['some title'], { cacheBucket: `g6-${process.pid}-${Date.now()}` });
+    } catch (err) {
+      caught = err;
+    }
+    assert.ok(caught, 'expected embedTitles to throw when no credentials are configured');
+    assert.strictEqual(caught.name, 'OpenAIKeyUnsetError',
+      `expected err.name === 'OpenAIKeyUnsetError' (so agent-parity.cjs's catch-by-name fallback fires), got ${JSON.stringify(caught.name)}`);
+    assert.match(caught.message, /AZURE_OPENAI_API_KEY|AZURE_OPENAI_ENDPOINT|OPENAI_API_KEY/,
+      `expected error message to name the env vars the user must set, got: ${JSON.stringify(caught.message)}`);
+  });
+});
