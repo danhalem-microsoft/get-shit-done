@@ -1,4 +1,10 @@
-filegroup(
+load("@aspect_rules_js//js:defs.bzl", "js_library")
+
+# Plan 02-11: js_library (not filegroup) so aspect_rules_js can copy these
+# data files into the bazel sandbox for tests in sibling packages. The
+# `bin/**` glob was added in Plan 02-11 so tests/install-shared-dir.test.cjs
+# can `require('bin/install.js')` inside the sandbox.
+js_library(
     name = "project_sources",
     srcs = glob([
         "get-shit-done/**",
@@ -7,6 +13,7 @@ filegroup(
         "hooks/**",
         "scripts/**",
         "sdk/**",
-    ]),
+        "bin/**",
+    ]) + ["package.json"],
     visibility = ["//visibility:public"],
 )

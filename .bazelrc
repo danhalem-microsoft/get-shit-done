@@ -3,8 +3,19 @@ test --test_env=ANTHROPIC_API_KEY
 test --test_env=HOME
 test --test_env=PATH
 
+# Azure OpenAI credentials for embedding-cosine parity comparator
+# (inherited from shell — `set -a; source ~/.env; set +a` before invoking).
+test --test_env=AZURE_OPENAI_API_KEY
+test --test_env=AZURE_OPENAI_ENDPOINT
+test --test_env=AZURE_OPENAI_API_VERSION
+test --test_env=AZURE_OPENAI_DEPLOYMENT
+test --test_env=AZURE_OPENAI_EMBEDDING_DEPLOYMENT
+
 # Show test output for debugging
 test:debug --test_output=all
 
 # Lockfile policy: do not auto-update
 common --lockfile_mode=off
+
+# Per-developer overrides — gitignored escape hatch for explicit values
+try-import %workspace%/user.bazelrc

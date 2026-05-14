@@ -38,6 +38,7 @@ philosophy.md
 /bazel-*
 MODULE.bazel.lock
 .bazel/
+user.bazelrc
 
 # GSD active project context (per-user, machine-specific)
 **/.active

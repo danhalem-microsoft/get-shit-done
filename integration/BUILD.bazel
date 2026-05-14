@@ -80,6 +80,17 @@ js_library(
     data = glob(["test-fixtures/lifecycle-shapes/*.json"]),
 )
 
+# Plan 02-11: expose the live walltime ledger so static schema tests
+# (e.g. //tests:walltime-ledger-schema) can read the committed snapshot
+# inside the bazel sandbox. Uses js_library (not filegroup) so
+# aspect_rules_js will copy the data file into the sandbox for sibling-
+# package consumers.
+js_library(
+    name = "walltime-ledger",
+    srcs = ["test-fixtures/walltime-ledger.jsonl"],
+    visibility = ["//tests:__pkg__"],
+)
+
 # Lifecycle pipeline — full GSD lifecycle, expensive, long-running
 js_test(
     name = "gsd-lifecycle",

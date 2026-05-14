@@ -23,10 +23,21 @@ load("@aspect_rules_js//js:defs.bzl", "js_test")
 # Plans 03 and 06 will EXTEND this list-comprehension with their own static
 # tests. Spike + inverse spike live in integration/BUILD.bazel (B8 — no
 # cross-directory entry_point).
+#
+# Plan 02-11 extension: `//:project_sources` + the walltime-ledger fixture
+# added to `data` so each test's `readFileSync(agents/...)`, `require(bin/...)`,
+# `readFileSync(get-shit-done/workflows/...)`, and `readFileSync(
+# integration/test-fixtures/walltime-ledger.jsonl)` resolve inside the bazel
+# sandbox. Without this, the static suite failed 6/7 with ENOENT despite
+# `node --test` passing 30/30 on the same files.
 [js_test(
     name = test_file.replace(".test.cjs", ""),
     entry_point = test_file,
-    data = ["//integration/helpers:test_helpers"],
+    data = [
+        "//integration/helpers:test_helpers",
+        "//:project_sources",
+        "//integration:walltime-ledger",
+    ],
     size = "small",
     tags = ["unit", "local", "phase-2-critic"],
     timeout = "short",
