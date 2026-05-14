@@ -86,7 +86,7 @@ Wave 1 — bulk trim + orchestrator wiring + live tests + phase exit (depends on
 **Plans**: 3 plans across 3 waves
 
 - [x] 02.1-01-PLAN.md — RED test suite for the embedding comparator contract + workflow.embedding_model config-schema entry (Plan 02.1-02 GREEN target) [CRIT-10]
-- [ ] 02.1-02-PLAN.md — Implement embedding-based cosine comparator in agent-parity.cjs + thin OpenAI SDK wrapper at integration/helpers/embedding-client.cjs + update critic-parity.test.cjs to use the new path with per-finding diagnosis; Phase 2 lock tests stay GREEN [CRIT-10]
+- [x] 02.1-02-PLAN.md — Implement embedding-based cosine comparator in agent-parity.cjs + thin OpenAI SDK wrapper at integration/helpers/embedding-client.cjs + update critic-parity.test.cjs to use the new path with per-finding diagnosis; Phase 2 lock tests stay GREEN [CRIT-10]
 - [ ] 02.1-03-PLAN.md — Live H8 variance (3× per critic) + N=5 parity verification + 02.1-VERIFICATION.md (with per-finding diagnosis + spend reconciliation) + 02.1-SUMMARY.md (phase exit, GO/NO-GO recommendation for Plan 02-08); $20 hard cap; has GO/NO-GO checkpoint before live spend [CRIT-10]
 
 ### Phase 3: Plan-phase chain merge
@@ -146,7 +146,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 |-------|----------------|--------|-----------|
 | 1. Cull (with Wave 0 test infrastructure) | 0/9 | Not started | - |
 | 2. Critic refactor (with commit-0 spike) | 7/8 | In Progress|  |
-| 2.1. CRIT-10 comparator rebuild (gap closure) | 1/3 | In Progress|  |
+| 2.1. CRIT-10 comparator rebuild (gap closure) | 2/3 | In Progress|  |
 | 3. Plan-phase chain merge | 0/TBD | Not started | - |
 | 4. TDD hardening (3 layers) | 0/TBD | Not started | - |
 | 5. SP integration | 0/TBD | Not started | - |
