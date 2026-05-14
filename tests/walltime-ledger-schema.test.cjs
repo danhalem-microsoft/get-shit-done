@@ -6,10 +6,17 @@
 //   - cost_usd: non-negative number (catches Phase 1 CR-05 cost→cost_usd regression)
 //   - walltime_ms: positive integer
 //   - date: parses as ISO 8601
-//   - phase: matches /^phase-\d+-[a-z-]+$/
+//   - phase: matches /^phase-\d+(\.\d+)?-[a-z0-9-]+$/
 //
 // Mandatory — NOT optional. The earlier "optional" label in RESEARCH was wrong;
 // XCUT-03 (REQUIREMENTS.md:103) is a hard requirement.
+//
+// Phase 2.1 hand-off (per 02.1-02-SUMMARY.md): decimal phase tags (e.g.
+// `phase-2.1-crit10`) must be accepted so gap-closure phases can write
+// scoped ledger entries. The regex was relaxed from /^phase-\d+-[a-z-]+$/
+// to /^phase-\d+(\.\d+)?-[a-z0-9-]+$/ — same anchor + base, optional decimal
+// suffix, suffix accepts digits to cover names like `crit10` that include
+// numerals.
 
 'use strict';
 
@@ -21,7 +28,7 @@ const path = require('node:path');
 const REPO_ROOT = path.resolve(__dirname, '..');
 const LEDGER = path.join(REPO_ROOT, 'integration', 'test-fixtures', 'walltime-ledger.jsonl');
 const REQUIRED_KEYS = ['date', 'test', 'walltime_ms', 'cost_usd', 'phase'];
-const PHASE_RE = /^phase-\d+-[a-z-]+$/;
+const PHASE_RE = /^phase-\d+(\.\d+)?-[a-z0-9-]+$/;
 
 function readEntries() {
   const raw = fs.readFileSync(LEDGER, 'utf8');
