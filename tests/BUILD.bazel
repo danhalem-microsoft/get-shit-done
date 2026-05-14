@@ -39,3 +39,35 @@ load("@aspect_rules_js//js:defs.bzl", "js_test")
     "critic-aggregate-shape.test.cjs",
     "critique-workflow-structure.test.cjs",
 ]]
+
+# Phase 2 gap-closure additions (Plan 02-10): test files existed on disk but
+# had no BUILD entries, so `--test_tag_filters=phase-2-critic` undercounted
+# coverage. `cull-no-orphan-references` is dual-tagged (phase-1-cull AND
+# phase-2-critic) — it locks the Phase 1 cull AND was extended in Plan 02-03
+# to cover `agents/_shared/`. The `gsd-sdk-query-registry-integration` test
+# drift-guards the Plan 02-06 critic-aggregate handler registration.
+# `data` attribute is intentionally minimal here; Plan 02-11 broadens it.
+js_test(
+    name = "cull-no-orphan-references",
+    entry_point = "cull-no-orphan-references.test.cjs",
+    data = [
+        "//integration/helpers:test_helpers",
+        "fixtures/cull-deletion-list.cjs",
+        "//:project_sources",
+    ],
+    size = "medium",
+    tags = ["unit", "local", "phase-1-cull", "phase-2-critic"],
+    timeout = "short",
+)
+
+js_test(
+    name = "gsd-sdk-query-registry-integration",
+    entry_point = "gsd-sdk-query-registry-integration.test.cjs",
+    data = [
+        "//integration/helpers:test_helpers",
+        "//:project_sources",
+    ],
+    size = "small",
+    tags = ["unit", "local", "phase-2-critic"],
+    timeout = "short",
+)

@@ -73,8 +73,8 @@ Wave 1 — bulk trim + orchestrator wiring + live tests + phase exit (depends on
 - [x] 02-07-PLAN.md — 3 live tests (critic-batch-walltime, critic-fault-injection, critic-parity) + walltime-ledger-schema [CRIT-08, CRIT-09, CRIT-10, XCUT-03]
 
 Wave 1.5 — gap closures surfaced by Plan 02-08 Wave 6 status check (must land before exit gate):
-- [ ] 02-09-PLAN.md — Revert unstaged critic @-import drift (`@$HOME` → `@~/.claude`) [CRIT-03]
-- [ ] 02-10-PLAN.md — Add tests/BUILD.bazel entries for `cull-no-orphan-references` + `gsd-sdk-query-registry-integration` (test files exist on disk; not in bazel filter) [CRIT-03, XCUT-03]
+- [x] 02-09-PLAN.md — Revert unstaged critic @-import drift (`@$HOME` → `@~/.claude`) [CRIT-03]
+- [x] 02-10-PLAN.md — Add tests/BUILD.bazel entries for `cull-no-orphan-references` + `gsd-sdk-query-registry-integration` (test files exist on disk; not in bazel filter) [CRIT-03, XCUT-03]
 - [ ] 02-11-PLAN.md — Fix Phase 2 js_test `data` attrs so agent/install/workflow/sdk files reach the bazel sandbox (closes 6 ENOENT failures in `--test_tag_filters=phase-2-critic`) [CRIT-03, CRIT-04, CRIT-05]
 
 - [ ] 02-08-PLAN.md — Phase exit: full Bazel suite green + CHANGELOG entry + git tag gsd-slim-phase-2-critic [XCUT-03]
