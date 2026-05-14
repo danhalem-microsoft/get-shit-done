@@ -7,9 +7,27 @@ const path = require('node:path');
 const { runAgentParity, SCHEMAS } = require('./helpers/agent-parity.cjs');
 const { createSandbox } = require('./helpers/claude-runner.cjs');
 
-// CRIT-10: N=5 median (or per H8 — adjusted in VALIDATION.md if variance >= 15%),
-// >=85% finding overlap by severity-bucketed key, no missing critical, vs Phase 1
-// baselines. Expensive — ~$25, ~30min — nightly + phase-exit only.
+// CRIT-10 (Phase 2 + Phase 2.1 embedding rebuild): N=5 median, >=85% finding
+// overlap by severity-bucketed key + cosine-embedding similarity (D-CTX-03
+// threshold 0.80 for the per-finding "same finding" judgement), no missing
+// critical, vs Phase 1 baselines. Expensive — ~$25 critic + ~$1 embeddings,
+// ~30min — nightly + phase-exit only.
+//
+// Phase 2.1 (Plan 02.1-02) hooks into this test:
+//   - `useEmbeddings: true` opts into the embedding-cosine comparator path
+//     (integration/helpers/agent-parity.cjs::computeCriticFindingsDeltasEmbedding).
+//   - `cacheBucket: criticName` scopes the per-critic on-disk embedding cache
+//     at integration/test-fixtures/baselines/embeddings/<criticName>/<sha>.json
+//     (D-CTX-10) — re-runs against the same baseline reuse embeddings, only
+//     novel candidate titles pay the API cost.
+//   - `phase: 'phase-2.1-crit10'` tags the walltime ledger entry (D-CTX-13).
+//   - Failure messages include per-finding diagnosis (D-CTX-12) so the
+//     reviewer can see which baseline findings have no semantic match plus
+//     the best-candidate cosine score per unmatched finding.
+//
+// Threshold rationale and cosine↔Jaccard relationship: see
+// .planning/users/dan-halem/gsd-slim-and-integrate/phases/02.1-crit10-comparator-rebuild/02.1-CONTEXT.md
+// (D-CTX-03) and integration/helpers/agent-parity.cjs `COSINE_TITLE_THRESHOLD`.
 //
 // B10 (per 02-REVIEWS.md scope-M-001 / plan-H-005 / verify-I-002):
 //   Fixture IDs are VERIFIED — read from `ls integration/test-fixtures/baselines/critic-*/`
@@ -79,17 +97,35 @@ for (const [criticName, fixtureId] of Object.entries(FIXTURE_IDS)) {
       {
         n: N,
         mode: 'compare',
-        phase: 'phase-2-critic',
+        phase: 'phase-2.1-crit10',  // D-CTX-13 walltime ledger tag (Plan 02.1-02)
         walltimeBudgetMs: 600_000,
         maxCostUsd: 30,
+        useEmbeddings: true,         // Plan 02.1-02 — opt into cosine path
+        cacheBucket: criticName,     // D-CTX-10 — per-critic embedding disk cache
       }
     );
 
+    // Plan 02.1-02 D-CTX-12: per-finding diagnosis on failure. Lists each
+    // baseline finding whose cosine to its best candidate match fell below
+    // COSINE_TITLE_THRESHOLD (0.80) — those are the findings the comparator
+    // could not semantically match. `cosine === null` means the baseline title
+    // had no embedding lookup (typically only happens in the unit-test or
+    // fallback path).
+    const unmatched = (result.deltas?.perFindingDiagnosis ?? [])
+      .filter((d) => d.cosine === null || d.cosine < 0.80)
+      .map((d) => `  - baseline=${d.baselineId} bestMatch=${d.bestCandidateId ?? 'NONE'} cosine=${d.cosine === null ? 'N/A' : d.cosine.toFixed(3)}`)
+      .join('\n');
+
     assert.ok(result.pass,
-      `parity FAIL for ${criticName}: ` +
-      `overlap=${result.deltas?.overlap?.toFixed(2) ?? 'n/a'}, ` +
-      `missingCritical=${JSON.stringify(result.deltas?.missingCritical ?? [])}, ` +
-      `baseFindingCount=${result.deltas?.baseFindingCount ?? 'n/a'}, ` +
-      `currFindingCount=${result.deltas?.currFindingCount ?? 'n/a'}`);
+      `parity FAIL for ${criticName}:\n` +
+      `  overlap=${result.deltas?.overlap?.toFixed(2) ?? 'n/a'}\n` +
+      `  cosineMatches=${result.deltas?.cosineMatchCount ?? 0}\n` +
+      `  fuzzyMatches=${result.deltas?.fuzzyMatchCount ?? 0}\n` +
+      `  baseFindingCount=${result.deltas?.baseFindingCount ?? 'n/a'}\n` +
+      `  currFindingCount=${result.deltas?.currFindingCount ?? 'n/a'}\n` +
+      `  missingCritical=${JSON.stringify(result.deltas?.missingCritical ?? [])}\n` +
+      `  usedFallback=${result.deltas?.usedFallback ?? false}\n` +
+      `  fallbackReason=${result.deltas?.fallbackReason ?? 'n/a'}\n` +
+      `  unmatchedBaselineFindings:\n${unmatched || '  (all matched)'}\n`);
   });
 }

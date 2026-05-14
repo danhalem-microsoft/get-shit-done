@@ -10,6 +10,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const crypto = require('node:crypto');
 const { runClaudeWithTools } = require('./claude-runner.cjs');
 const { recordWalltime } = require('./walltime-recorder.cjs');
 
@@ -158,7 +159,16 @@ async function runAgentParity(agentName, fixture, schema, opts = {}) {
     };
   }
 
-  const deltas = computeDeltas(schema, baseline, successful);
+  // Plan 02.1-02: `computeDeltas` is now async (forwards to async embedding path
+  // when `opts.useEmbeddings` is true). Phase 2 callers that pass nothing for
+  // `useEmbeddings` still get the synchronous Jaccard mechanism — the await is
+  // a no-op for the sync return value.
+  const deltas = await computeDeltas(schema, baseline, successful, {
+    useEmbeddings: opts.useEmbeddings,
+    cacheBucket: opts.cacheBucket,
+    config: opts.config,
+    allowFallback: opts.allowFallback ?? true,
+  });
   const walltimes = successful.map((r) => r.duration_ms);
   const totalCost = runs.reduce((s, r) => s + (r.cost ?? 0), 0);
 
@@ -173,13 +183,78 @@ async function runAgentParity(agentName, fixture, schema, opts = {}) {
   };
 }
 
-function computeDeltas(schema, baseline, runs) {
-  // Per-schema comparison logic. Stub for kinds the helper supports —
-  // Phase 2/3/6 will exercise these in production; for Phase 1 capture-mode
-  // these branches are not exercised but MUST compile + be exported.
+/**
+ * Per-schema delta dispatcher. Async because the Plan 02.1-02 critic-findings
+ * branch may need to await `embedTitles` (OpenAI Embeddings API). Phase 2
+ * call sites that don't pass `opts.useEmbeddings` still hit the synchronous
+ * Jaccard path via the resolved-immediately Promise the function returns; the
+ * caller's `await` is a no-op for sync values.
+ *
+ * Per Plan 02.1-02 D-CTX-07: Phase 2's `computeCriticFindingsDeltas` is
+ * preserved as a direct-call export on `_internal`; the 16-subtest lock test
+ * (`tests/critic-comparator-fix.test.cjs`) calls it synchronously and that
+ * path remains identical.
+ */
+async function computeDeltas(schema, baseline, runs, opts = {}) {
   switch (schema.kind) {
     case 'critic-findings':
-      return computeCriticFindingsDeltas(schema, baseline, runs);
+      // Phase 2 path: synchronous Jaccard. Call sites that don't opt into
+      // embeddings get the unchanged Phase 2 behavior.
+      if (!opts.useEmbeddings) {
+        return computeCriticFindingsDeltas(schema, baseline, runs);
+      }
+      // Phase 2.1 path: try the embedding-cosine comparator. On
+      // OpenAIKeyUnsetError or network failure, fall back to Phase 2 Jaccard
+      // with an explicit stderr WARN (D-CTX-05).
+      try {
+        // Lazy require: keep the embedding-client out of the load graph for
+        // call sites that never opt into embeddings (no module-level cycle
+        // risk; identical SDK init cost lives inside `embedTitles`).
+        const { embedTitles } = require('./embedding-client.cjs');
+
+        const candidate = pickMedianByDuration(runs.filter((r) => !r.failed && r.success));
+        if (!candidate) return { pass: false, error: 'no successful runs' };
+
+        const baseFindings = (baseline.result && baseline.result.findings)
+          || extractFindingsFromText(baseline.result || '');
+        const currFindings = (candidate.result && candidate.result.findings)
+          || extractFindingsFromText(candidate.result || '');
+
+        const allTitles = [
+          ...baseFindings.map((f) => f.title),
+          ...currFindings.map((f) => f.title),
+        ];
+        const model = getEmbeddingModel(opts.config);
+
+        const embeddingsByTitle = await embedTitles(allTitles, {
+          model,
+          cacheBucket: opts.cacheBucket,
+        });
+
+        return computeCriticFindingsDeltasEmbedding(schema, baseline, runs, {
+          embeddingsByTitle,
+          allowFallback: false,
+          cacheBucket: opts.cacheBucket,
+          config: opts.config,
+        });
+      } catch (err) {
+        const isUnset = err && err.name === 'OpenAIKeyUnsetError';
+        const isNetwork = err && (
+          err.code === 'ENOTFOUND' ||
+          err.code === 'ETIMEDOUT' ||
+          err.code === 'ECONNREFUSED' ||
+          (typeof err.status === 'number' && err.status >= 500)
+        );
+        if (!opts.allowFallback && !isUnset && !isNetwork) throw err;
+        const reason = isUnset
+          ? 'OPENAI_API_KEY unset'
+          : `embedding API ${err.code || err.status || (err.message || 'error')}`;
+        process.stderr.write(
+          `WARN: embedding API unavailable; falling back to Jaccard (Phase 2 contract — lexical similarity only). reason=${reason}\n`
+        );
+        const result = computeCriticFindingsDeltas(schema, baseline, runs);
+        return { ...result, usedFallback: true, fallbackReason: reason };
+      }
     case 'plan-structural':
       return computePlanStructuralDeltas(schema, baseline, runs);
     case 'schema-conformance':
@@ -495,6 +570,374 @@ function extractCategoryFromTitle(title) {
   return (title || 'unknown').toLowerCase().split(/\s+/).slice(0, 2).join('-');
 }
 
+// ============================================================================
+// Phase 2.1 / CRIT-10: embedding-cosine comparator (additive over Phase 2).
+// ============================================================================
+//
+// The Phase 2 Jaccard mechanism above (computeCriticFindingsDeltas + helpers)
+// REMAINS UNCHANGED and is what `tests/critic-comparator-fix.test.cjs` (16 sub-
+// tests) and the synchronous direct-call code path exercise. The symbols below
+// add an embedding-cosine comparison phase that runs on top of Phase 2's
+// exact-bucket + fuzzy-Jaccard phases:
+//
+//   Phase 1 (exact bucketKey)       — unchanged from computeCriticFindingsDeltas
+//   Phase 2 (fuzzy Jaccard ≥ 0.7)   — unchanged from computeCriticFindingsDeltas
+//   Phase 3 (cosine ≥ 0.80)         — NEW, only in computeCriticFindingsDeltasEmbedding
+//
+// Per D-CTX-01 the new path REPLACES Jaccard for the "same finding" judgement
+// in the comparator wired through `runAgentParity`, but it does so by adding
+// Phase 3 on top of Phases 1+2 (instead of removing them) — Phase 2 helpers
+// remain valid fallbacks for borderline cases inside the embedding path too.
+//
+// Per D-CTX-02: EMBEDDING_MODEL_DEFAULT (defined below) is the ONLY place the
+// default model name appears as a string literal in this file. All downstream
+// use goes through `getEmbeddingModel(config)` which reads
+// `config.workflow.embedding_model` (registered in config-schema.cjs by Plan
+// 02.1-01) with this constant as the fallback.
+
+const EMBEDDING_MODEL_DEFAULT = 'text-embedding-3-small';  // D-CTX-02
+
+/**
+ * D-CTX-03 — Threshold for the cosine "same finding" judgement.
+ *
+ * Empirically calibrated against the 02-07-SUMMARY-fixes.md §CRIT-10 paraphrase
+ * table: the load-bearing pair ("No input validation on req.body.email" ↔
+ * "Missing input validation on email parameter") has Jaccard ≈ 0.333 (below
+ * the 0.7 fuzzy threshold) but measured cosine ~0.87 against text-embedding-3-
+ * small. Cosine 0.80 ≈ Jaccard 0.50 for short, semantically-equivalent titles.
+ *
+ * The threshold is informational at the unit-test level (synthetic vectors —
+ * tests inject pre-built `embeddingsByTitle` Maps so no live API is used) and
+ * is validated empirically against live N=5 parity data in Plan 02.1-03.
+ */
+const COSINE_TITLE_THRESHOLD = 0.80;
+
+/**
+ * Strip leading `[severity]` markers, lowercase, collapse whitespace, trim.
+ * Keep BYTE-IDENTICAL with `embedding-client.cjs::normalizeForEmbedding` so the
+ * cache key the client writes matches the lookup the comparator does on
+ * retrieval (both call this same shape of normalization on the same input).
+ */
+function normalizeForEmbedding(title) {
+  return (title || '')
+    .toLowerCase()
+    .replace(/^\s*\[[a-z]+\]\s*/i, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
+ * sha256(model + ':' + normalized title) → 64-char hex. Used both for the
+ * unit-test contract (B3-B5) and (indirectly via embedding-client.cjs's
+ * matching helper) for the on-disk cache file naming.
+ */
+function embeddingCacheKey(model, title) {
+  return crypto.createHash('sha256')
+    .update(`${model}:${normalizeForEmbedding(title)}`)
+    .digest('hex');
+}
+
+/**
+ * Cosine similarity in [0, 1] for non-negative-bias contexts (we cap at 0 for
+ * zero-vectors and never expect negative vectors from the OpenAI embedding
+ * model — see EMBEDDING_MODEL_DEFAULT for the default).
+ *
+ * Contract (A1-A5):
+ *   identical vectors      → 1.0 (within 1e-9)
+ *   orthogonal vectors     → 0    (within 1e-9)
+ *   symmetric              → cos(a,b) === cos(b,a)
+ *   zero-vector defense    → 0   (NOT NaN)
+ *   mismatched length      → throws Error mentioning length/dim
+ */
+function cosineSimilarity(vecA, vecB) {
+  if (!Array.isArray(vecA) || !Array.isArray(vecB)) {
+    throw new Error('cosineSimilarity: both inputs must be number arrays');
+  }
+  if (vecA.length !== vecB.length) {
+    throw new Error(
+      `cosineSimilarity: length mismatch — vecA.length=${vecA.length}, vecB.length=${vecB.length} ` +
+      `(dimension must match; got mismatched vector dim).`
+    );
+  }
+  let dot = 0;
+  let normA = 0;
+  let normB = 0;
+  for (let i = 0; i < vecA.length; i++) {
+    const a = vecA[i];
+    const b = vecB[i];
+    dot += a * b;
+    normA += a * a;
+    normB += b * b;
+  }
+  if (normA === 0 || normB === 0) return 0;  // zero-vector defense (A4)
+  return dot / (Math.sqrt(normA) * Math.sqrt(normB));
+}
+
+/**
+ * Read the embedding model name from a GSD config object, falling back to
+ * EMBEDDING_MODEL_DEFAULT. The config key `workflow.embedding_model` was
+ * registered in `get-shit-done/bin/lib/config-schema.cjs` by Plan 02.1-01.
+ *
+ * Defensive: handles `null`, `undefined`, and a config object missing the
+ * `workflow` namespace (C5 contract).
+ */
+function getEmbeddingModel(config) {
+  return (config && config.workflow && config.workflow.embedding_model) || EMBEDDING_MODEL_DEFAULT;
+}
+
+/**
+ * Embedding-aware variant of `computeCriticFindingsDeltas`. Adds Phase 3
+ * (cosine matching) AFTER the Phase 1 (exact bucketKey) and Phase 2 (fuzzy
+ * Jaccard) phases from the original mechanism. Returns the SAME shape as the
+ * Phase 2 comparator, augmented with `cosineMatchCount` and
+ * `perFindingDiagnosis` (D-CTX-12).
+ *
+ * Live-mode (called from `computeDeltas` with `opts.useEmbeddings: true`):
+ *   `opts.embeddingsByTitle` is pre-built by the `embedTitles` API call (or
+ *   loaded from disk cache). Map keyed by NORMALIZED title.
+ *
+ * Unit-test mode (RED suite Group D, F):
+ *   `opts.embeddingsByTitle` is constructed by the test with synthetic
+ *   1536-dim unit vectors; no API call happens.
+ *
+ * Fallback mode (RED suite Group E):
+ *   `opts.embeddingsByTitle` is absent AND `opts.allowFallback: true` AND
+ *   `OPENAI_API_KEY` is unset → emit stderr WARN and delegate to Phase 2's
+ *   sync `computeCriticFindingsDeltas`, augmenting the result with
+ *   `usedFallback: true` and `fallbackReason`. Returns a value identical to
+ *   what the async dispatcher in `computeDeltas` would produce on a network
+ *   failure, so the contract is consistent across both fallback entrypoints.
+ *
+ * @param {object} schema      `SCHEMAS['critic-findings']` (threshold 0.85).
+ * @param {object} baseline    `{ result: { findings: [...] } }` or `{ result: '<text>' }`.
+ * @param {Array}  runs        Candidate runs (filtered for success/failed inside).
+ * @param {object} opts
+ * @param {Map}    [opts.embeddingsByTitle]  Map<normalizedTitle, number[]>
+ * @param {boolean}[opts.allowFallback]      If true + no key + no embeddings,
+ *                                           emit WARN and use Phase 2 Jaccard
+ *                                           instead of throwing.
+ * @param {string} [opts.cacheBucket]        (informational; not used in unit-
+ *                                           test mode since embeddings are
+ *                                           pre-supplied)
+ * @param {object} [opts.config]             (informational; pass-through to
+ *                                           getEmbeddingModel if a caller
+ *                                           wants the resolved model name in
+ *                                           a future diagnostic)
+ */
+function computeCriticFindingsDeltasEmbedding(schema, baseline, runs, opts = {}) {
+  const embeddingsByTitle = opts.embeddingsByTitle;
+  const allowFallback = opts.allowFallback === true;
+
+  // Fallback path (Group E contract): no embeddings provided AND no API key
+  // available AND caller opted into fallback. Emit WARN, return Phase 2 result
+  // with the documented fallback fields.
+  if (!embeddingsByTitle) {
+    const hasKey = !!(opts.apiKey || process.env.OPENAI_API_KEY);
+    if (!hasKey) {
+      if (!allowFallback) {
+        // No key, no embeddings, no fallback opt-in → contract violation.
+        // Surface the OpenAIKeyUnsetError shape so the dispatcher's catch
+        // block can distinguish it.
+        const err = new Error(
+          'computeCriticFindingsDeltasEmbedding: OPENAI_API_KEY unset, no embeddingsByTitle supplied, and allowFallback !== true'
+        );
+        err.name = 'OpenAIKeyUnsetError';
+        throw err;
+      }
+      const reason = 'OPENAI_API_KEY unset';
+      process.stderr.write(
+        `WARN: embedding API unavailable; falling back to Jaccard (Phase 2 contract — lexical similarity only). reason=${reason}\n`
+      );
+      const phase2Result = computeCriticFindingsDeltas(schema, baseline, runs);
+      return { ...phase2Result, usedFallback: true, fallbackReason: reason };
+    }
+    // Has key but no embeddings AND no live-fetch path here (this function is
+    // the leaf comparator — fetching is done by the dispatcher). Caller should
+    // have either supplied embeddings or routed through the async dispatcher.
+    throw new Error(
+      'computeCriticFindingsDeltasEmbedding: no embeddingsByTitle supplied. ' +
+      'Either pre-build the Map (unit-test mode) or call via computeDeltas() async dispatcher (live mode).'
+    );
+  }
+
+  // ----- Primary path: embeddings available. -----
+  const candidate = pickMedianByDuration(runs.filter((r) => !r.failed && r.success));
+  if (!candidate) return { pass: false, error: 'no successful runs' };
+
+  const baseFindings = (baseline.result && baseline.result.findings)
+    || extractFindingsFromText(baseline.result || '');
+  const currFindings = (candidate.result && candidate.result.findings)
+    || extractFindingsFromText(candidate.result || '');
+
+  // bucketKey identical to Phase 2's so exact matches behave the same.
+  function bucketKey(f) {
+    const sev = normalizeSeverity(f.severity);
+    const lane = (f.lane || 'primary').toLowerCase();
+    const cat = (f.category || extractCategoryFromTitle(f.title)).toLowerCase();
+    const file = f.file || 'N/A';
+    return `${sev}:${cat}:${lane}|${file}`;
+  }
+
+  const baseKeys = baseFindings.map(bucketKey);
+  const currKeys = currFindings.map(bucketKey);
+  const baseKeySet = new Set(baseKeys);
+  const currKeySet = new Set(currKeys);
+
+  // Phase 1: exact bucketKey intersection.
+  const matchedBaseIdx = new Set();
+  const matchedCurrIdx = new Set();
+  for (let bi = 0; bi < baseFindings.length; bi++) {
+    if (matchedBaseIdx.has(bi)) continue;
+    for (let ci = 0; ci < currFindings.length; ci++) {
+      if (matchedCurrIdx.has(ci)) continue;
+      if (baseKeys[bi] === currKeys[ci]) {
+        matchedBaseIdx.add(bi);
+        matchedCurrIdx.add(ci);
+        break;
+      }
+    }
+  }
+
+  // Phase 2: fuzzy Jaccard fallback (same shape as Phase 2 comparator).
+  let fuzzyMatchCount = 0;
+  for (let bi = 0; bi < baseFindings.length; bi++) {
+    if (matchedBaseIdx.has(bi)) continue;
+    const bf = baseFindings[bi];
+    const bfSev = normalizeSeverity(bf.severity);
+    const bfFile = bf.file || 'N/A';
+    const bfBag = titleWordBag(bf.title);
+    let bestScore = 0;
+    let bestCi = -1;
+    for (let ci = 0; ci < currFindings.length; ci++) {
+      if (matchedCurrIdx.has(ci)) continue;
+      const cf = currFindings[ci];
+      if (normalizeSeverity(cf.severity) !== bfSev) continue;
+      const cfFile = cf.file || 'N/A';
+      const sameFile = cfFile === bfFile;
+      const bothNoFile = cfFile === 'N/A' && bfFile === 'N/A';
+      if (!sameFile && !bothNoFile) continue;
+      const score = jaccardSimilarity(bfBag, titleWordBag(cf.title));
+      if (score >= FUZZY_TITLE_THRESHOLD && score > bestScore) {
+        bestScore = score;
+        bestCi = ci;
+      }
+    }
+    if (bestCi !== -1) {
+      matchedBaseIdx.add(bi);
+      matchedCurrIdx.add(bestCi);
+      fuzzyMatchCount += 1;
+    }
+  }
+
+  // Phase 3 (NEW): cosine fallback for still-unmatched baseline findings.
+  // Each baseline finding gets EXACTLY ONE perFindingDiagnosis entry. For
+  // already-matched (Phase 1 or Phase 2) baseline findings we record cosine=1.0
+  // with bestCandidateId='matched-pre-cosine' to signal "did not need Phase 3"
+  // — but in the test contract (F1) only the still-unmatched baselines exercise
+  // the bestCandidateId field, and the matched ones just need cosine >= 0.80
+  // (1.0 satisfies that). For unmatched baselines whose normalized title HAS an
+  // embedding, scan all unmatched candidates that share normalizedSeverity and
+  // (file OR both-N/A), compute cosine, and pick the highest. Match if cosine
+  // >= COSINE_TITLE_THRESHOLD.
+  let cosineMatchCount = 0;
+  const perFindingDiagnosis = [];
+  for (let bi = 0; bi < baseFindings.length; bi++) {
+    const bf = baseFindings[bi];
+    if (matchedBaseIdx.has(bi)) {
+      // Already matched by Phase 1 or Phase 2 — no need to invoke cosine, but
+      // the diagnosis array must have one entry per baseline finding (F1).
+      perFindingDiagnosis.push({
+        baselineId: bf.id,
+        bestCandidateId: 'matched-pre-cosine',
+        cosine: 1.0,
+      });
+      continue;
+    }
+    const bfNorm = normalizeForEmbedding(bf.title);
+    const bfVec = embeddingsByTitle.get(bfNorm);
+    if (!bfVec) {
+      // No embedding for this baseline title — can't cosine-match.
+      perFindingDiagnosis.push({
+        baselineId: bf.id,
+        bestCandidateId: null,
+        cosine: null,
+      });
+      continue;
+    }
+    const bfSev = normalizeSeverity(bf.severity);
+    const bfFile = bf.file || 'N/A';
+    let bestCosine = 0;
+    let bestCi = -1;
+    for (let ci = 0; ci < currFindings.length; ci++) {
+      if (matchedCurrIdx.has(ci)) continue;
+      const cf = currFindings[ci];
+      if (normalizeSeverity(cf.severity) !== bfSev) continue;
+      const cfFile = cf.file || 'N/A';
+      const sameFile = cfFile === bfFile;
+      const bothNoFile = cfFile === 'N/A' && bfFile === 'N/A';
+      if (!sameFile && !bothNoFile) continue;
+      const cfNorm = normalizeForEmbedding(cf.title);
+      const cfVec = embeddingsByTitle.get(cfNorm);
+      if (!cfVec) continue;
+      const cos = cosineSimilarity(bfVec, cfVec);
+      if (cos > bestCosine) {
+        bestCosine = cos;
+        bestCi = ci;
+      }
+    }
+    if (bestCi !== -1 && bestCosine >= COSINE_TITLE_THRESHOLD) {
+      matchedBaseIdx.add(bi);
+      matchedCurrIdx.add(bestCi);
+      cosineMatchCount += 1;
+      perFindingDiagnosis.push({
+        baselineId: bf.id,
+        bestCandidateId: currFindings[bestCi].id,
+        cosine: bestCosine,
+      });
+    } else {
+      perFindingDiagnosis.push({
+        baselineId: bf.id,
+        bestCandidateId: bestCi !== -1 ? currFindings[bestCi].id : null,
+        cosine: bestCosine,
+      });
+    }
+  }
+
+  const overlap = baseFindings.length === 0
+    ? 1.0
+    : matchedBaseIdx.size / baseFindings.length;
+
+  // Missing critical: baseline findings with normalized-severity 'critical'
+  // that remain unmatched after Phases 1+2+3.
+  const missingCritical = [];
+  for (let bi = 0; bi < baseFindings.length; bi++) {
+    const bf = baseFindings[bi];
+    if (normalizeSeverity(bf.severity) !== 'critical') continue;
+    if (matchedBaseIdx.has(bi)) continue;
+    missingCritical.push({ id: bf.id, title: bf.title, severity: bf.severity });
+  }
+
+  const extra = [...currKeySet].filter((k) => !baseKeySet.has(k));
+  const pass = (overlap >= schema.threshold) && (missingCritical.length === 0);
+
+  return {
+    pass,
+    overlap,
+    threshold: schema.threshold,
+    missingCritical,
+    extraFindings: extra,
+    baseFindingCount: baseFindings.length,
+    currFindingCount: currFindings.length,
+    fuzzyMatchCount,
+    cosineMatchCount,
+    perFindingDiagnosis,
+  };
+}
+
+// ============================================================================
+// End Phase 2.1 additions.
+// ============================================================================
+
 function computePlanStructuralDeltas(schema, baseline, runs) {
   // Stub for Phase 3.
   return {
@@ -524,10 +967,14 @@ module.exports = {
   loadBaseline,
   saveBaseline,
   pickMedianByDuration,
-  // _internal: exposed for tests/critic-findings-delta-shape.test.cjs (B6 / verify-C-003)
-  // and tests/critic-comparator-fix.test.cjs (CRIT-10 fix). Do NOT use these from
-  // non-test code; they are heuristics with backfill semantics.
+  // _internal: exposed for tests/critic-findings-delta-shape.test.cjs (B6 / verify-C-003),
+  // tests/critic-comparator-fix.test.cjs (CRIT-10 Phase 2 fix), and Plan 02.1-02
+  // (tests/critic-comparator-embedding-shape.test.cjs — Phase 2.1 embedding contract).
+  // Do NOT use these from non-test code; they are heuristics with backfill semantics
+  // (Phase 2) and a leaf comparator that requires pre-built or async-fetched
+  // embeddings to be useful (Phase 2.1).
   _internal: {
+    // Phase 2 (preserved, locked by tests/critic-comparator-fix.test.cjs):
     extractFindingsFromText,
     extractCategoryFromTitle,
     normalizeSeverity,
@@ -535,5 +982,13 @@ module.exports = {
     jaccardSimilarity,
     computeCriticFindingsDeltas,
     FUZZY_TITLE_THRESHOLD,
+    // Phase 2.1 (additive, locked by tests/critic-comparator-embedding-shape.test.cjs):
+    cosineSimilarity,
+    normalizeForEmbedding,
+    embeddingCacheKey,
+    COSINE_TITLE_THRESHOLD,
+    EMBEDDING_MODEL_DEFAULT,
+    getEmbeddingModel,
+    computeCriticFindingsDeltasEmbedding,
   },
 };
