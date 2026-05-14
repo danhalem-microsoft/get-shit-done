@@ -16,7 +16,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [ ] **Phase 1: Cull (with Wave 0 test infrastructure)** - Build parity infrastructure + orphan-reference test + lifecycle step decomposition, then delete 49 commands + 17 agents and consolidate `/gsd-review` and `/gsd-phase`
 - [ ] **Phase 2: Critic refactor (with commit-0 spike)** - Verify `@`-reference resolution in agent context, then extract shared base + 6 lens addendums fired as a single parallel batch with parity + walltime + 1-of-N failure-injection tests
-- [ ] **Phase 2.1: CRIT-10 comparator rebuild (gap closure)** - Replace Jaccard-title similarity with embedding-based cosine in `agent-parity.cjs::computeCriticFindingsDeltas`; capture H8 variance baseline; re-run N=5 parity for real semantic-equivalence signal
+- [x] **Phase 2.1: CRIT-10 comparator rebuild (gap closure)** - Replace Jaccard-title similarity with embedding-based cosine in `agent-parity.cjs::computeCriticFindingsDeltas`; capture H8 variance baseline; re-run N=5 parity for real semantic-equivalence signal (completed 2026-05-14)
 - [ ] **Phase 3: Plan-phase chain merge** - Merge `gsd-research-synthesizer` into `gsd-planner` under `<synthesis-step>` anchor, parallelize pattern-mapper + phase-researcher, gate Phase 3 exit on token-headroom calculation
 - [ ] **Phase 4: TDD hardening (3 layers)** - Layer 1 (executor + planner prompts), Layer 2 (plan-checker structural rule), Layer 3 (`hooks/tdd-gate.sh` with 30-day warn-mode auto-sunset and CI mirror)
 - [ ] **Phase 5: SP integration** - `lib/spec-reader.cjs`, `--from-spec` on three commands, project-local SP brainstorming addendum via `CLAUDE.md` `@`-import, multi-signal `.planning/` detection, spec git-SHA recording, nightly contract test against live SP
@@ -87,7 +87,7 @@ Wave 1 — bulk trim + orchestrator wiring + live tests + phase exit (depends on
 
 - [x] 02.1-01-PLAN.md — RED test suite for the embedding comparator contract + workflow.embedding_model config-schema entry (Plan 02.1-02 GREEN target) [CRIT-10]
 - [x] 02.1-02-PLAN.md — Implement embedding-based cosine comparator in agent-parity.cjs + thin OpenAI SDK wrapper at integration/helpers/embedding-client.cjs + update critic-parity.test.cjs to use the new path with per-finding diagnosis; Phase 2 lock tests stay GREEN [CRIT-10]
-- [ ] 02.1-03-PLAN.md — Live H8 variance (3× per critic) + N=5 parity verification + 02.1-VERIFICATION.md (with per-finding diagnosis + spend reconciliation) + 02.1-SUMMARY.md (phase exit, GO/NO-GO recommendation for Plan 02-08); $20 hard cap; has GO/NO-GO checkpoint before live spend [CRIT-10]
+- [x] 02.1-03-PLAN.md — Live H8 variance (3× per critic) + N=5 parity verification + 02.1-VERIFICATION.md (with per-finding diagnosis + spend reconciliation) + 02.1-SUMMARY.md (phase exit, GO/NO-GO recommendation for Plan 02-08); $20 hard cap; has GO/NO-GO checkpoint before live spend [CRIT-10]
 
 ### Phase 3: Plan-phase chain merge
 **Goal**: `agents/gsd-research-synthesizer.md` is deleted and its content is merged into `agents/gsd-planner.md` under a `<synthesis-step>` anchor with the previous planner content under `<planning-step>`, `pattern-mapper` and `phase-researcher` fire as a single parallel `Task` batch with wall-clock equal to max rather than sum, plan-phase has 1 fewer agent and 1 fewer hop than baseline, plan-structural parity is verified with N=5 median against Phase 1 wave 0 baseline (task count within ±10%, must-haves set equality, dependency graph isomorphic by content, every implementation task has a RED test sub-step), and merged-planner token budget under realistic input does not exceed 100K tokens — if it does, Posture B trim of the planner is executed within Phase 3 rather than deferred.
@@ -146,7 +146,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 |-------|----------------|--------|-----------|
 | 1. Cull (with Wave 0 test infrastructure) | 0/9 | Not started | - |
 | 2. Critic refactor (with commit-0 spike) | 7/8 | In Progress|  |
-| 2.1. CRIT-10 comparator rebuild (gap closure) | 2/3 | In Progress|  |
+| 2.1. CRIT-10 comparator rebuild (gap closure) | 3/3 | Complete   | 2026-05-14 |
 | 3. Plan-phase chain merge | 0/TBD | Not started | - |
 | 4. TDD hardening (3 layers) | 0/TBD | Not started | - |
 | 5. SP integration | 0/TBD | Not started | - |
