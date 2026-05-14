@@ -160,6 +160,7 @@ All workflow toggles follow the **absent = enabled** pattern. If a key is missin
 | `workflow.pattern_mapper` | boolean | `true` | Run the `gsd-pattern-mapper` agent between research and planning to map new files to existing codebase analogs |
 | `workflow.subagent_timeout` | number | `600` | Timeout in seconds for individual subagent invocations. Increase for long-running research or execution phases |
 | `workflow.inline_plan_threshold` | number | `3` | Maximum number of tasks in a phase before the planner generates a separate PLAN.md file instead of inlining tasks in the prompt |
+| `workflow.embedding_model` | string | `text-embedding-3-small` | Embedding model used by `integration/helpers/agent-parity.cjs` for cosine-similarity-based critic finding comparison (Phase 2.1 — CRIT-10 gap closure). Used by the comparator's primary path when `OPENAI_API_KEY` is set; ignored on the Jaccard fallback path. Example: `gsd-sdk query config-set workflow.embedding_model text-embedding-3-small`. See `.planning/users/dan-halem/gsd-slim-and-integrate/phases/02.1-crit10-comparator-rebuild/02.1-CONTEXT.md` D-CTX-02. Added in Phase 2.1 |
 
 ### Recommended Presets
 
