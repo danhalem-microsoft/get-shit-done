@@ -14,6 +14,7 @@ js_library(
         "scripts/**",
         "sdk/**",
         "bin/**",
+        "tests/e2e/fixtures/**",
     ]) + ["package.json"],
     visibility = ["//visibility:public"],
 )

@@ -19,3 +19,11 @@ common --lockfile_mode=off
 
 # Per-developer overrides — gitignored escape hatch for explicit values
 try-import %workspace%/user.bazelrc
+
+# GSD E2E runtime-track env (Copilot + OpenCode)
+test --test_env=GSD_E2E_COPILOT
+test --test_env=GSD_E2E_OPENCODE
+test --test_env=GSD_E2E_KEEP_TMP
+test --test_env=GSD_E2E_MODEL
+test --test_env=GH_TOKEN
+test --test_env=GITHUB_TOKEN

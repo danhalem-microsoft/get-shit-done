@@ -1,0 +1,40 @@
+load("@aspect_rules_js//js:defs.bzl", "js_library", "js_test")
+
+js_library(
+    name = "e2e_lib",
+    srcs = glob(
+        ["*.cjs", "*.json"],
+        exclude = ["__tests__/**"],
+    ),
+    visibility = ["//visibility:public"],
+)
+
+# Wrap __tests__ sources so js_test entry_points resolve via copy-to-bin
+js_library(
+    name = "e2e_test_srcs",
+    srcs = glob(["__tests__/*.test.cjs"]),
+    deps = [":e2e_lib"],
+)
+
+[
+    js_test(
+        name = name.replace(".test.cjs", ""),
+        entry_point = "__tests__/{}".format(name),
+        data = [
+            ":e2e_test_srcs",
+            ":e2e_lib",
+            "//:project_sources",
+            "//tests/e2e/fixtures:e2e_fixtures",
+        ],
+        tags = ["unit"],
+    )
+    for name in [
+        "test-repo.test.cjs",
+        "runtime-driver.test.cjs",
+        "preflight.test.cjs",
+        "install-probe.test.cjs",
+        "fork-structural.test.cjs",
+        "gap-taxonomy.test.cjs",
+    ]
+]
+

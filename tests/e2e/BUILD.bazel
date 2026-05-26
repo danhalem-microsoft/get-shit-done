@@ -1,0 +1,21 @@
+load("@aspect_rules_js//js:defs.bzl", "js_test")
+
+[
+    js_test(
+        name = name.replace(".test.cjs", ""),
+        entry_point = name,
+        data = [
+            "//tests/e2e/lib:e2e_lib",
+            "//tests/e2e/fixtures:e2e_fixtures",
+            "//:project_sources",
+        ],
+        tags = ["manual", "local", "exclusive", "requires-network"],
+    )
+    for name in [
+        "invocation-smoke.test.cjs",
+        "copilot-install.test.cjs",
+        "opencode-install.test.cjs",
+        "lifecycle-copilot.test.cjs",
+        "lifecycle-opencode.test.cjs",
+    ]
+]
