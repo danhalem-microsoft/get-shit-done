@@ -26,6 +26,6 @@ test('destroyScratchRepo is skipped when GSD_E2E_KEEP_TMP=1', () => {
     assert.equal(fs.existsSync(scratch.dir), true);
   } finally {
     delete process.env.GSD_E2E_KEEP_TMP;
-    fs.rmSync(scratch.dir, { recursive: true, force: true });
+    fs.rmSync(scratch.root, { recursive: true, force: true });
   }
 });

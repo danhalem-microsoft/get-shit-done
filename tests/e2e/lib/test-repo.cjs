@@ -22,13 +22,18 @@ function createScratchRepo({ fixture = 'lifecycle' } = {}) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'gsd-e2e-'));
   const dir = path.join(root, 'project');
   const fakeHome = path.join(root, 'fakehome');
-  fs.mkdirSync(fakeHome, { recursive: true });
-  copyDir(path.join(FIXTURES_DIR, fixture), dir);
-  execFileSync('git', ['init', '-q', '-b', 'main'], { cwd: dir });
-  execFileSync('git', ['config', 'user.email', 'gsd-e2e@example.com'], { cwd: dir });
-  execFileSync('git', ['config', 'user.name', 'GSD E2E'], { cwd: dir });
-  execFileSync('git', ['add', '.'], { cwd: dir });
-  execFileSync('git', ['commit', '-q', '-m', 'fixture'], { cwd: dir });
+  try {
+    fs.mkdirSync(fakeHome, { recursive: true });
+    copyDir(path.join(FIXTURES_DIR, fixture), dir);
+    execFileSync('git', ['init', '-q', '-b', 'main'], { cwd: dir });
+    execFileSync('git', ['config', 'user.email', 'gsd-e2e@example.com'], { cwd: dir });
+    execFileSync('git', ['config', 'user.name', 'GSD E2E'], { cwd: dir });
+    execFileSync('git', ['add', '.'], { cwd: dir });
+    execFileSync('git', ['commit', '-q', '-m', 'fixture'], { cwd: dir });
+  } catch (err) {
+    fs.rmSync(root, { recursive: true, force: true });
+    throw err;
+  }
   return { root, dir, fakeHome };
 }
 
