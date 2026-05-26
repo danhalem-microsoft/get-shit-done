@@ -36,11 +36,11 @@ test('runChecks passes when all 6 fork features are present (copilot layout)', (
     '.github/get-shit-done/researchers/_template.md': '#',
     '.github/agents/gsd-research-synthesizer.md': 'adaptive synthesis',
     '.github/commands/gsd/add-mistake.md': 'add-mistake',
-    '.github/commands/gsd/list-mistakes.md': 'list-mistakes',
+    '.github/commands/gsd/mistakes.md': 'mistakes',
     '.github/commands/gsd/add-taste.md': 'add-taste',
     '.github/commands/gsd/extract-taste.md': 'extract-taste',
-    '.github/sdk/gsd-tools.cjs': 'gsd-tools',
-    '.github/sdk/taste.cjs': 'taste',
+    '.github/get-shit-done/bin/gsd-tools.cjs': 'gsd-tools',
+    '.github/get-shit-done/bin/lib/taste.cjs': 'taste',
   });
   const report = runChecks({ root, runtime: 'copilot' });
   assert.equal(report.allPass, true, JSON.stringify(report.failures));

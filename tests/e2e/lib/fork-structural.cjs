@@ -27,17 +27,24 @@ function checkSynthesizer(base) {
   return { feature: 'synthesizer', pass: exists(path.join(base, 'agents', 'gsd-research-synthesizer.md')) };
 }
 
+// NOTE: paths reflect the actual Claude reference install (the working
+// runtime this fork was developed against), not the plan's spec source.
+// The plan listed list-mistakes.md / sdk/gsd-tools.cjs / sdk/taste.cjs,
+// but those files do not exist anywhere in the fork. The real names are:
+//   commands/gsd/mistakes.md
+//   get-shit-done/bin/gsd-tools.cjs
+//   get-shit-done/bin/lib/taste.cjs
 function checkMistakeRegistry(base) {
   const a = exists(path.join(base, 'commands', 'gsd', 'add-mistake.md'));
-  const b = exists(path.join(base, 'commands', 'gsd', 'list-mistakes.md'));
-  const c = exists(path.join(base, 'sdk', 'gsd-tools.cjs'));
-  return { feature: 'mistake-registry', pass: a && b && c, parts: { 'add-mistake': a, 'list-mistakes': b, 'gsd-tools.cjs': c } };
+  const b = exists(path.join(base, 'commands', 'gsd', 'mistakes.md'));
+  const c = exists(path.join(base, 'get-shit-done', 'bin', 'gsd-tools.cjs'));
+  return { feature: 'mistake-registry', pass: a && b && c, parts: { 'add-mistake': a, 'mistakes': b, 'gsd-tools.cjs': c } };
 }
 
 function checkTasteLibrary(base) {
   const a = exists(path.join(base, 'commands', 'gsd', 'add-taste.md'));
   const b = exists(path.join(base, 'commands', 'gsd', 'extract-taste.md'));
-  const c = exists(path.join(base, 'sdk', 'taste.cjs'));
+  const c = exists(path.join(base, 'get-shit-done', 'bin', 'lib', 'taste.cjs'));
   return { feature: 'taste-library', pass: a && b && c, parts: { 'add-taste': a, 'extract-taste': b, 'taste.cjs': c } };
 }
 
