@@ -4,6 +4,10 @@ load("@aspect_rules_js//js:defs.bzl", "js_library")
 # data files into the bazel sandbox for tests in sibling packages. The
 # `bin/**` glob was added in Plan 02-11 so tests/install-shared-dir.test.cjs
 # can `require('bin/install.js')` inside the sandbox.
+#
+# Note: tests/e2e/fixtures/** is NOT included here. The E2E harness tests
+# and lifecycle tests pull `//tests/e2e/fixtures:e2e_fixtures` directly as
+# `data`, which keeps fixture files out of every other test's sandbox.
 js_library(
     name = "project_sources",
     srcs = glob([
@@ -14,7 +18,6 @@ js_library(
         "scripts/**",
         "sdk/**",
         "bin/**",
-        "tests/e2e/fixtures/**",
     ]) + ["package.json"],
     visibility = ["//visibility:public"],
 )
