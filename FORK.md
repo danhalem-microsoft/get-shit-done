@@ -23,16 +23,75 @@ cd get-shit-done
 node bin/install.js --global
 ```
 
-### Runtime Options
+### Supported Runtimes
+
+| Runtime | Status | Install command | Install root |
+|---------|--------|-----------------|--------------|
+| Claude Code | Supported (original target) | `node bin/install.js --claude --global` | `~/.claude/` |
+| **Copilot CLI** | **Verified** | `node bin/install.js --copilot --global` (or `--local`) | `.github/` |
+| **OpenCode** | **Verified** | `node bin/install.js --opencode --global` (or `--local`) | `.opencode/` |
+| Gemini | Available, unverified | `node bin/install.js --gemini --global` | runtime-specific |
+| Codex | Available, unverified | `node bin/install.js --codex --global` | runtime-specific |
 
 ```bash
 node bin/install.js --global          # Install to ~/.claude/ (default)
 node bin/install.js --local           # Install to ./.claude/
 node bin/install.js --claude --global # Explicit Claude Code
+node bin/install.js --copilot --global
 node bin/install.js --opencode --global
 node bin/install.js --gemini --global
 node bin/install.js --codex --global
 ```
+
+### Copilot CLI + OpenCode verification
+
+Copilot CLI and OpenCode are now verified runtimes. Both pass the full
+fork-feature E2E lifecycle slice (`/gsd:new-project` → `/gsd:plan-phase`
+→ `/gsd:execute-phase` → `/gsd:verify-work`) against the lifecycle
+fixture under `tests/e2e/fixtures/lifecycle/`.
+
+Each runtime installs the same fork features under its own native
+layout — `bin/install.js` is not parity-forced:
+
+| Feature | Copilot (`.github/`) | OpenCode (`.opencode/`) | Claude (`.claude/`) |
+|---------|----------------------|--------------------------|----------------------|
+| Critic agents | `agents/gsd-critic-*.agent.md` | `agents/gsd-critic-*.md` | `agents/gsd-critic-*.md` |
+| Synthesizer | `agents/gsd-research-synthesizer.agent.md` | `agents/gsd-research-synthesizer.md` | `agents/gsd-research-synthesizer.md` |
+| Researchers | `get-shit-done/researchers/*.md` | `get-shit-done/researchers/*.md` | `get-shit-done/researchers/*.md` |
+| Mistake / taste commands | `skills/gsd-<cmd>/SKILL.md` | `command/gsd-<cmd>.md` (flat) | `commands/gsd/<cmd>.md` |
+| `gsd-tools.cjs` / `taste.cjs` | `get-shit-done/bin/...` | `get-shit-done/bin/...` | `get-shit-done/bin/...` |
+
+The structural check `tests/e2e/lib/fork-structural.cjs` understands all
+three layouts; running `node --test tests/e2e/copilot-install.test.cjs`
+or `tests/e2e/opencode-install.test.cjs` against a scratch project
+proves all 5 fork features land where each runtime expects them.
+
+For the verification methodology, see
+[`docs/superpowers/specs/2026-05-26-gsd-copilot-opencode-verify-design.md`](docs/superpowers/specs/2026-05-26-gsd-copilot-opencode-verify-design.md)
+and the executed plan in
+[`docs/superpowers/plans/2026-05-26-gsd-copilot-opencode-verify.md`](docs/superpowers/plans/2026-05-26-gsd-copilot-opencode-verify.md).
+
+### Running the E2E harness
+
+The fork ships with an E2E harness under `tests/e2e/` that verifies
+install + invocation + lifecycle for each non-Claude runtime.
+
+```bash
+# Harness unit tests (always run, no credentials needed)
+bazel test //tests/e2e/lib/...
+
+# Structural install checks (no live LLM call needed)
+node --test tests/e2e/copilot-install.test.cjs
+node --test tests/e2e/opencode-install.test.cjs
+
+# Live smoke + lifecycle (requires `copilot` / `opencode` on PATH + auth)
+GSD_E2E_COPILOT=1  node --test tests/e2e/invocation-smoke.test.cjs tests/e2e/lifecycle-copilot.test.cjs
+GSD_E2E_OPENCODE=1 node --test tests/e2e/invocation-smoke.test.cjs tests/e2e/lifecycle-opencode.test.cjs
+```
+
+Live tests skip cleanly when the gating env var is unset, so the
+default `node --test` and `bazel test //tests/...` runs stay green
+without credentials.
 
 ## Code-Search Integration
 
