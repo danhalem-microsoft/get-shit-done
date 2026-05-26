@@ -9,7 +9,10 @@ const { runRuntime } = require('./lib/runtime-driver.cjs');
 const { checkRuntime, checkCli, defaultAuthCheck, defaultModelCheck } = require('./lib/preflight.cjs');
 
 const CONTRACT = JSON.parse(fs.readFileSync(path.join(__dirname, 'lib', 'invocation-contract.json'), 'utf8'));
-const STEP_TIMEOUT_MS = 8 * 60 * 1000;
+// 20 min per step. The /gsd-new-project workflow alone reads ~1700 lines
+// of workflow context, then runs research → requirements → roadmap; even
+// in --auto mode this takes well past the original 8-minute budget.
+const STEP_TIMEOUT_MS = 20 * 60 * 1000;
 
 function copilotPrompt(promptText) {
   return ['--allow-all', '--prompt', promptText];
@@ -59,24 +62,24 @@ test('copilot lifecycle: new-project → plan-phase → execute-phase → verify
     const inst = runInstall({ runtime: 'copilot', dir: scratch.dir, fakeHome: scratch.fakeHome });
     assert.equal(inst.ok, true, inst.error || inst.stderr);
 
-    const s1 = await runStep(scratch.dir, 'Run /gsd:new-project to initialize this repository as a GSD project. Use the fixture README as project context. Do not ask clarifying questions; choose reasonable defaults.');
+    const s1 = await runStep(scratch.dir, 'Run /gsd-new-project --auto to initialize this repository as a GSD project. Use the README as the idea document. Choose all recommended defaults; do not stop to ask clarifying questions.');
     assert.equal(s1.timedOut, false, 'new-project timed out');
-    assert.ok(fs.existsSync(path.join(scratch.dir, '.gsd')) || fs.existsSync(path.join(scratch.dir, 'docs', 'gsd')) || s1.stdout.match(/initialized|created/i),
+    assert.ok(fs.existsSync(path.join(scratch.dir, '.gsd')) || fs.existsSync(path.join(scratch.dir, 'docs', 'gsd')) || fs.existsSync(path.join(scratch.dir, '.planning')) || s1.stdout.match(/initialized|created/i),
       `new-project produced no visible state.\nTAIL:\n${s1.tail}`);
 
-    const s2 = await runStep(scratch.dir, 'Run /gsd:plan-phase to plan fixing the broken add() function in src/calc.js so tests/calc.test.js passes. Save the plan to disk.');
+    const s2 = await runStep(scratch.dir, 'Run /gsd-plan-phase 1 --auto to plan fixing the broken add() function in src/calc.js so tests/calc.test.js passes. Save the plan to disk and choose all recommended defaults.');
     assert.equal(s2.timedOut, false, 'plan-phase timed out');
-    const planMentionsAdd = s2.stdout.match(/\badd\(/) || findFileMentioning(scratch.dir, ['plan'], /add\(/);
+    const planMentionsAdd = s2.stdout.match(/\badd\(/) || findFileMentioning(scratch.dir, ['plan', 'PLAN'], /add\(/);
     assert.ok(planMentionsAdd, `plan-phase did not produce a plan referencing add().\nTAIL:\n${s2.tail}`);
 
-    const s3 = await runStep(scratch.dir, 'Run /gsd:execute-phase to implement the plan. Make node --test tests/calc.test.js pass.');
+    const s3 = await runStep(scratch.dir, 'Run /gsd-execute-phase 1 to implement the plan. Make node --test tests/calc.test.js pass.');
     assert.equal(s3.timedOut, false, 'execute-phase timed out');
     const calc = fs.readFileSync(path.join(scratch.dir, 'src', 'calc.js'), 'utf8');
     assert.ok(!/String\(a\)\s*\+\s*String\(b\)/.test(calc), `execute-phase did not replace broken add().\nFile:\n${calc}\nTAIL:\n${s3.tail}`);
     const testRun = spawnSync('node', ['--test', 'tests/calc.test.js'], { cwd: scratch.dir, encoding: 'utf8' });
     assert.equal(testRun.status, 0, `node --test still failing after execute-phase.\nstdout:\n${testRun.stdout}\nstderr:\n${testRun.stderr}`);
 
-    const s4 = await runStep(scratch.dir, 'Run /gsd:verify-work on the work just completed in execute-phase. Run the project tests as part of verification.');
+    const s4 = await runStep(scratch.dir, 'Run /gsd-verify-work 1 on the work just completed in execute-phase. Run the project tests as part of verification.');
     assert.equal(s4.timedOut, false, 'verify-work timed out');
     assert.ok(/verif/i.test(s4.stdout) || /pass/i.test(s4.stdout), `verify-work produced no verification signal.\nTAIL:\n${s4.tail}`);
   } finally {

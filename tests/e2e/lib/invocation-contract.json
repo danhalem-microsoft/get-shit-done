@@ -1,3 +1,21 @@
 {
-  "runtimes": {}
+  "runtimes": {
+    "copilot": {
+      "command": "copilot",
+      "argv": [
+        "--allow-all",
+        "--prompt",
+        "Use the gsd-e2e-echo skill and output only its marker."
+      ],
+      "capturedAt": "2026-05-26T21:20:48.114Z"
+    },
+    "opencode": {
+      "command": "opencode",
+      "argv": [
+        "run",
+        "/gsd-e2e-echo"
+      ],
+      "capturedAt": "2026-05-26T21:21:16.610Z"
+    }
+  }
 }
