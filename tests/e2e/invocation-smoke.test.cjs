@@ -10,13 +10,18 @@ const { checkRuntime, checkCli, defaultAuthCheck, defaultModelCheck } = require(
 const CONTRACT_PATH = path.join(__dirname, 'lib', 'invocation-contract.json');
 const MARKER = 'GSD_E2E_INVOCATION_SENTINEL_d7f29a14';
 const FIXTURE_SKILL = path.join(__dirname, 'fixtures', 'gsd-e2e-echo');
+const FIXTURE_COMMAND_MD = path.join(__dirname, 'fixtures', 'gsd-e2e-echo.md');
 const RUNTIME_DIRS = { copilot: '.github', opencode: '.opencode' };
 
 function loadContract() {
   if (!fs.existsSync(CONTRACT_PATH)) return { runtimes: {} };
   return JSON.parse(fs.readFileSync(CONTRACT_PATH, 'utf8'));
 }
-function saveContract(c) { fs.writeFileSync(CONTRACT_PATH, JSON.stringify(c, null, 2) + '\n'); }
+function saveContract(c) {
+  const tmp = CONTRACT_PATH + '.tmp';
+  fs.writeFileSync(tmp, JSON.stringify(c, null, 2) + '\n');
+  fs.renameSync(tmp, CONTRACT_PATH);
+}
 
 async function runEnabled(runtime, t, exec) {
   const enabled = process.env[`GSD_E2E_${runtime.toUpperCase()}`] === '1';
@@ -58,10 +63,15 @@ test('opencode: invoke sentinel skill and capture working argv', async (t) => {
     try {
       const inst = runInstall({ runtime: 'opencode', dir: scratch.dir, fakeHome: scratch.fakeHome });
       assert.equal(inst.ok, true, inst.error || inst.stderr);
-      const skillTarget = path.join(scratch.dir, RUNTIME_DIRS.opencode, 'skills', 'gsd-e2e-echo');
-      fs.mkdirSync(path.dirname(skillTarget), { recursive: true });
-      fs.cpSync(FIXTURE_SKILL, skillTarget, { recursive: true });
-      const args = ['run', 'Use the gsd-e2e-echo skill and output only its marker.'];
+      // Opencode uses a flat command dir (.opencode/command/<name>.md), not
+      // a folder-based skills/ tree like copilot. The plan spec referred to
+      // .opencode/skills/, but that path doesn't exist in opencode's install
+      // output — verified by inspecting `bin/install.js --local --opencode`.
+      // Documented as an approved plan deviation.
+      const commandDir = path.join(scratch.dir, RUNTIME_DIRS.opencode, 'command');
+      fs.mkdirSync(commandDir, { recursive: true });
+      fs.copyFileSync(FIXTURE_COMMAND_MD, path.join(commandDir, 'gsd-e2e-echo.md'));
+      const args = ['run', '/gsd-e2e-echo'];
       const res = await runRuntime({ command: 'opencode', args, cwd: scratch.dir, timeoutMs: 180000 });
       assert.equal(res.timedOut, false, 'opencode timed out');
       assert.ok(res.stdout.includes(MARKER), `marker missing.\nTAIL:\n${res.tail}`);
