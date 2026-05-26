@@ -8,7 +8,7 @@ function classify(gap) {
   if (kind === 'missing-file' && /researchers\//.test(detail)) {
     return { category: 'fork-feature-loss', fixable: true, hint: 'researcher copy step in bin/install.js' };
   }
-  if (kind === 'missing-file' && /(add-mistake|list-mistakes|gsd-tools\.cjs)/.test(detail)) {
+  if (kind === 'missing-file' && /(add-mistake|mistakes\.md|gsd-tools\.cjs)/.test(detail)) {
     return { category: 'fork-feature-loss', fixable: true, hint: 'mistake-registry triad' };
   }
   if (kind === 'missing-file' && /(add-taste|extract-taste|taste\.cjs)/.test(detail)) {
