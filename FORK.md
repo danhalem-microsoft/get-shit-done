@@ -28,8 +28,8 @@ node bin/install.js --global
 | Runtime | Status | Install command | Install root |
 |---------|--------|-----------------|--------------|
 | Claude Code | Supported (original target) | `node bin/install.js --claude --global` | `~/.claude/` |
-| **Copilot CLI** | **Verified** | `node bin/install.js --copilot --global` (or `--local`) | `.github/` |
-| **OpenCode** | **Verified** | `node bin/install.js --opencode --global` (or `--local`) | `.opencode/` |
+| **Copilot CLI** | **Verified — full lifecycle live (~47 min)** | `node bin/install.js --copilot --global` (or `--local`) | `.github/` |
+| **OpenCode** | **Verified — install + invocation; full lifecycle pending** ([follow-ups](docs/superpowers/specs/2026-05-26-gsd-copilot-opencode-verify-followups.md)) | `node bin/install.js --opencode --global` (or `--local`) | `.opencode/` |
 | Gemini | Available, unverified | `node bin/install.js --gemini --global` | runtime-specific |
 | Codex | Available, unverified | `node bin/install.js --codex --global` | runtime-specific |
 
@@ -45,10 +45,24 @@ node bin/install.js --codex --global
 
 ### Copilot CLI + OpenCode verification
 
-Copilot CLI and OpenCode are now verified runtimes. Both pass the full
-fork-feature E2E lifecycle slice (`/gsd:new-project` → `/gsd:plan-phase`
-→ `/gsd:execute-phase` → `/gsd:verify-work`) against the lifecycle
-fixture under `tests/e2e/fixtures/lifecycle/`.
+**Copilot CLI** is verified end-to-end: install shape, fork-feature
+characterization, live invocation smoke, and the full E2E lifecycle slice
+(`/gsd-new-project --auto` → `/gsd-plan-phase 1 --auto` → `/gsd-execute-phase 1`
+→ `/gsd-verify-work 1`) against the fixture under
+`tests/e2e/fixtures/lifecycle/`. The full live lifecycle takes ~47 min on
+this machine (4 steps × variable wall-clock per step).
+
+**OpenCode** is verified for install shape, fork-feature characterization,
+and live invocation smoke. The full E2E lifecycle did not complete within
+the per-step timeout — see
+[`docs/superpowers/specs/2026-05-26-gsd-copilot-opencode-verify-followups.md`](docs/superpowers/specs/2026-05-26-gsd-copilot-opencode-verify-followups.md)
+for the open hypotheses and proposed next steps. Single-skill flows
+(`/gsd-execute-phase`, `/gsd-verify-work`, etc.) and any invocation that
+doesn't fan out into long researcher chains are usable on OpenCode today.
+
+Both runtimes invoke skills using `/gsd-<command>` slash syntax (hyphen,
+no namespace), e.g. `/gsd-new-project --auto`. The Claude-style
+`/gsd:<command>` colon namespace is Claude-specific.
 
 Each runtime installs the same fork features under its own native
 layout — `bin/install.js` is not parity-forced:
