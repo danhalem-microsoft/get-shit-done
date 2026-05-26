@@ -1,8 +1,85 @@
-'use strict';
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const { spawnSync } = require('node:child_process');
+const { createScratchRepo, destroyScratchRepo } = require('./lib/test-repo.cjs');
+const { runInstall } = require('./lib/install-probe.cjs');
+const { runRuntime } = require('./lib/runtime-driver.cjs');
+const { checkRuntime, checkCli, defaultAuthCheck, defaultModelCheck } = require('./lib/preflight.cjs');
 
-// Placeholder for Task 13 (lifecycle E2E - copilot). The Bazel js_test
-// rule in tests/e2e/BUILD.bazel is tagged `manual` so it is not executed
-// by wildcard test runs. This stub keeps the build graph self-consistent
-// until Task 13 replaces the file with the real test.
+const CONTRACT = JSON.parse(fs.readFileSync(path.join(__dirname, 'lib', 'invocation-contract.json'), 'utf8'));
+const STEP_TIMEOUT_MS = 8 * 60 * 1000;
 
-throw new Error('tests/e2e/lifecycle-copilot.test.cjs is a placeholder; see Task 13 of docs/superpowers/plans/2026-05-26-gsd-copilot-opencode-verify.md');
+function copilotPrompt(promptText) {
+  return ['--allow-all', '--prompt', promptText];
+}
+
+async function runStep(scratchDir, promptText) {
+  return runRuntime({
+    command: 'copilot',
+    args: copilotPrompt(promptText),
+    cwd: scratchDir,
+    timeoutMs: STEP_TIMEOUT_MS,
+  });
+}
+
+function findFileMentioning(dir, pathSubstrings, pattern) {
+  function walk(p) {
+    for (const e of fs.readdirSync(p, { withFileTypes: true })) {
+      if (e.name === 'node_modules' || e.name === '.git') continue;
+      const full = path.join(p, e.name);
+      if (e.isDirectory()) { const hit = walk(full); if (hit) return hit; }
+      else if (e.isFile()) {
+        if (pathSubstrings.some((s) => full.includes(s))) {
+          try {
+            const c = fs.readFileSync(full, 'utf8');
+            if (pattern.test(c)) return full;
+          } catch { /* skip binary */ }
+        }
+      }
+    }
+    return null;
+  }
+  return walk(dir);
+}
+
+test('copilot lifecycle: new-project → plan-phase → execute-phase → verify-work', async (t) => {
+  if (process.env.GSD_E2E_COPILOT !== '1') { t.skip('GSD_E2E_COPILOT!=1'); return; }
+  if (!CONTRACT.runtimes || !CONTRACT.runtimes.copilot) { t.skip('invocation-contract.json missing copilot entry — run Task 8 live first'); return; }
+  const pre = await checkRuntime('copilot', {
+    cliCheck: (n) => checkCli(n),
+    authCheck: () => defaultAuthCheck('copilot'),
+    modelCheck: () => defaultModelCheck('copilot'),
+  });
+  if (!pre.available) { t.skip(pre.reason); return; }
+
+  const scratch = createScratchRepo({ fixture: 'lifecycle' });
+  try {
+    const inst = runInstall({ runtime: 'copilot', dir: scratch.dir, fakeHome: scratch.fakeHome });
+    assert.equal(inst.ok, true, inst.error || inst.stderr);
+
+    const s1 = await runStep(scratch.dir, 'Run /gsd:new-project to initialize this repository as a GSD project. Use the fixture README as project context. Do not ask clarifying questions; choose reasonable defaults.');
+    assert.equal(s1.timedOut, false, 'new-project timed out');
+    assert.ok(fs.existsSync(path.join(scratch.dir, '.gsd')) || fs.existsSync(path.join(scratch.dir, 'docs', 'gsd')) || s1.stdout.match(/initialized|created/i),
+      `new-project produced no visible state.\nTAIL:\n${s1.tail}`);
+
+    const s2 = await runStep(scratch.dir, 'Run /gsd:plan-phase to plan fixing the broken add() function in src/calc.js so tests/calc.test.js passes. Save the plan to disk.');
+    assert.equal(s2.timedOut, false, 'plan-phase timed out');
+    const planMentionsAdd = s2.stdout.match(/\badd\(/) || findFileMentioning(scratch.dir, ['plan'], /add\(/);
+    assert.ok(planMentionsAdd, `plan-phase did not produce a plan referencing add().\nTAIL:\n${s2.tail}`);
+
+    const s3 = await runStep(scratch.dir, 'Run /gsd:execute-phase to implement the plan. Make node --test tests/calc.test.js pass.');
+    assert.equal(s3.timedOut, false, 'execute-phase timed out');
+    const calc = fs.readFileSync(path.join(scratch.dir, 'src', 'calc.js'), 'utf8');
+    assert.ok(!/String\(a\)\s*\+\s*String\(b\)/.test(calc), `execute-phase did not replace broken add().\nFile:\n${calc}\nTAIL:\n${s3.tail}`);
+    const testRun = spawnSync('node', ['--test', 'tests/calc.test.js'], { cwd: scratch.dir, encoding: 'utf8' });
+    assert.equal(testRun.status, 0, `node --test still failing after execute-phase.\nstdout:\n${testRun.stdout}\nstderr:\n${testRun.stderr}`);
+
+    const s4 = await runStep(scratch.dir, 'Run /gsd:verify-work on the work just completed in execute-phase. Run the project tests as part of verification.');
+    assert.equal(s4.timedOut, false, 'verify-work timed out');
+    assert.ok(/verif/i.test(s4.stdout) || /pass/i.test(s4.stdout), `verify-work produced no verification signal.\nTAIL:\n${s4.tail}`);
+  } finally {
+    destroyScratchRepo(scratch);
+  }
+});
