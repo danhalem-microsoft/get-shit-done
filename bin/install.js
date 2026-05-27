@@ -1008,7 +1008,7 @@ function convertClaudeCommandToCopilotSkill(content, skillName, isGlobal = false
   }
 
   // Reconstruct frontmatter in Copilot format
-  let fm = `---\nname: ${skillName}\ndescription: ${description}\n`;
+  let fm = `---\nname: ${skillName}\ndescription: ${yamlQuote(description)}\n`;
   if (argumentHint) fm += `argument-hint: ${yamlQuote(argumentHint)}\n`;
   if (agent) fm += `agent: ${agent}\n`;
   if (toolsLine) fm += `allowed-tools: ${toolsLine}\n`;
@@ -1074,7 +1074,7 @@ function convertClaudeAgentToCopilotAgent(content, isGlobal = false) {
     : '[]';
 
   // Reconstruct frontmatter in Copilot format
-  let fm = `---\nname: ${name}\ndescription: ${description}\ntools: ${toolsArray}\n`;
+  let fm = `---\nname: ${name}\ndescription: ${yamlQuote(description)}\ntools: ${toolsArray}\n`;
   if (color) fm += `color: ${color}\n`;
   fm += '---';
 
@@ -1127,7 +1127,7 @@ function convertClaudeCommandToAntigravitySkill(content, skillName, isGlobal = f
   const name = skillName || extractFrontmatterField(frontmatter, 'name') || 'unknown';
   const description = extractFrontmatterField(frontmatter, 'description') || '';
 
-  const fm = `---\nname: ${name}\ndescription: ${description}\n---`;
+  const fm = `---\nname: ${name}\ndescription: ${yamlQuote(description)}\n---`;
   return `${fm}\n${body}`;
 }
 
@@ -1149,7 +1149,7 @@ function convertClaudeAgentToAntigravityAgent(content, isGlobal = false) {
   const claudeTools = toolsRaw.split(',').map(t => t.trim()).filter(Boolean);
   const mappedTools = claudeTools.map(t => convertGeminiToolName(t)).filter(Boolean);
 
-  let fm = `---\nname: ${name}\ndescription: ${description}\ntools: ${mappedTools.join(', ')}\n`;
+  let fm = `---\nname: ${name}\ndescription: ${yamlQuote(description)}\ntools: ${mappedTools.join(', ')}\n`;
   if (color) fm += `color: ${color}\n`;
   fm += '---';
 
