@@ -6029,48 +6029,37 @@ function install(isGlobal, runtime = 'claude') {
   }
 
   // Write file manifest for future modification detection
-  writeManifest(targetDir, runtime);
+  const manifest = writeManifest(targetDir, runtime);
   console.log(`  ${green}✓${reset} Wrote file manifest (${MANIFEST_NAME})`);
 
   // Report any backed-up local patches
   reportLocalPatches(targetDir, runtime);
 
-  // Verify no leaked .claude paths in non-Claude runtimes
+  // Verify no leaked .claude paths in non-Claude runtimes.
+  // Scan ONLY files GSD wrote (per manifest), not the entire targetDir — other
+  // plugins and runtime state under ~/.copilot, ~/.opencode, etc. may
+  // legitimately reference ~/.claude paths and are not ours to rewrite.
   if (runtime !== 'claude') {
     const leakedPaths = [];
-    function scanForLeakedPaths(dir) {
-      if (!fs.existsSync(dir)) return;
-      let entries;
+    const leakRegex = /(?:~|\$HOME)\/\.claude\b/g;
+    for (const relPath of Object.keys(manifest.files)) {
+      if (!relPath.endsWith('.md') && !relPath.endsWith('.toml')) continue;
+      if (path.basename(relPath) === 'CHANGELOG.md') continue;
+      const fullPath = path.join(targetDir, relPath);
+      let content;
       try {
-        entries = fs.readdirSync(dir, { withFileTypes: true });
+        content = fs.readFileSync(fullPath, 'utf8');
       } catch (err) {
-        if (err.code === 'EPERM' || err.code === 'EACCES') {
-          return; // skip inaccessible directories
+        if (err.code === 'ENOENT' || err.code === 'EPERM' || err.code === 'EACCES') {
+          continue;
         }
         throw err;
       }
-      for (const entry of entries) {
-        const fullPath = path.join(dir, entry.name);
-        if (entry.isDirectory()) {
-          scanForLeakedPaths(fullPath);
-        } else if ((entry.name.endsWith('.md') || entry.name.endsWith('.toml')) && entry.name !== 'CHANGELOG.md') {
-          let content;
-          try {
-            content = fs.readFileSync(fullPath, 'utf8');
-          } catch (err) {
-            if (err.code === 'EPERM' || err.code === 'EACCES') {
-              continue; // skip inaccessible files
-            }
-            throw err;
-          }
-          const matches = content.match(/(?:~|\$HOME)\/\.claude\b/g);
-          if (matches) {
-            leakedPaths.push({ file: fullPath.replace(targetDir + '/', ''), count: matches.length });
-          }
-        }
+      const matches = content.match(leakRegex);
+      if (matches) {
+        leakedPaths.push({ file: relPath, count: matches.length });
       }
     }
-    scanForLeakedPaths(targetDir);
     if (leakedPaths.length > 0) {
       const totalLeaks = leakedPaths.reduce((sum, l) => sum + l.count, 0);
       console.warn(`\n  ${yellow}⚠${reset}  Found ${totalLeaks} unreplaced .claude path reference(s) in ${leakedPaths.length} file(s):`);
